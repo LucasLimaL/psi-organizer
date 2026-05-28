@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  Paper, Box, Typography, IconButton, Button, Chip, FormControlLabel, Switch, Tooltip,
+  Paper, Box, Stack, Typography, IconButton, Button, Chip, Tooltip,
+  ToggleButton,
 } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
@@ -8,6 +9,8 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import KeyboardDoubleArrowLeftIcon from '@mui/icons-material/KeyboardDoubleArrowLeft'
 import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArrowRight'
 import TodayIcon from '@mui/icons-material/Today'
+import AddIcon from '@mui/icons-material/Add'
+import WeekendIcon from '@mui/icons-material/Weekend'
 import { consultasApi, type Consulta } from '../api/consultas'
 import {
   inicioDaSemana, addDias, mesmaData, formatarHora, formatarData,
@@ -17,8 +20,9 @@ import ConsultaDialog from '../components/ConsultaDialog'
 
 const HORA_INICIO = 7
 const HORA_FIM = 21
-const ALTURA_HORA = 56
+const ALTURA_HORA = 60
 const LARGURA_HORA_COL = 64
+const HEADER_DIAS = 56
 const DIAS_SEMANA = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 
 const PREF_FDS_KEY = 'psi.agenda.ocultarFds'
@@ -36,7 +40,7 @@ export default function AgendaPage() {
   const divider = theme.palette.divider
   const dividerSubtle = alpha(theme.palette.divider, 0.5)
   const tintHoje = alpha(theme.palette.primary.main, 0.04)
-  const tintHoverSlot = alpha(theme.palette.primary.main, 0.08)
+  const tintHoverSlot = alpha(theme.palette.primary.main, 0.06)
 
   const [segunda, setSegunda] = useState(() => inicioDaSemana(new Date()))
   const [mesRef, setMesRef] = useState(() => {
@@ -49,6 +53,13 @@ export default function AgendaPage() {
   const [dialogAberto, setDialogAberto] = useState(false)
   const [consultaSelecionada, setConsultaSelecionada] = useState<Consulta | null>(null)
   const [inicioPadrao, setInicioPadrao] = useState<Date | undefined>()
+  const [agora, setAgora] = useState(() => new Date())
+
+  // tick a cada 60s pra mover o indicador "agora"
+  useEffect(() => {
+    const id = setInterval(() => setAgora(new Date()), 60_000)
+    return () => clearInterval(id)
+  }, [])
 
   useEffect(() => {
     localStorage.setItem(PREF_FDS_KEY, ocultarFds ? '1' : '0')
@@ -107,7 +118,6 @@ export default function AgendaPage() {
   function navegarSemana(delta: number) {
     const nova = addDias(segunda, delta * 7)
     setSegunda(nova)
-    // sincroniza mês de referência com a quinta-feira da nova semana
     const ref = addDias(nova, 3)
     setMesRef({ year: ref.getFullYear(), month: ref.getMonth() })
   }
@@ -118,118 +128,307 @@ export default function AgendaPage() {
     setMesRef({ year: h.getFullYear(), month: h.getMonth() })
   }
 
+  function abrirNovaConsulta() {
+    const d = new Date()
+    d.setMinutes(0, 0, 0)
+    setInicioPadrao(d)
+    setConsultaSelecionada(null)
+    setDialogAberto(true)
+  }
+
   const horas = Array.from({ length: HORA_FIM - HORA_INICIO }, (_, i) => HORA_INICIO + i)
   const hoje = new Date()
   const mesReferencia = new Date(mesRef.year, mesRef.month, 1)
 
+  // Posição da linha "agora" (apenas se hoje está na semana visível e dentro do range de horas)
+  const colHojeIdx = dias.findIndex(d => mesmaData(d, agora))
+  const minutosDeAgora = agora.getHours() * 60 + agora.getMinutes() - HORA_INICIO * 60
+  const mostrarLinhaAgora =
+    colHojeIdx >= 0 && minutosDeAgora >= 0 && minutosDeAgora <= (HORA_FIM - HORA_INICIO) * 60
+  const topoLinhaAgora = HEADER_DIAS + (minutosDeAgora / 60) * ALTURA_HORA
+
   return (
-    <Paper sx={{ p: 2 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 1, flexWrap: 'wrap' }}>
-        <Typography variant="h5" sx={{ flexGrow: 1 }}>
-          Semana de {formatarData(segunda)} a {formatarData(ultimoDia)}
-        </Typography>
+    <Stack spacing={2}>
+      {/* Toolbar */}
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+        <Stack sx={{ flexGrow: 1, minWidth: 0 }}>
+          <Typography variant="body2" color="text.secondary">
+            {formatarData(segunda)} – {formatarData(ultimoDia)}
+          </Typography>
+          <Typography variant="h5" sx={{ textTransform: 'capitalize', fontWeight: 600 }}>
+            {formatarMes(mesReferencia)}
+          </Typography>
+        </Stack>
 
-        <Tooltip title="Mês anterior (semana do 1º dia útil)">
-          <IconButton aria-label="Mês anterior" onClick={() => pularMes(-1)}>
-            <KeyboardDoubleArrowLeftIcon />
-          </IconButton>
+        {/* Mês */}
+        <Paper
+          variant="outlined"
+          sx={{
+            display: 'flex', alignItems: 'center',
+            border: `1px solid ${divider}`, boxShadow: 'none',
+            borderRadius: 999, p: 0.25,
+          }}
+        >
+          <Tooltip title="Mês anterior (semana do 1º dia útil)">
+            <IconButton size="small" aria-label="Mês anterior" onClick={() => pularMes(-1)}>
+              <KeyboardDoubleArrowLeftIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Próximo mês (semana do 1º dia útil)">
+            <IconButton size="small" aria-label="Próximo mês" onClick={() => pularMes(1)}>
+              <KeyboardDoubleArrowRightIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Paper>
+
+        {/* Semana + Hoje */}
+        <Paper
+          variant="outlined"
+          sx={{
+            display: 'flex', alignItems: 'center',
+            border: `1px solid ${divider}`, boxShadow: 'none',
+            borderRadius: 999, p: 0.25,
+          }}
+        >
+          <Tooltip title="Semana anterior">
+            <IconButton size="small" aria-label="Semana anterior" onClick={() => navegarSemana(-1)}>
+              <ChevronLeftIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Button
+            size="small" startIcon={<TodayIcon />} onClick={irParaHoje}
+            sx={{ borderRadius: 999, mx: 0.25 }}
+          >
+            Hoje
+          </Button>
+          <Tooltip title="Próxima semana">
+            <IconButton size="small" aria-label="Próxima semana" onClick={() => navegarSemana(1)}>
+              <ChevronRightIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Paper>
+
+        {/* FDS toggle */}
+        <Tooltip title={ocultarFds ? 'Mostrar fim de semana' : 'Ocultar fim de semana'}>
+          <ToggleButton
+            size="small"
+            value="fds"
+            selected={ocultarFds}
+            onChange={() => setOcultarFds(o => !o)}
+            aria-label="Ocultar fim de semana"
+            sx={{ borderRadius: 999, px: 1.5 }}
+          >
+            <WeekendIcon fontSize="small" />
+          </ToggleButton>
         </Tooltip>
-        <Typography variant="body2" sx={{ minWidth: 120, textAlign: 'center', textTransform: 'capitalize' }}>
-          {formatarMes(mesReferencia)}
-        </Typography>
-        <Tooltip title="Próximo mês (semana do 1º dia útil)">
-          <IconButton aria-label="Próximo mês" onClick={() => pularMes(1)}>
-            <KeyboardDoubleArrowRightIcon />
-          </IconButton>
-        </Tooltip>
 
-        <Box sx={{ borderLeft: `1px solid ${divider}`, height: 24, mx: 1 }} />
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={abrirNovaConsulta}
+          sx={{ borderRadius: 999, ml: 0.5 }}
+        >
+          Nova consulta
+        </Button>
+      </Stack>
 
-        <IconButton aria-label="Semana anterior" onClick={() => navegarSemana(-1)}>
-          <ChevronLeftIcon />
-        </IconButton>
-        <Button startIcon={<TodayIcon />} onClick={irParaHoje}>Hoje</Button>
-        <IconButton aria-label="Próxima semana" onClick={() => navegarSemana(1)}>
-          <ChevronRightIcon />
-        </IconButton>
-
-        <Button variant="contained" sx={{ ml: 2 }} onClick={() => {
-          const d = new Date()
-          d.setMinutes(0, 0, 0)
-          setInicioPadrao(d)
-          setConsultaSelecionada(null)
-          setDialogAberto(true)
-        }}>Nova consulta</Button>
-      </Box>
-
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-        <FormControlLabel
-          control={<Switch checked={ocultarFds}
-                           onChange={e => setOcultarFds(e.target.checked)} />}
-          label="Ocultar fim de semana" />
-      </Box>
-
-      <Box sx={{ display: 'flex', borderTop: `1px solid ${divider}` }}>
-        <Box sx={{ width: LARGURA_HORA_COL, flexShrink: 0 }}>
-          <Box sx={{ height: 40, borderBottom: `1px solid ${divider}` }} />
-          {horas.map(h => (
-            <Box key={h} sx={{
-              height: ALTURA_HORA, borderBottom: `1px solid ${dividerSubtle}`,
-              pr: 1, textAlign: 'right',
-              fontSize: 12, color: 'text.secondary',
-            }}>
-              {String(h).padStart(2, '0')}:00
-            </Box>
-          ))}
-        </Box>
-
-        {dias.map((dia, idx) => (
-          <Box key={idx} sx={{
-            flex: 1, borderLeft: `1px solid ${divider}`, position: 'relative',
-            bgcolor: mesmaData(dia, hoje) ? tintHoje : 'transparent',
-          }}>
-            <Box sx={{
-              height: 40, borderBottom: `1px solid ${divider}`,
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              fontWeight: mesmaData(dia, hoje) ? 700 : 500,
-            }}>
-              <Typography variant="caption">{DIAS_SEMANA[idx]}</Typography>
-              <Typography variant="body2">{formatarData(dia)}</Typography>
-            </Box>
+      {/* Grade da agenda */}
+      <Paper sx={{ overflow: 'hidden', p: 0 }}>
+        <Box sx={{ display: 'flex', position: 'relative' }}>
+          {/* Coluna de horários */}
+          <Box sx={{ width: LARGURA_HORA_COL, flexShrink: 0 }}>
+            <Box sx={{ height: HEADER_DIAS, borderBottom: `1px solid ${divider}` }} />
             {horas.map(h => (
-              <Box key={h}
-                   onClick={() => onClicarHora(dia, h)}
-                   sx={{
-                     height: ALTURA_HORA, borderBottom: `1px solid ${dividerSubtle}`,
-                     cursor: 'pointer', '&:hover': { bgcolor: tintHoverSlot },
-                   }} />
+              <Box key={h} sx={{
+                height: ALTURA_HORA,
+                borderBottom: `1px solid ${dividerSubtle}`,
+                pr: 1, pt: 0.5,
+                textAlign: 'right',
+                fontSize: 11,
+                fontVariantNumeric: 'tabular-nums',
+                color: 'text.secondary',
+              }}>
+                {String(h).padStart(2, '0')}:00
+              </Box>
             ))}
-            {consultasNoDia(dia).map(c => {
-              const { top, altura } = topoEAltura(c)
-              const cor = status[MAPA_STATUS[c.status]]
-              return (
-                <Box key={c.id}
-                     onClick={e => { e.stopPropagation(); onClicarConsulta(c) }}
-                     sx={{
-                       position: 'absolute', left: 4, right: 4,
-                       top: 40 + top, height: Math.max(altura - 2, 18),
-                       bgcolor: cor.bg, color: cor.fg,
-                       border: `1px solid ${cor.border}`,
-                       borderRadius: 1, px: 0.75, py: 0.25,
-                       fontSize: 11, lineHeight: 1.2, overflow: 'hidden',
-                       cursor: 'pointer', boxShadow: 1,
-                     }}>
-                  <Box sx={{ fontWeight: 700 }}>{formatarHora(new Date(c.inicio))} {c.pacienteNome}</Box>
-                  {c.pago && <Chip size="small" label="pago" sx={{
-                    height: 14, fontSize: 9, mt: 0.25,
-                    bgcolor: alpha(cor.fg, 0.18), color: cor.fg,
-                  }} />}
-                </Box>
-              )
-            })}
           </Box>
-        ))}
-      </Box>
+
+          {dias.map((dia, idx) => {
+            const ehHoje = mesmaData(dia, hoje)
+            return (
+              <Box key={idx} sx={{
+                flex: 1, borderLeft: `1px solid ${divider}`,
+                position: 'relative',
+                bgcolor: ehHoje ? tintHoje : 'transparent',
+              }}>
+                {/* Header do dia */}
+                <Box sx={{
+                  height: HEADER_DIAS,
+                  borderBottom: `1px solid ${divider}`,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  justifyContent: 'center', gap: 0.25,
+                }}>
+                  <Typography variant="caption" sx={{
+                    color: 'text.secondary',
+                    fontWeight: 500,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    fontSize: 10,
+                  }}>
+                    {DIAS_SEMANA[idx]}
+                  </Typography>
+                  <Box sx={{
+                    width: 30, height: 30,
+                    borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    bgcolor: ehHoje ? 'primary.main' : 'transparent',
+                    color: ehHoje ? 'primary.contrastText' : 'text.primary',
+                    fontWeight: ehHoje ? 700 : 500,
+                    fontSize: 14,
+                    fontVariantNumeric: 'tabular-nums',
+                  }}>
+                    {dia.getDate()}
+                  </Box>
+                </Box>
+
+                {/* Slots horários */}
+                {horas.map(h => (
+                  <Box key={h}
+                       onClick={() => onClicarHora(dia, h)}
+                       sx={{
+                         height: ALTURA_HORA,
+                         borderBottom: `1px solid ${dividerSubtle}`,
+                         cursor: 'pointer',
+                         transition: theme.transitions.create('background-color', {
+                           duration: theme.transitions.duration.short,
+                         }),
+                         '&:hover': { bgcolor: tintHoverSlot },
+                       }} />
+                ))}
+
+                {/* Consultas */}
+                {consultasNoDia(dia).map(c => {
+                  const { top, altura } = topoEAltura(c)
+                  const cor = status[MAPA_STATUS[c.status]]
+                  const ePequena = altura < 36
+                  return (
+                    <Tooltip
+                      key={c.id}
+                      title={`${formatarHora(new Date(c.inicio))} · ${c.pacienteNome} · ${c.status.toLowerCase()}`}
+                      placement="right"
+                    >
+                      <Box
+                        onClick={e => { e.stopPropagation(); onClicarConsulta(c) }}
+                        sx={{
+                          position: 'absolute',
+                          left: 6, right: 6,
+                          top: HEADER_DIAS + top + 2,
+                          height: Math.max(altura - 4, 22),
+                          bgcolor: alpha(cor.bg, 0.14),
+                          color: 'text.primary',
+                          border: `1px solid ${alpha(cor.border, 0.6)}`,
+                          borderLeft: `3px solid ${cor.bg}`,
+                          borderRadius: 1.5,
+                          px: 1, py: 0.5,
+                          fontSize: 12, lineHeight: 1.3,
+                          overflow: 'hidden',
+                          cursor: 'pointer',
+                          transition: theme.transitions.create(['box-shadow', 'transform'], {
+                            duration: theme.transitions.duration.short,
+                          }),
+                          boxShadow: theme.shadows[1],
+                          '&:hover': {
+                            boxShadow: theme.shadows[3],
+                            transform: 'translateY(-1px)',
+                          },
+                        }}
+                      >
+                        <Stack
+                          direction={ePequena ? 'row' : 'column'}
+                          spacing={ePequena ? 0.75 : 0}
+                          sx={{
+                            minWidth: 0,
+                            alignItems: ePequena ? 'center' : 'stretch',
+                          }}
+                        >
+                          <Typography
+                            component="span"
+                            sx={{
+                              fontWeight: 700,
+                              fontSize: 11,
+                              fontVariantNumeric: 'tabular-nums',
+                              color: cor.bg,
+                              flexShrink: 0,
+                            }}
+                          >
+                            {formatarHora(new Date(c.inicio))}
+                          </Typography>
+                          <Typography
+                            component="span"
+                            noWrap
+                            sx={{
+                              fontWeight: 600,
+                              fontSize: 12,
+                              minWidth: 0,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                            }}
+                          >
+                            {c.pacienteNome}
+                          </Typography>
+                        </Stack>
+                        {!ePequena && c.pago && (
+                          <Chip
+                            label="pago"
+                            size="small"
+                            sx={{
+                              height: 16,
+                              fontSize: 9,
+                              fontWeight: 600,
+                              mt: 0.5,
+                              bgcolor: alpha(cor.bg, 0.2),
+                              color: cor.bg,
+                              '& .MuiChip-label': { px: 0.75 },
+                            }}
+                          />
+                        )}
+                      </Box>
+                    </Tooltip>
+                  )
+                })}
+              </Box>
+            )
+          })}
+
+          {/* Linha do "agora" — atravessa todas as colunas dos dias */}
+          {mostrarLinhaAgora && (
+            <Box
+              aria-hidden
+              sx={{
+                position: 'absolute',
+                top: topoLinhaAgora,
+                left: LARGURA_HORA_COL,
+                right: 0,
+                pointerEvents: 'none',
+                zIndex: 1,
+              }}
+            >
+              <Box sx={{
+                position: 'relative',
+                borderTop: `2px solid ${theme.palette.error.main}`,
+              }}>
+                <Box sx={{
+                  position: 'absolute',
+                  left: -5, top: -6,
+                  width: 10, height: 10,
+                  borderRadius: '50%',
+                  bgcolor: theme.palette.error.main,
+                }} />
+              </Box>
+            </Box>
+          )}
+        </Box>
+      </Paper>
 
       <ConsultaDialog
         aberto={dialogAberto}
@@ -238,6 +437,6 @@ export default function AgendaPage() {
         onFechar={() => setDialogAberto(false)}
         onSalvo={carregar}
       />
-    </Paper>
+    </Stack>
   )
 }

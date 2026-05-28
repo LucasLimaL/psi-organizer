@@ -1,11 +1,24 @@
 import { createTheme, type Theme } from '@mui/material/styles'
 import { globalTokens, type PaletteTokens } from './tokens'
+import { derivarStatusConsulta } from './derive'
+
+/**
+ * Detecta se o usuário pediu `prefers-reduced-motion: reduce`.
+ * Em SSR ou sem suporte, retorna `false` (movimento normal).
+ */
+function reducedMotion(): boolean {
+  if (typeof window === 'undefined' || !window.matchMedia) return false
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
 
 /**
  * Constrói um Theme do MUI a partir dos tokens de paleta + tokens globais.
  * Mantém a parametrização: trocar palette = trocar argumento.
  */
 export function createAppTheme(p: PaletteTokens): Theme {
+  const statusConsulta = p.status ?? derivarStatusConsulta(p)
+  const prm = reducedMotion()
+  const dur = globalTokens.motion.duration
   return createTheme({
     palette: {
       mode: p.modo,
@@ -22,6 +35,29 @@ export function createAppTheme(p: PaletteTokens): Theme {
       warning: { main: p.warning },
       error: { main: p.error },
       info: { main: p.info },
+      statusConsulta,
+    },
+    transitions: {
+      duration: prm
+        ? {
+            shortest: 0, shorter: 0, short: 0, standard: 0,
+            complex: 0, enteringScreen: 0, leavingScreen: 0,
+          }
+        : {
+            shortest: dur.fast,
+            shorter: dur.fast,
+            short: dur.short,
+            standard: dur.medium,
+            complex: dur.long,
+            enteringScreen: dur.medium,
+            leavingScreen: dur.short,
+          },
+      easing: {
+        easeInOut: globalTokens.motion.easing.standard,
+        easeOut: globalTokens.motion.easing.decelerate,
+        easeIn: globalTokens.motion.easing.accelerate,
+        sharp: globalTokens.motion.easing.emphasized,
+      },
     },
     typography: {
       fontFamily: globalTokens.typography.fontFamily,

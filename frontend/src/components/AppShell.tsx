@@ -1,0 +1,216 @@
+import { useState } from 'react'
+import {
+  AppBar, Box, Drawer, IconButton, List, ListItemButton, ListItemIcon,
+  ListItemText, Toolbar, Typography, useMediaQuery, useTheme, Divider, Avatar,
+  Tooltip,
+} from '@mui/material'
+import MenuIcon from '@mui/icons-material/Menu'
+import EventNoteIcon from '@mui/icons-material/EventNote'
+import PeopleAltIcon from '@mui/icons-material/PeopleAlt'
+import PersonOutlineIcon from '@mui/icons-material/PersonOutlined'
+import LogoutIcon from '@mui/icons-material/Logout'
+import SpaIcon from '@mui/icons-material/Spa'
+import { Outlet, Link as RouterLink, useLocation, useNavigate } from 'react-router-dom'
+import { useAuth } from '../auth/authContext'
+import { globalTokens } from '../theme/tokens'
+import PaletteSwitcher from './PaletteSwitcher'
+
+const NAV = [
+  { to: '/', label: 'Agenda', icon: <EventNoteIcon /> },
+  { to: '/pacientes', label: 'Pacientes', icon: <PeopleAltIcon /> },
+  { to: '/perfil', label: 'Perfil', icon: <PersonOutlineIcon /> },
+]
+
+const { drawerWidth, appBarHeight } = globalTokens.layout
+
+function tituloDaRota(pathname: string): string {
+  if (pathname.startsWith('/pacientes')) return 'Pacientes'
+  if (pathname.startsWith('/perfil')) return 'Perfil'
+  return 'Agenda'
+}
+
+function iniciais(nome: string): string {
+  return nome
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(s => s[0]?.toUpperCase() ?? '')
+    .join('')
+}
+
+export default function AppShell() {
+  const theme = useTheme()
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'))
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { psicologa, logout } = useAuth()
+
+  function onLogout() {
+    logout()
+    navigate('/login', { replace: true })
+  }
+
+  function fecharMobile() {
+    if (!isDesktop) setMobileOpen(false)
+  }
+
+  const drawerContent = (
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, p: 2.5 }}>
+        <Box
+          aria-hidden
+          sx={{
+            width: 36, height: 36, borderRadius: 2,
+            bgcolor: 'primary.main', color: 'primary.contrastText',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          <SpaIcon fontSize="small" />
+        </Box>
+        <Box>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
+            psi-organizer
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Consultório
+          </Typography>
+        </Box>
+      </Box>
+
+      <Divider />
+
+      <List sx={{ flexGrow: 1, px: 1.5, py: 2 }} component="nav" aria-label="Navegação principal">
+        {NAV.map(item => {
+          const ativo = item.to === '/'
+            ? location.pathname === '/'
+            : location.pathname.startsWith(item.to)
+          return (
+            <ListItemButton
+              key={item.to}
+              component={RouterLink}
+              to={item.to}
+              onClick={fecharMobile}
+              selected={ativo}
+              aria-current={ativo ? 'page' : undefined}
+              sx={{
+                borderRadius: 2, mb: 0.5,
+                '&.Mui-selected': {
+                  bgcolor: 'primary.main', color: 'primary.contrastText',
+                  '& .MuiListItemIcon-root': { color: 'primary.contrastText' },
+                  '&:hover': { bgcolor: 'primary.main', filter: 'brightness(1.08)' },
+                },
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 36, color: 'text.secondary' }}>
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText
+                primary={item.label}
+                slotProps={{ primary: { sx: { fontWeight: ativo ? 600 : 500 } } }}
+              />
+            </ListItemButton>
+          )
+        })}
+      </List>
+
+      <Divider />
+
+      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <Avatar sx={{ bgcolor: 'primary.main', width: 36, height: 36 }}>
+          {psicologa ? iniciais(psicologa.nomeCompleto) : '?'}
+        </Avatar>
+        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+          <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
+            {psicologa?.nomeCompleto ?? '—'}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" noWrap component="div">
+            {psicologa?.email ?? ''}
+          </Typography>
+        </Box>
+        <Tooltip title="Sair">
+          <IconButton onClick={onLogout} aria-label="Sair" size="small">
+            <LogoutIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    </Box>
+  )
+
+  return (
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+      <AppBar
+        position="fixed"
+        sx={{
+          width: { md: `calc(100% - ${drawerWidth}px)` },
+          ml: { md: `${drawerWidth}px` },
+          height: appBarHeight,
+        }}
+      >
+        <Toolbar sx={{ minHeight: `${appBarHeight}px !important` }}>
+          <IconButton
+            color="inherit"
+            edge="start"
+            onClick={() => setMobileOpen(o => !o)}
+            sx={{ mr: 2, display: { md: 'none' } }}
+            aria-label="Abrir menu"
+          >
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="h6" component="h1" sx={{ flexGrow: 1, fontWeight: 600 }}>
+            {tituloDaRota(location.pathname)}
+          </Typography>
+          <PaletteSwitcher />
+        </Toolbar>
+      </AppBar>
+
+      <Box
+        component="nav"
+        sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
+        aria-label="Menu lateral"
+      >
+        {/* Mobile — temporary drawer */}
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={() => setMobileOpen(false)}
+          ModalProps={{ keepMounted: true }}
+          sx={{
+            display: { xs: 'block', md: 'none' },
+            '& .MuiDrawer-paper': { width: drawerWidth, boxSizing: 'border-box' },
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+        {/* Desktop — permanent drawer */}
+        <Drawer
+          variant="permanent"
+          open
+          sx={{
+            display: { xs: 'none', md: 'block' },
+            '& .MuiDrawer-paper': { width: drawerWidth, boxSizing: 'border-box' },
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+      </Box>
+
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          width: { md: `calc(100% - ${drawerWidth}px)` },
+          pt: `${appBarHeight}px`,
+        }}
+      >
+        <Box sx={{
+          maxWidth: globalTokens.layout.contentMaxWidth,
+          mx: 'auto',
+          p: { xs: 2, md: 3 },
+        }}>
+          <Outlet />
+        </Box>
+      </Box>
+    </Box>
+  )
+}

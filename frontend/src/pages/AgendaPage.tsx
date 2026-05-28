@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Paper, Box, Stack, Typography, IconButton, Button, Chip, Tooltip,
-  ToggleButton,
+  ToggleButton, ButtonBase, useMediaQuery,
 } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
@@ -14,7 +14,7 @@ import WeekendIcon from '@mui/icons-material/Weekend'
 import { consultasApi, type Consulta } from '../api/consultas'
 import {
   inicioDaSemana, addDias, mesmaData, formatarHora, formatarData,
-  primeiroDiaUtilDoMes, formatarMes,
+  primeiroDiaUtilDoMes, formatarMes, formatarDataLonga,
 } from '../utils/datas'
 import ConsultaDialog from '../components/ConsultaDialog'
 
@@ -36,6 +36,7 @@ const MAPA_STATUS: Record<Consulta['status'], 'agendada' | 'confirmada' | 'reali
 
 export default function AgendaPage() {
   const theme = useTheme()
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'))
   const status = theme.palette.statusConsulta
   const divider = theme.palette.divider
   const dividerSubtle = alpha(theme.palette.divider, 0.5)
@@ -54,6 +55,7 @@ export default function AgendaPage() {
   const [consultaSelecionada, setConsultaSelecionada] = useState<Consulta | null>(null)
   const [inicioPadrao, setInicioPadrao] = useState<Date | undefined>()
   const [agora, setAgora] = useState(() => new Date())
+  const [diaSelecionado, setDiaSelecionado] = useState(() => new Date())
 
   // tick a cada 60s pra mover o indicador "agora"
   useEffect(() => {
@@ -106,13 +108,26 @@ export default function AgendaPage() {
     return { top, altura }
   }
 
+  function ajustarDiaSelecionado(novaSegunda: Date) {
+    // Mantém o offset do dia da semana atual; senão usa segunda
+    const h = new Date()
+    const hojeNaSemana = h >= novaSegunda && h < addDias(novaSegunda, 7)
+    if (hojeNaSemana) {
+      setDiaSelecionado(h)
+    } else {
+      setDiaSelecionado(novaSegunda)
+    }
+  }
+
   function pularMes(delta: number) {
     const total = mesRef.year * 12 + mesRef.month + delta
     const year = Math.floor(total / 12)
     const month = total - year * 12
     setMesRef({ year, month })
     const primeiro = primeiroDiaUtilDoMes(year, month)
-    setSegunda(inicioDaSemana(primeiro))
+    const nova = inicioDaSemana(primeiro)
+    setSegunda(nova)
+    ajustarDiaSelecionado(nova)
   }
 
   function navegarSemana(delta: number) {
@@ -120,12 +135,14 @@ export default function AgendaPage() {
     setSegunda(nova)
     const ref = addDias(nova, 3)
     setMesRef({ year: ref.getFullYear(), month: ref.getMonth() })
+    ajustarDiaSelecionado(nova)
   }
 
   function irParaHoje() {
     const h = new Date()
     setSegunda(inicioDaSemana(h))
     setMesRef({ year: h.getFullYear(), month: h.getMonth() })
+    setDiaSelecionado(h)
   }
 
   function abrirNovaConsulta() {
@@ -140,12 +157,21 @@ export default function AgendaPage() {
   const hoje = new Date()
   const mesReferencia = new Date(mesRef.year, mesRef.month, 1)
 
-  // Posição da linha "agora" (apenas se hoje está na semana visível e dentro do range de horas)
-  const colHojeIdx = dias.findIndex(d => mesmaData(d, agora))
+  // Mobile: só renderiza o dia selecionado.
+  const diasVisiveis = isDesktop ? dias : [diaSelecionado]
+  const cabecalhoColuna = isDesktop ? HEADER_DIAS : 0
+  // No mobile a strip da semana sempre mostra os 7 dias.
+  const diasSemana7 = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => addDias(segunda, i)),
+    [segunda],
+  )
+
+  // Posição da linha "agora": precisa que `agora` esteja em algum dos `diasVisiveis`.
+  const colHojeIdx = diasVisiveis.findIndex(d => mesmaData(d, agora))
   const minutosDeAgora = agora.getHours() * 60 + agora.getMinutes() - HORA_INICIO * 60
   const mostrarLinhaAgora =
     colHojeIdx >= 0 && minutosDeAgora >= 0 && minutosDeAgora <= (HORA_FIM - HORA_INICIO) * 60
-  const topoLinhaAgora = HEADER_DIAS + (minutosDeAgora / 60) * ALTURA_HORA
+  const topoLinhaAgora = cabecalhoColuna + (minutosDeAgora / 60) * ALTURA_HORA
 
   return (
     <Stack spacing={2}>
@@ -208,7 +234,7 @@ export default function AgendaPage() {
           </Tooltip>
         </Paper>
 
-        {/* FDS toggle */}
+        {/* FDS toggle (desktop only — mobile mostra strip semanal) */}
         <Tooltip title={ocultarFds ? 'Mostrar fim de semana' : 'Ocultar fim de semana'}>
           <ToggleButton
             size="small"
@@ -216,7 +242,7 @@ export default function AgendaPage() {
             selected={ocultarFds}
             onChange={() => setOcultarFds(o => !o)}
             aria-label="Ocultar fim de semana"
-            sx={{ borderRadius: 999, px: 1.5 }}
+            sx={{ borderRadius: 999, px: 1.5, display: { xs: 'none', md: 'inline-flex' } }}
           >
             <WeekendIcon fontSize="small" />
           </ToggleButton>
@@ -232,12 +258,118 @@ export default function AgendaPage() {
         </Button>
       </Stack>
 
+      {/* Mobile: tira-semana + banner do dia selecionado */}
+      {!isDesktop && (
+        <>
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 0.5, display: 'flex', boxShadow: 'none',
+              border: `1px solid ${divider}`, borderRadius: 2,
+            }}
+          >
+            {diasSemana7.map((d, i) => {
+              const ehHoje = mesmaData(d, hoje)
+              const ehSelecionado = mesmaData(d, diaSelecionado)
+              const numConsultas = consultas.filter(c => mesmaData(new Date(c.inicio), d)).length
+              const dots = Math.min(numConsultas, 3)
+              return (
+                <ButtonBase
+                  key={i}
+                  onClick={() => setDiaSelecionado(d)}
+                  aria-current={ehSelecionado ? 'date' : undefined}
+                  aria-label={`${DIAS_SEMANA[i]} ${d.getDate()}, ${numConsultas} consulta${numConsultas === 1 ? '' : 's'}`}
+                  sx={{
+                    flex: 1, py: 0.75, borderRadius: 1.5,
+                    display: 'flex', flexDirection: 'column',
+                    alignItems: 'center', gap: 0.5,
+                    bgcolor: ehSelecionado
+                      ? alpha(theme.palette.primary.main, 0.10)
+                      : 'transparent',
+                    color: ehSelecionado ? 'primary.main' : 'text.primary',
+                    transition: theme.transitions.create('background-color', {
+                      duration: theme.transitions.duration.short,
+                    }),
+                    '&:hover': { bgcolor: tintHoverSlot },
+                  }}
+                >
+                  <Typography variant="caption" sx={{
+                    fontSize: 9,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    fontWeight: 600,
+                    color: ehSelecionado ? 'primary.main' : 'text.secondary',
+                  }}>
+                    {DIAS_SEMANA[i]}
+                  </Typography>
+                  <Box sx={{
+                    width: 28, height: 28,
+                    borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    bgcolor: ehHoje ? 'primary.main' : 'transparent',
+                    color: ehHoje ? 'primary.contrastText' : 'inherit',
+                    fontWeight: ehHoje ? 700 : 500,
+                    fontSize: 13,
+                    fontVariantNumeric: 'tabular-nums',
+                  }}>
+                    {d.getDate()}
+                  </Box>
+                  <Stack direction="row" spacing={0.25} sx={{ height: 4, alignItems: 'center' }}>
+                    {dots > 0
+                      ? Array.from({ length: dots }).map((_, k) => (
+                          <Box key={k} sx={{
+                            width: 4, height: 4, borderRadius: '50%',
+                            bgcolor: ehSelecionado ? 'primary.main' : alpha(theme.palette.primary.main, 0.5),
+                          }} />
+                        ))
+                      : <Box sx={{ width: 4, height: 4 }} />}
+                  </Stack>
+                </ButtonBase>
+              )
+            })}
+          </Paper>
+
+          {/* Banner do dia selecionado */}
+          <Paper
+            variant="outlined"
+            sx={{
+              px: 2, py: 1.5, boxShadow: 'none',
+              border: `1px solid ${divider}`, borderRadius: 2,
+              display: 'flex', alignItems: 'center', gap: 1,
+            }}
+          >
+            <Box sx={{
+              width: 36, height: 36, borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              bgcolor: mesmaData(diaSelecionado, hoje) ? 'primary.main' : alpha(theme.palette.primary.main, 0.1),
+              color: mesmaData(diaSelecionado, hoje) ? 'primary.contrastText' : 'primary.main',
+              fontWeight: 700,
+              fontVariantNumeric: 'tabular-nums',
+            }}>
+              {diaSelecionado.getDate()}
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography variant="subtitle1" sx={{
+                fontWeight: 600, lineHeight: 1.2, textTransform: 'capitalize',
+              }}>
+                {formatarDataLonga(diaSelecionado)}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {consultas.filter(c => mesmaData(new Date(c.inicio), diaSelecionado)).length} consulta(s)
+              </Typography>
+            </Box>
+          </Paper>
+        </>
+      )}
+
       {/* Grade da agenda */}
       <Paper sx={{ overflow: 'hidden', p: 0 }}>
         <Box sx={{ display: 'flex', position: 'relative' }}>
           {/* Coluna de horários */}
           <Box sx={{ width: LARGURA_HORA_COL, flexShrink: 0 }}>
-            <Box sx={{ height: HEADER_DIAS, borderBottom: `1px solid ${divider}` }} />
+            {isDesktop && (
+              <Box sx={{ height: HEADER_DIAS, borderBottom: `1px solid ${divider}` }} />
+            )}
             {horas.map(h => (
               <Box key={h} sx={{
                 height: ALTURA_HORA,
@@ -253,43 +385,47 @@ export default function AgendaPage() {
             ))}
           </Box>
 
-          {dias.map((dia, idx) => {
+          {diasVisiveis.map((dia, idx) => {
             const ehHoje = mesmaData(dia, hoje)
+            const idxNoArray7 = diasSemana7.findIndex(d => mesmaData(d, dia))
+            const nomeAbreviado = idxNoArray7 >= 0 ? DIAS_SEMANA[idxNoArray7] : DIAS_SEMANA[idx]
             return (
               <Box key={idx} sx={{
                 flex: 1, borderLeft: `1px solid ${divider}`,
                 position: 'relative',
                 bgcolor: ehHoje ? tintHoje : 'transparent',
               }}>
-                {/* Header do dia */}
-                <Box sx={{
-                  height: HEADER_DIAS,
-                  borderBottom: `1px solid ${divider}`,
-                  display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  justifyContent: 'center', gap: 0.25,
-                }}>
-                  <Typography variant="caption" sx={{
-                    color: 'text.secondary',
-                    fontWeight: 500,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                    fontSize: 10,
-                  }}>
-                    {DIAS_SEMANA[idx]}
-                  </Typography>
+                {/* Header do dia (desktop only) */}
+                {isDesktop && (
                   <Box sx={{
-                    width: 30, height: 30,
-                    borderRadius: '50%',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    bgcolor: ehHoje ? 'primary.main' : 'transparent',
-                    color: ehHoje ? 'primary.contrastText' : 'text.primary',
-                    fontWeight: ehHoje ? 700 : 500,
-                    fontSize: 14,
-                    fontVariantNumeric: 'tabular-nums',
+                    height: HEADER_DIAS,
+                    borderBottom: `1px solid ${divider}`,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    justifyContent: 'center', gap: 0.25,
                   }}>
-                    {dia.getDate()}
+                    <Typography variant="caption" sx={{
+                      color: 'text.secondary',
+                      fontWeight: 500,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                      fontSize: 10,
+                    }}>
+                      {nomeAbreviado}
+                    </Typography>
+                    <Box sx={{
+                      width: 30, height: 30,
+                      borderRadius: '50%',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      bgcolor: ehHoje ? 'primary.main' : 'transparent',
+                      color: ehHoje ? 'primary.contrastText' : 'text.primary',
+                      fontWeight: ehHoje ? 700 : 500,
+                      fontSize: 14,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}>
+                      {dia.getDate()}
+                    </Box>
                   </Box>
-                </Box>
+                )}
 
                 {/* Slots horários */}
                 {horas.map(h => (
@@ -322,7 +458,7 @@ export default function AgendaPage() {
                         sx={{
                           position: 'absolute',
                           left: 6, right: 6,
-                          top: HEADER_DIAS + top + 2,
+                          top: cabecalhoColuna + top + 2,
                           height: Math.max(altura - 4, 22),
                           bgcolor: alpha(cor.bg, 0.14),
                           color: 'text.primary',

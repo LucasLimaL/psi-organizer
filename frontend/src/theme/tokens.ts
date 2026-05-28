@@ -6,6 +6,24 @@
 
 export type PaletteMode = 'light' | 'dark'
 
+/** Token de cor para um status de domínio (ex: status de consulta). */
+export type StatusToken = {
+  /** Cor de fundo do badge/bloco. */
+  bg: string
+  /** Cor do texto/ícone sobre `bg`. Contraste >= 4.5:1. */
+  fg: string
+  /** Cor da borda (útil em variantes tonais). */
+  border: string
+}
+
+/** Conjunto de tokens para status de consulta. */
+export type StatusConsultaTokens = {
+  agendada: StatusToken
+  confirmada: StatusToken
+  realizada: StatusToken
+  falta: StatusToken
+}
+
 /**
  * Tokens de cor inspirados em Material Design 3 roles.
  * Cada paleta deve fornecer todos os campos abaixo, para garantir contraste e consistência.
@@ -51,6 +69,13 @@ export type PaletteTokens = {
   warning: string
   error: string
   info: string
+
+  /**
+   * Status de consulta. Opcional — se omitido, a fábrica deriva
+   * automaticamente a partir das demais cores via `derivarStatusConsulta()`.
+   * Paletas podem sobrescrever pra customização fina.
+   */
+  status?: StatusConsultaTokens
 }
 
 /** Tokens globais — não variam por cliente. */
@@ -85,5 +110,25 @@ export const globalTokens = {
     drawerWidthCollapsed: 72,
     appBarHeight: 64,
     contentMaxWidth: 1280,
+  },
+  /**
+   * Tokens de movimento. Durations em ms.
+   * Respeitados em `createAppTheme`: se o usuário preferir `prefers-reduced-motion`,
+   * todas as durations vão para 0.
+   */
+  motion: {
+    duration: {
+      instant: 0,
+      fast: 120,    // micro: toggle, ripple
+      short: 200,   // hover, focus, snackbar
+      medium: 280,  // drawer slide, dialog
+      long: 400,    // page transition
+    },
+    easing: {
+      standard: 'cubic-bezier(0.2, 0, 0, 1)',
+      emphasized: 'cubic-bezier(0.3, 0, 0, 1)',
+      decelerate: 'cubic-bezier(0, 0, 0, 1)',
+      accelerate: 'cubic-bezier(0.3, 0, 1, 1)',
+    },
   },
 } as const

@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: psi-organizer-db
+    environment:
+      POSTGRES_DB: psi_organizer
+      POSTGRES_USER: psi
+      POSTGRES_PASSWORD: psi
+    ports:
+      - "5432:5432"
+    volumes:
+      - psi_pgdata:/var/lib/postgresql/data
+
+volumes:
+  psi_pgdata:

@@ -16,6 +16,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutlined'
 import { pacientesApi, type Paciente, type PacienteInput } from '../api/pacientes'
 import PacienteForm from '../components/PacienteForm'
+import InativarPacienteDialog from '../components/InativarPacienteDialog'
 
 function formatarCpf(cpf: string) {
   if (cpf.length !== 11) return cpf
@@ -40,6 +41,7 @@ export default function PacientesPage() {
   const [incluirInativos, setIncluirInativos] = useState(false)
   const [busca, setBusca] = useState('')
   const [criando, setCriando] = useState(false)
+  const [pacienteParaInativar, setPacienteParaInativar] = useState<Paciente | null>(null)
 
   const carregar = useCallback(async () => {
     const lista = await pacientesApi.listar(incluirInativos)
@@ -64,9 +66,9 @@ export default function PacientesPage() {
     await carregar()
   }
 
-  async function inativar(p: Paciente) {
-    if (!confirm(`Inativar ${p.nome}? Consultas futuras serão canceladas.`)) return
-    await pacientesApi.inativar(p.id)
+  async function confirmarInativar() {
+    if (!pacienteParaInativar) return
+    await pacientesApi.inativar(pacienteParaInativar.id)
     await carregar()
   }
 
@@ -251,7 +253,7 @@ export default function PacientesPage() {
                           <IconButton
                             size="small"
                             aria-label={`Inativar ${p.nome}`}
-                            onClick={() => inativar(p)}
+                            onClick={() => setPacienteParaInativar(p)}
                           >
                             <DeleteOutlineIcon fontSize="small" />
                           </IconButton>
@@ -349,6 +351,13 @@ export default function PacientesPage() {
           <PacienteForm textoBotao="Criar" onSubmit={onCriar} />
         </DialogContent>
       </Dialog>
+
+      <InativarPacienteDialog
+        aberto={pacienteParaInativar !== null}
+        paciente={pacienteParaInativar}
+        onFechar={() => setPacienteParaInativar(null)}
+        onConfirmar={confirmarInativar}
+      />
     </Stack>
   )
 }

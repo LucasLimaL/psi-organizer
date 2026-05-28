@@ -1,6 +1,6 @@
 import { createTheme, type Theme } from '@mui/material/styles'
 import { globalTokens, type PaletteTokens } from './tokens'
-import { derivarStatusConsulta } from './derive'
+import { derivarStatusConsulta, derivarSurfaceContainer } from './derive'
 
 /**
  * Detecta se o usuário pediu `prefers-reduced-motion: reduce`.
@@ -17,6 +17,7 @@ function reducedMotion(): boolean {
  */
 export function createAppTheme(p: PaletteTokens): Theme {
   const statusConsulta = p.status ?? derivarStatusConsulta(p)
+  const surfaceContainer = p.surfaceContainer ?? derivarSurfaceContainer(p)
   const prm = reducedMotion()
   const dur = globalTokens.motion.duration
   return createTheme({
@@ -36,6 +37,14 @@ export function createAppTheme(p: PaletteTokens): Theme {
       error: { main: p.error },
       info: { main: p.info },
       statusConsulta,
+      surfaceContainer,
+    },
+    zIndex: {
+      drawer: globalTokens.zIndex.drawer,
+      appBar: globalTokens.zIndex.appBar,
+      modal: globalTokens.zIndex.modal,
+      snackbar: globalTokens.zIndex.snackbar,
+      tooltip: globalTokens.zIndex.tooltip,
     },
     transitions: {
       duration: prm

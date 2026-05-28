@@ -33,4 +33,5 @@ docs/design/
 |---|---|---|
 | 2026-05-28 | Fundação: tokens, paletas, fábrica de tema, AppShell | #1 |
 | 2026-05-28 | Audit inicial → identificadas 5 prioridades | — |
-| 2026-05-28 | Tokens `statusConsulta` + `motion` + AgendaPage refatorada | #2 |
+| 2026-05-28 | Tokens `statusConsulta` + `motion` + AgendaPage refatorada | #3 |
+| 2026-05-28 | Tokens `surfaceContainer` + `elevation` + `zIndex` | #4 |

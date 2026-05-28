@@ -72,7 +72,7 @@ zera as durations se reduzido. Easings permanecem (irrelevantes a 0ms).
 
 ---
 
-## Surface tonal — `PaletteTokens.surfaceContainer*`  🟡 PR #3
+## Surface tonal — `PaletteTokens.surfaceContainer*`  ✅ entregue
 
 ```ts
 surfaceContainerLow:     string  // cards em background — 5% mix com primary
@@ -93,7 +93,7 @@ surfaceContainerHighest: string  // modal, popover — 14% mix
 
 ---
 
-## Elevation + Z-index — `globalTokens.elevation` / `globalTokens.zIndex`  🟡 PR #3
+## Elevation + Z-index — `globalTokens.elevation` / `globalTokens.zIndex`  ✅ entregue
 
 ```ts
 elevation: { none: 0, sm: 1, md: 2, lg: 3, xl: 4 }

@@ -95,6 +95,7 @@ export default function AppShell() {
               aria-current={ativo ? 'page' : undefined}
               sx={{
                 borderRadius: 2, mb: 0.5,
+                '&:hover': { bgcolor: 'surfaceContainer.high' },
                 '&.Mui-selected': {
                   bgcolor: 'primary.main', color: 'primary.contrastText',
                   '& .MuiListItemIcon-root': { color: 'primary.contrastText' },

@@ -25,6 +25,25 @@ export type StatusConsultaTokens = {
 }
 
 /**
+ * Escala tonal de superfície (Material 3-inspired).
+ * Cada nível mistura `surface` com `primary` em proporção crescente —
+ * dando hierarquia visual sem precisar de sombras pesadas.
+ *
+ * Uso:
+ * - `background` (fundo da app)
+ *   ↳ `surfaceContainer.low` (cards sobre background)
+ *     ↳ `surfaceContainer.base` (= surface; default Paper)
+ *       ↳ `surfaceContainer.high` (item de lista no hover, sidebar)
+ *         ↳ `surfaceContainer.highest` (modal, popover, menu)
+ */
+export type SurfaceContainerTokens = {
+  low: string
+  base: string
+  high: string
+  highest: string
+}
+
+/**
  * Tokens de cor inspirados em Material Design 3 roles.
  * Cada paleta deve fornecer todos os campos abaixo, para garantir contraste e consistência.
  */
@@ -76,6 +95,12 @@ export type PaletteTokens = {
    * Paletas podem sobrescrever pra customização fina.
    */
   status?: StatusConsultaTokens
+
+  /**
+   * Escala tonal de superfície. Opcional — se omitido, a fábrica deriva
+   * misturando `surface` com `primary` em 5% / 8% / 11% / 14%.
+   */
+  surfaceContainer?: SurfaceContainerTokens
 }
 
 /** Tokens globais — não variam por cliente. */
@@ -110,6 +135,34 @@ export const globalTokens = {
     drawerWidthCollapsed: 72,
     appBarHeight: 64,
     contentMaxWidth: 1280,
+  },
+  /**
+   * Escala de elevação numérica (compatível com `Paper elevation={n}` do MUI).
+   * Define um vocabulário consistente:
+   * - `none`: sem elevação visual (border simples)
+   * - `sm`: cards estáticos
+   * - `md`: hover, focus
+   * - `lg`: dialog, drawer flutuante
+   * - `xl`: popover, menu sobreposto
+   */
+  elevation: {
+    none: 0,
+    sm: 1,
+    md: 2,
+    lg: 8,
+    xl: 16,
+  },
+  /**
+   * Z-index explícitos por camada — substitui defaults opacos do MUI
+   * pra hierarquia previsível quando entrar snackbar/tooltip/etc.
+   */
+  zIndex: {
+    base: 0,
+    drawer: 1100,
+    appBar: 1200,
+    modal: 1300,
+    snackbar: 1400,
+    tooltip: 1500,
   },
   /**
    * Tokens de movimento. Durations em ms.

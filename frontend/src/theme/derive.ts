@@ -1,5 +1,22 @@
-import { alpha } from '@mui/material/styles'
-import type { PaletteTokens, StatusConsultaTokens } from './tokens'
+import { alpha, decomposeColor, recomposeColor } from '@mui/material/styles'
+import type { PaletteTokens, StatusConsultaTokens, SurfaceContainerTokens } from './tokens'
+
+/**
+ * Mistura duas cores hex em proporção linear no espaço sRGB.
+ * `ratio=0` retorna `a`, `ratio=1` retorna `b`.
+ */
+function mix(a: string, b: string, ratio: number): string {
+  const ca = decomposeColor(a).values
+  const cb = decomposeColor(b).values
+  return recomposeColor({
+    type: 'rgb',
+    values: [
+      Math.round(ca[0] * (1 - ratio) + cb[0] * ratio),
+      Math.round(ca[1] * (1 - ratio) + cb[1] * ratio),
+      Math.round(ca[2] * (1 - ratio) + cb[2] * ratio),
+    ],
+  })
+}
 
 /**
  * Deriva tokens de status de consulta a partir das cores semânticas da paleta.
@@ -34,5 +51,18 @@ export function derivarStatusConsulta(p: PaletteTokens): StatusConsultaTokens {
       fg: p.error,
       border: alpha(p.error, 0.4),
     },
+  }
+}
+
+/**
+ * Deriva a escala tonal de superfície (Material 3-style).
+ * `base` = `surface` puro; demais misturam com `primary` em proporção crescente.
+ */
+export function derivarSurfaceContainer(p: PaletteTokens): SurfaceContainerTokens {
+  return {
+    low: mix(p.surface, p.primary, 0.05),
+    base: p.surface,
+    high: mix(p.surface, p.primary, 0.11),
+    highest: mix(p.surface, p.primary, 0.14),
   }
 }

@@ -54,10 +54,13 @@ export default function PacientesPage() {
     const q = busca.trim().toLowerCase()
     if (!q) return pacientes
     const qDigitos = q.replace(/\D/g, '')
-    return pacientes.filter(p =>
-      p.nome.toLowerCase().includes(q) ||
-      (qDigitos && p.cpf.includes(qDigitos))
-    )
+    return pacientes.filter(p => {
+      if (p.nome.toLowerCase().includes(q)) return true
+      if (!qDigitos) return false
+      if (p.cpf.includes(qDigitos)) return true
+      const telefoneDigitos = p.telefone.replace(/\D/g, '')
+      return telefoneDigitos.includes(qDigitos)
+    })
   }, [pacientes, busca])
 
   async function onCriar(p: PacienteInput) {
@@ -113,7 +116,7 @@ export default function PacientesPage() {
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
         <TextField
           size="small"
-          placeholder="Buscar por nome ou CPF"
+          placeholder="Buscar por nome, CPF ou telefone"
           value={busca}
           onChange={e => setBusca(e.target.value)}
           sx={{ width: { xs: '100%', sm: 320 } }}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Paper, Box, Typography, IconButton, Button, Chip, FormControlLabel, Switch, Tooltip,
 } from '@mui/material'
+import { alpha, useTheme } from '@mui/material/styles'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import KeyboardDoubleArrowLeftIcon from '@mui/icons-material/KeyboardDoubleArrowLeft'
@@ -20,18 +21,23 @@ const ALTURA_HORA = 56
 const LARGURA_HORA_COL = 64
 const DIAS_SEMANA = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 
-function corStatus(status: Consulta['status']): string {
-  switch (status) {
-    case 'AGENDADA': return '#90caf9'
-    case 'CONFIRMADA': return '#6750A4'
-    case 'REALIZADA': return '#81c784'
-    case 'FALTA': return '#e57373'
-  }
-}
-
 const PREF_FDS_KEY = 'psi.agenda.ocultarFds'
 
+const MAPA_STATUS: Record<Consulta['status'], 'agendada' | 'confirmada' | 'realizada' | 'falta'> = {
+  AGENDADA: 'agendada',
+  CONFIRMADA: 'confirmada',
+  REALIZADA: 'realizada',
+  FALTA: 'falta',
+}
+
 export default function AgendaPage() {
+  const theme = useTheme()
+  const status = theme.palette.statusConsulta
+  const divider = theme.palette.divider
+  const dividerSubtle = alpha(theme.palette.divider, 0.5)
+  const tintHoje = alpha(theme.palette.primary.main, 0.04)
+  const tintHoverSlot = alpha(theme.palette.primary.main, 0.08)
+
   const [segunda, setSegunda] = useState(() => inicioDaSemana(new Date()))
   const [mesRef, setMesRef] = useState(() => {
     const h = new Date()
@@ -124,20 +130,28 @@ export default function AgendaPage() {
         </Typography>
 
         <Tooltip title="Mês anterior (semana do 1º dia útil)">
-          <IconButton onClick={() => pularMes(-1)}><KeyboardDoubleArrowLeftIcon /></IconButton>
+          <IconButton aria-label="Mês anterior" onClick={() => pularMes(-1)}>
+            <KeyboardDoubleArrowLeftIcon />
+          </IconButton>
         </Tooltip>
         <Typography variant="body2" sx={{ minWidth: 120, textAlign: 'center', textTransform: 'capitalize' }}>
           {formatarMes(mesReferencia)}
         </Typography>
         <Tooltip title="Próximo mês (semana do 1º dia útil)">
-          <IconButton onClick={() => pularMes(1)}><KeyboardDoubleArrowRightIcon /></IconButton>
+          <IconButton aria-label="Próximo mês" onClick={() => pularMes(1)}>
+            <KeyboardDoubleArrowRightIcon />
+          </IconButton>
         </Tooltip>
 
-        <Box sx={{ borderLeft: '1px solid #e0e0e0', height: 24, mx: 1 }} />
+        <Box sx={{ borderLeft: `1px solid ${divider}`, height: 24, mx: 1 }} />
 
-        <IconButton onClick={() => navegarSemana(-1)}><ChevronLeftIcon /></IconButton>
+        <IconButton aria-label="Semana anterior" onClick={() => navegarSemana(-1)}>
+          <ChevronLeftIcon />
+        </IconButton>
         <Button startIcon={<TodayIcon />} onClick={irParaHoje}>Hoje</Button>
-        <IconButton onClick={() => navegarSemana(1)}><ChevronRightIcon /></IconButton>
+        <IconButton aria-label="Próxima semana" onClick={() => navegarSemana(1)}>
+          <ChevronRightIcon />
+        </IconButton>
 
         <Button variant="contained" sx={{ ml: 2 }} onClick={() => {
           const d = new Date()
@@ -155,12 +169,12 @@ export default function AgendaPage() {
           label="Ocultar fim de semana" />
       </Box>
 
-      <Box sx={{ display: 'flex', borderTop: '1px solid #e0e0e0' }}>
+      <Box sx={{ display: 'flex', borderTop: `1px solid ${divider}` }}>
         <Box sx={{ width: LARGURA_HORA_COL, flexShrink: 0 }}>
-          <Box sx={{ height: 40, borderBottom: '1px solid #e0e0e0' }} />
+          <Box sx={{ height: 40, borderBottom: `1px solid ${divider}` }} />
           {horas.map(h => (
             <Box key={h} sx={{
-              height: ALTURA_HORA, borderBottom: '1px solid #f0f0f0',
+              height: ALTURA_HORA, borderBottom: `1px solid ${dividerSubtle}`,
               pr: 1, textAlign: 'right',
               fontSize: 12, color: 'text.secondary',
             }}>
@@ -171,11 +185,11 @@ export default function AgendaPage() {
 
         {dias.map((dia, idx) => (
           <Box key={idx} sx={{
-            flex: 1, borderLeft: '1px solid #e0e0e0', position: 'relative',
-            bgcolor: mesmaData(dia, hoje) ? 'rgba(103, 80, 164, 0.04)' : 'transparent',
+            flex: 1, borderLeft: `1px solid ${divider}`, position: 'relative',
+            bgcolor: mesmaData(dia, hoje) ? tintHoje : 'transparent',
           }}>
             <Box sx={{
-              height: 40, borderBottom: '1px solid #e0e0e0',
+              height: 40, borderBottom: `1px solid ${divider}`,
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               fontWeight: mesmaData(dia, hoje) ? 700 : 500,
             }}>
@@ -186,19 +200,21 @@ export default function AgendaPage() {
               <Box key={h}
                    onClick={() => onClicarHora(dia, h)}
                    sx={{
-                     height: ALTURA_HORA, borderBottom: '1px solid #f0f0f0',
-                     cursor: 'pointer', '&:hover': { bgcolor: 'rgba(103, 80, 164, 0.08)' },
+                     height: ALTURA_HORA, borderBottom: `1px solid ${dividerSubtle}`,
+                     cursor: 'pointer', '&:hover': { bgcolor: tintHoverSlot },
                    }} />
             ))}
             {consultasNoDia(dia).map(c => {
               const { top, altura } = topoEAltura(c)
+              const cor = status[MAPA_STATUS[c.status]]
               return (
                 <Box key={c.id}
                      onClick={e => { e.stopPropagation(); onClicarConsulta(c) }}
                      sx={{
                        position: 'absolute', left: 4, right: 4,
                        top: 40 + top, height: Math.max(altura - 2, 18),
-                       bgcolor: corStatus(c.status), color: 'white',
+                       bgcolor: cor.bg, color: cor.fg,
+                       border: `1px solid ${cor.border}`,
                        borderRadius: 1, px: 0.75, py: 0.25,
                        fontSize: 11, lineHeight: 1.2, overflow: 'hidden',
                        cursor: 'pointer', boxShadow: 1,
@@ -206,7 +222,8 @@ export default function AgendaPage() {
                   <Box sx={{ fontWeight: 700 }}>{formatarHora(new Date(c.inicio))} {c.pacienteNome}</Box>
                   {c.pago && <Chip size="small" label="pago" sx={{
                     height: 14, fontSize: 9, mt: 0.25,
-                    bgcolor: 'rgba(255,255,255,0.3)', color: 'white' }} />}
+                    bgcolor: alpha(cor.fg, 0.18), color: cor.fg,
+                  }} />}
                 </Box>
               )
             })}

@@ -218,6 +218,7 @@ Todos retornam JSON. Todos exceto `/auth/*` exigem JWT.
 - `PUT /pacientes/{id}`
 - `DELETE /pacientes/{id}` — soft delete
 - `POST /pacientes/{id}/reativar`
+- `GET /pacientes/{id}/consultas?tipo=proximas|historico&limit=&offset=` — lista paginada (envelope `{consultas, total, temMais}`)
 
 ### Consultas (agenda)
 - `GET /consultas?inicio=YYYY-MM-DD&fim=YYYY-MM-DD` — lista por intervalo
@@ -227,22 +228,35 @@ Todos retornam JSON. Todos exceto `/auth/*` exigem JWT.
 - `PUT /consultas/{id}` — atualiza dados/status/pago
 - `DELETE /consultas/{id}` — remove a consulta
 
+### Dashboard
+- `GET /dashboard` — métricas agregadas para a tela inicial (hoje, mês, comparativo, próximos 7 dias, pacientes, consultas futuras agendadas, próximas consultas)
+
+> Sumário completo dos endpoints em **[docs/API.md](API.md)**. Swagger interativo em `/swagger-ui.html`.
+
 ---
 
 ## 7. Frontend — Telas
 
-1. **Login** (`/login`) — e-mail + senha
-2. **Cadastro de conta** (`/signup`) — todos os campos da psicóloga
-3. **Agenda** (`/`) — tela principal após login
-   - Visão semanal (segunda a domingo)
-   - Toggle "ocultar fim de semana"
-   - Navegação semana anterior / próxima
-   - Navegação mês anterior / próximo: pula para a semana que contém o **primeiro dia útil** do mês alvo
-   - Clicar em horário vazio → modal de nova consulta
-   - Clicar em consulta existente → modal de detalhes/edição (status, pago, observações)
-4. **Pacientes** (`/pacientes`) — listagem + busca por nome/CPF
-5. **Detalhe/edição do paciente** (`/pacientes/{id}`) — todos os campos + histórico de consultas
-6. **Perfil** (`/perfil`) — editar dados da própria conta
+1. **Login** (`/login`) — e-mail + senha, com `AuthShell` (logo + tagline + fundo tonal)
+2. **Cadastro de conta** (`/signup`) — formulário em seções (Dados pessoais / Registro profissional / Endereço), CEP autofill via ViaCEP
+3. **Início / Dashboard** (`/`) — tela principal após login
+   - Sistema de **widgets configuráveis** (catálogo de 10): user escolhe quais ativar via drawer (⚙️ Tune)
+   - Drag & drop com `@dnd-kit` — swap on drop ou após **1s de hover** (preview animado)
+   - Preferências persistidas em `localStorage` (`psi.dashboard.widgets`)
+   - Default ativos: Hoje, Mês, Recebido, Consultas futuras, Próximos 7 dias, Próximas consultas
+4. **Agenda** (`/agenda`)
+   - Desktop: visão semanal (Seg-Dom) com grade 07h-21h, toggle ocultar FDS, navegação mensal pelo 1º dia útil, indicador de "agora"
+   - Mobile (<md): **week-strip** estilo Google Calendar + drill-down por dia
+   - Cores das consultas vêm de `theme.palette.statusConsulta` (parametrizado pela paleta ativa)
+5. **Pacientes** (`/pacientes`) — listagem + busca por nome / CPF / telefone, toggle "incluir inativos", empty state ilustrado
+   - Desktop: tabela com avatar + status
+   - Mobile: lista de cards com chevron
+6. **Detalhe do paciente** (`/pacientes/{id}`) — header card + **tabs** (Dados / Próximas / Histórico)
+   - Tabs de consultas paginadas estilo extrato bancário ("Ver mais" anexa lote abaixo, sem paginação lateral)
+   - Modal de inativação dedicado (`InativarPacienteDialog`) que reforça a remoção de consultas futuras
+7. **Perfil** (`/perfil`) — editar dados (nome, CRP, telefone, endereço); e-mail e CPF são imutáveis (mostrados com ícone de cadeado)
+
+**Shell de aplicação** (rotas autenticadas): `AppShell` com drawer lateral permanente em desktop / temporário em mobile, AppBar com `PaletteSwitcher` (troca de paleta em runtime).
 
 ---
 
@@ -271,12 +285,19 @@ Todos retornam JSON. Todos exceto `/auth/*` exigem JWT.
 
 ## 10. Decisões Pendentes
 
-Nenhuma no momento. Decisões anteriormente em aberto foram fechadas em 2026-05-27:
-- UI: Material UI
-- Soft delete de paciente: remove consultas futuras automaticamente
-- Recorrência: sem tabela, materializa as N consultas no momento da criação
-- Senha: mínimo 8 caracteres com pelo menos 1 dígito
-- CPF: validação com cálculo dos dígitos verificadores
+Nenhuma no momento. Decisões fechadas até agora:
+
+| Decisão | Resolução | Quando |
+|---|---|---|
+| UI library | Material UI 9 | 2026-05-27 |
+| Soft delete de paciente | Hard-delete consultas futuras (AGENDADA/CONFIRMADA com `inicio > agora`) | 2026-05-27 |
+| Recorrência | Sem tabela — materializa N consultas no momento da criação, transacional | 2026-05-27 |
+| Senha | Mínimo 8 caracteres + ≥ 1 dígito numérico, BCrypt | 2026-05-27 |
+| CPF | Validação com cálculo de dígitos verificadores | 2026-05-27 |
+| Autofill de endereço | ViaCEP (gratuito, sem auth, padrão BR) | 2026-05-28 |
+| Lock após CEP | Travar logradouro/bairro/cidade/UF; manter número e complemento editáveis | 2026-05-29 |
+| Endpoint de recorrência | Separado (`POST /consultas/recorrente`) em vez de unificado com `/consultas` — preserva contratos estritos | 2026-05-28 |
+| Comparativos no dashboard | Disponíveis como widgets opcionais (não default ativos) — evitar pressão de crescimento como default | 2026-05-29 |
 
 ---
 
@@ -294,3 +315,24 @@ Checklist vivo — marcar `[x]` quando concluído, com data.
 - [x] **Lint & formatação** _(2026-05-28)_ — **Frontend:** ESLint 9 (vem do scaffold Vite) + plugins react-hooks/react-refresh; `npm run lint` limpo. Ajustes feitos: `useAuth` movido pra `auth/authContext.ts` (provider em `auth/AuthProvider.tsx`) pra satisfazer `react-refresh/only-export-components`; `useCallback` em AgendaPage/PacientesPage pra resolver `react-hooks/exhaustive-deps`. **Backend:** Spotless 2.43 (sem auto-formatter pesado — palantir/google-java-format têm incompatibilidade com JDK 25 usado pelo Maven local). Regras aplicadas: `removeUnusedImports`, `importOrder` (java/javax/jakarta/org/com), `trimTrailingWhitespace`, `endWithNewline`, `indent` (4 espaços). 42 arquivos reformatados via `mvn spotless:apply`. Ligado à fase `verify` — `mvn verify` falha se algo estiver fora do padrão. Para reformatar: `mvn spotless:apply`.
 - [x] **Seed de dados amostrais** _(2026-05-28)_ — `config/SeedDataRunner.java` é `ApplicationRunner` anotado com `@Profile("!prod")`. Roda no startup; se `psicologaRepo.count() == 0`, insere 1 psicóloga (`ana@psi.com` / `senha123`), 3 pacientes (CPFs válidos) e 6 consultas (passadas REALIZADA/FALTA, hoje CONFIRMADA, futuras AGENDADA). Pra desativar em produção: subir com `-Dspring.profiles.active=prod`. CPFs usados: 11144477735, 39053344705, 52998224725, 12345678909.
 - [x] **8. UI da visão semanal** _(2026-05-28)_ — Toggle "Ocultar fim de semana" (preferência persistida em `localStorage` sob `psi.agenda.ocultarFds`) — quando ligado, mostra Seg-Sex; senão Seg-Dom. Navegação mensal com botões `<<` / `>>` que pulam para a semana contendo o **1º dia útil** do mês alvo (`primeiroDiaUtilDoMes` em `utils/datas.ts` — pula sáb/dom). Rótulo do mês exibido entre as setas. A busca de consultas continua usando a semana inteira (Seg-Dom) — só a renderização muda — pra não recarregar ao alternar o toggle.
+
+### Janela de impacto visual + dashboard (entregue 2026-05-28 / 2026-05-29)
+
+- [x] **PR #1 — Design system foundation** _(2026-05-28)_ — `theme/` com tokens parametrizáveis, 4 paletas swappable (Lavanda, Sálvia, Aurora, Oceano), `createAppTheme(paleta)` factory, `AppThemeProvider` com troca em runtime + persistência em `localStorage`, `AppShell` substitui o antigo `Layout` (drawer lateral responsivo permanente em desktop / temporary em mobile + AppBar com `PaletteSwitcher`). Fonte Inter via Google Fonts.
+- [x] **PR #3 — Status + motion tokens** _(2026-05-28)_ — Tokens semânticos `statusConsulta` derivados de `info/primary/success/error`, função `derivarStatusConsulta`, augment do MUI `Palette` com `statusConsulta`. Tokens de motion (5 durations + 4 easings) aplicados a `theme.transitions` e respeitando `prefers-reduced-motion`. `AgendaPage` refatorada removendo todos os hex hardcoded — verificado por grep.
+- [x] **PR #4 — Surface tonal + elevation + zIndex** _(2026-05-28)_ — Escala `surfaceContainer.{low,base,high,highest}` derivada por blend sRGB de `surface` com `primary` (5/8/11/14%), via `derivarSurfaceContainer` + `mix` em `derive.ts`. Tokens explícitos de `elevation` e `zIndex` em `globalTokens`. Drawer items usam `surfaceContainer.high` no hover.
+- [x] **PR #5 — Reskin Agenda desktop** _(2026-05-28)_ — Toolbar reorganizada em pills (mês / semana / FDS / Nova consulta), cabeçalho de dias com nome em caption + número em círculo (hoje vira pill cheia primária), blocos de consulta com stripe lateral de status + bg tonal + texto em `text.primary`, indicador "agora" (linha vermelha + bolinha) que atualiza a cada 60s. Hover dos blocos com `translateY(-1px)` + sombra.
+- [x] **PR #6 — Agenda mobile (week-strip)** _(2026-05-28)_ — Em `<md`, oculta a grade de 7 colunas e mostra: (1) **week-strip** clicável com bolinhas indicando consultas/dia + pill "hoje", (2) **banner do dia selecionado** com nome longo, (3) grade de **um único dia** com a coluna de horários. Toggle FDS some no mobile. Navegação de semana mantém seleção coerente (hoje se está na semana visível, senão segunda).
+- [x] **PR #7 — Reskin Pacientes** _(2026-05-28)_ — Header com subtítulo de contagem + h5 + CTA pill. Busca com `SearchIcon` + clear. Filtro "incluir inativos" virou Chip toggle. Desktop: tabela com avatar + status outlined. Mobile: lista de cards. Empty state contextual com `PeopleOutline` em círculo tonal + CTA. **Busca por nome / CPF / telefone** (mesma lógica de dígitos). `InativarPacienteDialog` substitui `confirm()` nativo, com Alert warning reforçando o cancelamento de consultas futuras.
+- [x] **PR #8 — Reskin Login + Signup + ViaCEP + EnderecoForm** _(2026-05-28)_ — `AuthShell` reusável (logo Spa + tagline + background com gradiente radial sutil derivado da paleta). Login com ícones nos campos e toggle de visibilidade de senha. Signup em 3 seções (Dados pessoais / Registro profissional / Endereço) com helpers contextuais. **CEP autofill** via [ViaCEP](https://viacep.com.br): hook `useAutofillCep` dispara busca quando CEP atinge 8 dígitos, preenche logradouro/bairro/cidade/UF, **trava esses campos** após autofill bem-sucedido (destravam em CEP novo ou falha). Componente `EnderecoForm` extraído e reusado entre Signup e PacienteForm.
+- [x] **PR #9 — Reskin PacienteDetalhe** _(2026-05-28)_ — Breadcrumb + header card com avatar 64px + nome em h5 + chip de status + ação inline (Inativar/Reativar) + form em paper separado com subtítulo. Skeleton estruturado durante load.
+- [x] **PR #10 — Perfil completo** _(2026-05-28)_ — Backend: `AtualizarPerfilRequest` DTO (nomeCompleto, crp, telefone, endereco), `PsicologaService.atualizarPerfil`, endpoint `PUT /me`. E-mail e CPF imutáveis. Frontend: `PerfilPage` com header card + 3 seções editáveis + `EnderecoForm` reusado, Snackbar de sucesso, `AuthContext.atualizarPsicologa` propaga novo nome ao AppShell.
+- [x] **PR #11 — Dashboard com sistema de widgets** _(2026-05-29)_ — Backend: pacote `dashboard/` com `DashboardResponse`, `DashboardService.calcular` (carrega janela única, agrega em Java), endpoint `GET /dashboard`. Frontend: **/agenda** passa a ser rota dedicada e **/** vira Dashboard. Sistema de **widgets configuráveis** (10 widgets em `dashboard/widgets.tsx`), `DashboardGrid` com `@dnd-kit` (swap on drop, **1s hover preview** com swap antecipado animado, ESC cancela e restaura ordem original), `WidgetSettings` drawer com toggles. Preferências em `localStorage` (`psi.dashboard.widgets`). Comparativos (delta vs mês anterior) e taxa de comparecimento existem como widgets **opcionais não default** — escolha consciente para evitar pressão por crescimento contínuo na tela inicial.
+- [x] **PR #12 — Histórico do paciente com Ver mais** _(2026-05-29)_ — Backend: endpoint `GET /pacientes/{id}/consultas?tipo=proximas|historico&limit&offset` com envelope `{consultas, total, temMais}`. 4 queries novas no `ConsultaRepository`. Frontend: `PacienteDetalhe` ganha 3 tabs (Dados / Próximas / Histórico). Componentes novos `ConsultaCard` (stripe lateral + data extensa + chips status/pago) e `ConsultasPacienteList` (paginação estilo extrato — 5 iniciais + "Ver mais (N restantes)" anexa lote abaixo). Contagem aparece no rótulo da tab após primeiro load.
+
+### Pendente / próximas frentes (não bloqueador)
+
+- [ ] **Testes** — backend e frontend (mencionado como "fora do MVP" em §1, ainda em aberto)
+- [ ] **Hardening multi-tenant** — Row-Level Security do Postgres OU `@Filter` global do Hibernate (ver discussão em [ARCHITECTURE.md](ARCHITECTURE.md))
+- [ ] **Audit Priority #4** — estados completos do Button (loading, ghost, danger) + TextField error refinado (ver [docs/design/audit-2026-05-28.md](design/audit-2026-05-28.md))
+- [ ] **Audit Priority #5** — density toggle + dark mode + validação de contraste no CI

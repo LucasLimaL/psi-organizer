@@ -53,7 +53,7 @@ public class PacienteController {
         UUID psicologaId = PsicologaPrincipal.corrente().id();
         Paciente p = service.criar(psicologaId, req.nome(), req.cpf(), req.dataNascimento(),
                 req.telefone(), req.email(), req.endereco().toDomain(),
-                req.valorConsulta(), req.observacoes());
+                req.valorConsulta(), req.observacoes(), req.optInWhatsapp());
         return ResponseEntity.status(HttpStatus.CREATED).body(PacienteResponse.fromDomain(p));
     }
 
@@ -63,7 +63,7 @@ public class PacienteController {
         UUID psicologaId = PsicologaPrincipal.corrente().id();
         Paciente p = service.atualizar(psicologaId, id, req.nome(), req.cpf(), req.dataNascimento(),
                 req.telefone(), req.email(), req.endereco().toDomain(),
-                req.valorConsulta(), req.observacoes());
+                req.valorConsulta(), req.observacoes(), req.optInWhatsapp());
         return PacienteResponse.fromDomain(p);
     }
 

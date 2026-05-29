@@ -298,6 +298,7 @@ Nenhuma no momento. Decisões fechadas até agora:
 | Lock após CEP | Travar logradouro/bairro/cidade/UF; manter número e complemento editáveis | 2026-05-29 |
 | Endpoint de recorrência | Separado (`POST /consultas/recorrente`) em vez de unificado com `/consultas` — preserva contratos estritos | 2026-05-28 |
 | Comparativos no dashboard | Disponíveis como widgets opcionais (não default ativos) — evitar pressão de crescimento como default | 2026-05-29 |
+| WhatsApp provider | Meta Cloud API direto, número único da plataforma — custo ~R$88/mês a 10 psi × 10 pacientes/dia, sem risco de ban, suporte nativo a HSM/botões/webhook. Modo número-próprio (Embedded Signup) postergado até demanda real. | 2026-05-29 |
 
 ---
 
@@ -336,3 +337,4 @@ Checklist vivo — marcar `[x]` quando concluído, com data.
 - [ ] **Hardening multi-tenant** — Row-Level Security do Postgres OU `@Filter` global do Hibernate (ver discussão em [ARCHITECTURE.md](ARCHITECTURE.md))
 - [ ] **Audit Priority #4** — estados completos do Button (loading, ghost, danger) + TextField error refinado (ver [docs/design/audit-2026-05-28.md](design/audit-2026-05-28.md))
 - [ ] **Audit Priority #5** — density toggle + dark mode + validação de contraste no CI
+- [ ] **Lembretes via WhatsApp** — automação de envio 1 dia antes da consulta com confirmação bidirecional dupla, número único da plataforma, scheduler horário 07h-20h, 4 PRs incrementais. Spec em [docs/specs/whatsapp-lembrete.md](specs/whatsapp-lembrete.md).

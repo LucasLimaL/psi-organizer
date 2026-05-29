@@ -42,20 +42,22 @@ public class PacienteService {
     @Transactional
     public Paciente criar(UUID psicologaId, String nome, String cpf, LocalDate dataNascimento,
                           String telefone, String email, Endereco endereco,
-                          BigDecimal valorConsulta, String observacoes) {
+                          BigDecimal valorConsulta, String observacoes, boolean optInWhatsapp) {
         String cpfNumerico = CpfUtil.somenteDigitos(cpf);
         if (pacienteRepository.existsByPsicologaIdAndCpf(psicologaId, cpfNumerico)) {
             throw ApiException.conflito("Já existe um paciente com este CPF");
         }
         Paciente p = new Paciente(UUID.randomUUID(), psicologaId, nome, cpfNumerico,
                 dataNascimento, telefone, email, endereco, valorConsulta, observacoes);
+        p.setOptInWhatsapp(optInWhatsapp);
         return pacienteRepository.save(p);
     }
 
     @Transactional
     public Paciente atualizar(UUID psicologaId, UUID id, String nome, String cpf,
                               LocalDate dataNascimento, String telefone, String email,
-                              Endereco endereco, BigDecimal valorConsulta, String observacoes) {
+                              Endereco endereco, BigDecimal valorConsulta, String observacoes,
+                              boolean optInWhatsapp) {
         Paciente p = buscar(psicologaId, id);
         String cpfNumerico = CpfUtil.somenteDigitos(cpf);
         if (!p.getCpf().equals(cpfNumerico)
@@ -70,6 +72,7 @@ public class PacienteService {
         p.setEndereco(endereco);
         p.setValorConsulta(valorConsulta);
         p.setObservacoes(observacoes);
+        p.setOptInWhatsapp(optInWhatsapp);
         return pacienteRepository.save(p);
     }
 

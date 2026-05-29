@@ -1,6 +1,7 @@
 package com.psiorganizer.paciente.dto;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -17,7 +18,9 @@ public record PacienteResponse(
         EnderecoDto endereco,
         BigDecimal valorConsulta,
         String observacoes,
-        boolean ativo
+        boolean ativo,
+        boolean optInWhatsapp,
+        Instant optInWhatsappEm
 ) {
     public static PacienteResponse fromDomain(Paciente p) {
         return new PacienteResponse(
@@ -30,6 +33,8 @@ public record PacienteResponse(
                 EnderecoDto.fromDomain(p.getEndereco()),
                 p.getValorConsulta(),
                 p.getObservacoes(),
-                p.isAtivo());
+                p.isAtivo(),
+                p.isOptInWhatsapp(),
+                p.getOptInWhatsappEm());
     }
 }

@@ -98,6 +98,7 @@ export default function PacienteDetalhePage() {
     endereco: paciente.endereco,
     valorConsulta: paciente.valorConsulta,
     observacoes: paciente.observacoes ?? '',
+    optInWhatsapp: paciente.optInWhatsapp,
   }
 
   function rotuloAba(base: string, total: number | null) {

@@ -30,7 +30,7 @@ export default function PacienteForm({ inicial, textoBotao, onSubmit }: Props) {
     setForm(f => ({ ...f, endereco: { ...f.endereco, [k]: v } }))
   }
 
-  const buscandoCep = useAutofillCep(form.endereco.cep, end => {
+  const { buscando: buscandoCep, autoPreenchido } = useAutofillCep(form.endereco.cep, end => {
     setForm(f => ({
       ...f,
       endereco: {
@@ -103,17 +103,24 @@ export default function PacienteForm({ inicial, textoBotao, onSubmit }: Props) {
             }}
           />
         </Grid>
-        <Grid size={6}><TextField fullWidth label="Logradouro" required value={form.endereco.logradouro}
+        <Grid size={6}><TextField fullWidth label="Logradouro" required
+          disabled={autoPreenchido}
+          value={form.endereco.logradouro}
           onChange={e => setEnd('logradouro', e.target.value)} /></Grid>
         <Grid size={3}><TextField fullWidth label="Número" required value={form.endereco.numero}
           onChange={e => setEnd('numero', e.target.value)} /></Grid>
         <Grid size={6}><TextField fullWidth label="Complemento" value={form.endereco.complemento ?? ''}
           onChange={e => setEnd('complemento', e.target.value)} /></Grid>
-        <Grid size={6}><TextField fullWidth label="Bairro" required value={form.endereco.bairro}
+        <Grid size={6}><TextField fullWidth label="Bairro" required
+          disabled={autoPreenchido}
+          value={form.endereco.bairro}
           onChange={e => setEnd('bairro', e.target.value)} /></Grid>
-        <Grid size={9}><TextField fullWidth label="Cidade" required value={form.endereco.cidade}
+        <Grid size={9}><TextField fullWidth label="Cidade" required
+          disabled={autoPreenchido}
+          value={form.endereco.cidade}
           onChange={e => setEnd('cidade', e.target.value)} /></Grid>
         <Grid size={3}><TextField fullWidth label="UF" required
+          disabled={autoPreenchido}
           slotProps={{ htmlInput: { maxLength: 2 } }}
           value={form.endereco.uf}
           onChange={e => setEnd('uf', e.target.value.toUpperCase())} /></Grid>

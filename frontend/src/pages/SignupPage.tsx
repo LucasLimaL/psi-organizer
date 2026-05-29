@@ -70,7 +70,7 @@ export default function SignupPage() {
     setForm(f => ({ ...f, endereco: { ...f.endereco, [k]: v } }))
   }
 
-  const buscandoCep = useAutofillCep(form.endereco.cep, end => {
+  const { buscando: buscandoCep, autoPreenchido } = useAutofillCep(form.endereco.cep, end => {
     setForm(f => ({
       ...f,
       endereco: {
@@ -199,6 +199,7 @@ export default function SignupPage() {
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField fullWidth label="Logradouro" required
                          autoComplete="address-line1"
+                         disabled={autoPreenchido}
                          value={form.endereco.logradouro}
                          onChange={e => setEnd('logradouro', e.target.value)} />
             </Grid>
@@ -215,18 +216,21 @@ export default function SignupPage() {
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField fullWidth label="Bairro" required
+                         disabled={autoPreenchido}
                          value={form.endereco.bairro}
                          onChange={e => setEnd('bairro', e.target.value)} />
             </Grid>
             <Grid size={{ xs: 12, sm: 8 }}>
               <TextField fullWidth label="Cidade" required
                          autoComplete="address-level2"
+                         disabled={autoPreenchido}
                          value={form.endereco.cidade}
                          onChange={e => setEnd('cidade', e.target.value)} />
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
               <TextField fullWidth label="UF" required
                          autoComplete="address-level1"
+                         disabled={autoPreenchido}
                          slotProps={{ htmlInput: { maxLength: 2 } }}
                          value={form.endereco.uf}
                          onChange={e => setEnd('uf', e.target.value.toUpperCase())} />

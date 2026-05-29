@@ -1,7 +1,16 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
-import { Box, Paper, Typography, TextField, Button, Link, Alert, Grid } from '@mui/material'
+import {
+  Stack, TextField, Button, Link, Alert, Grid, Typography, Divider,
+  InputAdornment, IconButton,
+} from '@mui/material'
+import VisibilityIcon from '@mui/icons-material/VisibilityOutlined'
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOffOutlined'
 import { useAuth } from '../auth/authContext'
+import AuthShell from '../components/AuthShell'
+import EnderecoForm from '../components/EnderecoForm'
+
+import type { EnderecoFormValor } from '../components/EnderecoForm'
 
 type Form = {
   nomeCompleto: string
@@ -10,15 +19,7 @@ type Form = {
   cpf: string
   crp: string
   telefone: string
-  endereco: {
-    cep: string
-    logradouro: string
-    numero: string
-    complemento: string
-    bairro: string
-    cidade: string
-    uf: string
-  }
+  endereco: EnderecoFormValor
 }
 
 const inicial: Form = {
@@ -26,18 +27,38 @@ const inicial: Form = {
   endereco: { cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' },
 }
 
+function Secao({ titulo, descricao, children }: {
+  titulo: string
+  descricao?: string
+  children: ReactNode
+}) {
+  return (
+    <Stack spacing={1.5}>
+      <Stack spacing={0.25}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+          {titulo}
+        </Typography>
+        {descricao && (
+          <Typography variant="caption" color="text.secondary">
+            {descricao}
+          </Typography>
+        )}
+      </Stack>
+      {children}
+    </Stack>
+  )
+}
+
 export default function SignupPage() {
   const { signup } = useAuth()
   const navigate = useNavigate()
   const [form, setForm] = useState<Form>(inicial)
+  const [mostrarSenha, setMostrarSenha] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
 
   function set<K extends keyof Form>(k: K, v: Form[K]) {
     setForm(f => ({ ...f, [k]: v }))
-  }
-  function setEnd<K extends keyof Form['endereco']>(k: K, v: string) {
-    setForm(f => ({ ...f, endereco: { ...f.endereco, [k]: v } }))
   }
 
   async function onSubmit(e: FormEvent) {
@@ -62,76 +83,106 @@ export default function SignupPage() {
   }
 
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, mb: 4 }}>
-      <Paper component="form" onSubmit={onSubmit} sx={{ p: 4, width: 640 }}>
-        <Typography variant="h5" gutterBottom>Criar conta</Typography>
-        {erro && <Alert severity="error" sx={{ mb: 2 }}>{erro}</Alert>}
+    <AuthShell
+      titulo="Criar conta"
+      subtitulo="Comece a organizar sua agenda em poucos minutos"
+      larguraCard={640}
+    >
+      <Stack component="form" onSubmit={onSubmit} spacing={3}>
+        {erro && <Alert severity="error">{erro}</Alert>}
 
-        <Grid container spacing={2}>
-          <Grid size={12}>
-            <TextField fullWidth label="Nome completo" required
-                       value={form.nomeCompleto} onChange={e => set('nomeCompleto', e.target.value)} />
+        <Secao titulo="Dados pessoais" descricao="Como você aparece para seus pacientes">
+          <Grid container spacing={2}>
+            <Grid size={12}>
+              <TextField fullWidth label="Nome completo" required
+                         autoComplete="name"
+                         value={form.nomeCompleto}
+                         onChange={e => set('nomeCompleto', e.target.value)} />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField fullWidth label="E-mail" type="email" required
+                         autoComplete="email"
+                         value={form.email} onChange={e => set('email', e.target.value)} />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                fullWidth
+                label="Senha"
+                type={mostrarSenha ? 'text' : 'password'}
+                autoComplete="new-password"
+                required
+                helperText="Mín. 8 caracteres com pelo menos 1 número"
+                value={form.senha}
+                onChange={e => set('senha', e.target.value)}
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                          onClick={() => setMostrarSenha(v => !v)}
+                        >
+                          {mostrarSenha ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField fullWidth label="CPF" required
+                         helperText="Apenas números ou com pontuação"
+                         value={form.cpf} onChange={e => set('cpf', e.target.value)} />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField fullWidth label="Telefone" required
+                         autoComplete="tel"
+                         value={form.telefone} onChange={e => set('telefone', e.target.value)} />
+            </Grid>
           </Grid>
-          <Grid size={6}>
-            <TextField fullWidth label="E-mail" type="email" required
-                       value={form.email} onChange={e => set('email', e.target.value)} />
-          </Grid>
-          <Grid size={6}>
-            <TextField fullWidth label="Senha (mín. 8, com 1 dígito)" type="password" required
-                       value={form.senha} onChange={e => set('senha', e.target.value)} />
-          </Grid>
-          <Grid size={4}>
-            <TextField fullWidth label="CPF" required
-                       value={form.cpf} onChange={e => set('cpf', e.target.value)} />
-          </Grid>
-          <Grid size={4}>
-            <TextField fullWidth label="CRP" required
-                       value={form.crp} onChange={e => set('crp', e.target.value)} />
-          </Grid>
-          <Grid size={4}>
-            <TextField fullWidth label="Telefone" required
-                       value={form.telefone} onChange={e => set('telefone', e.target.value)} />
-          </Grid>
+        </Secao>
 
-          <Grid size={12}><Typography variant="subtitle1" sx={{ mt: 1 }}>Endereço</Typography></Grid>
-          <Grid size={3}>
-            <TextField fullWidth label="CEP" required
-                       value={form.endereco.cep} onChange={e => setEnd('cep', e.target.value)} />
-          </Grid>
-          <Grid size={6}>
-            <TextField fullWidth label="Logradouro" required
-                       value={form.endereco.logradouro} onChange={e => setEnd('logradouro', e.target.value)} />
-          </Grid>
-          <Grid size={3}>
-            <TextField fullWidth label="Número" required
-                       value={form.endereco.numero} onChange={e => setEnd('numero', e.target.value)} />
-          </Grid>
-          <Grid size={6}>
-            <TextField fullWidth label="Complemento"
-                       value={form.endereco.complemento} onChange={e => setEnd('complemento', e.target.value)} />
-          </Grid>
-          <Grid size={6}>
-            <TextField fullWidth label="Bairro" required
-                       value={form.endereco.bairro} onChange={e => setEnd('bairro', e.target.value)} />
-          </Grid>
-          <Grid size={9}>
-            <TextField fullWidth label="Cidade" required
-                       value={form.endereco.cidade} onChange={e => setEnd('cidade', e.target.value)} />
-          </Grid>
-          <Grid size={3}>
-            <TextField fullWidth label="UF" required
-                       slotProps={{ htmlInput: { maxLength: 2 } }}
-                       value={form.endereco.uf} onChange={e => setEnd('uf', e.target.value.toUpperCase())} />
-          </Grid>
-        </Grid>
+        <Divider />
 
-        <Button fullWidth type="submit" variant="contained" sx={{ mt: 3 }} disabled={enviando}>
-          {enviando ? 'Criando…' : 'Criar conta'}
+        <Secao titulo="Registro profissional">
+          <TextField fullWidth label="CRP" required
+                     helperText="Inclua a sigla regional, ex: CRP 06/12345"
+                     value={form.crp} onChange={e => set('crp', e.target.value)} />
+        </Secao>
+
+        <Divider />
+
+        <Secao titulo="Endereço do consultório">
+          <EnderecoForm
+            value={form.endereco}
+            onChange={endereco => setForm(f => ({ ...f, endereco }))}
+          />
+        </Secao>
+
+        <Button
+          fullWidth
+          type="submit"
+          variant="contained"
+          size="large"
+          disabled={enviando}
+          sx={{ borderRadius: 2, py: 1.25, mt: 1 }}
+        >
+          {enviando ? 'Criando conta…' : 'Criar conta'}
         </Button>
-        <Typography variant="body2" sx={{ mt: 2 }}>
-          Já tem conta? <Link component={RouterLink} to="/login">Entrar</Link>
+
+        <Typography variant="body2" sx={{ textAlign: 'center', color: 'text.secondary' }}>
+          Já tem conta?{' '}
+          <Link
+            component={RouterLink}
+            to="/login"
+            sx={{ fontWeight: 600, textDecoration: 'none' }}
+          >
+            Entrar
+          </Link>
         </Typography>
-      </Paper>
-    </Box>
+      </Stack>
+    </AuthShell>
   )
 }

@@ -18,12 +18,6 @@ export type MesStats = {
   faturamentoRealizado: number
   faturamentoPago: number
   faturamentoPendente: number
-  taxaComparecimento: number | null
-}
-
-export type ComparativoStats = {
-  consultasMesAnterior: number
-  faturamentoMesAnterior: number
 }
 
 export type DiaStats = {
@@ -33,7 +27,6 @@ export type DiaStats = {
 
 export type PacientesStats = {
   ativos: number
-  novosNoMes: number
 }
 
 export type ProximaConsulta = {
@@ -47,7 +40,6 @@ export type ProximaConsulta = {
 export type DashboardData = {
   hoje: HojeStats
   mes: MesStats
-  comparativo: ComparativoStats
   proximos7Dias: DiaStats[]
   pacientes: PacientesStats
   proximasConsultas: ProximaConsulta[]

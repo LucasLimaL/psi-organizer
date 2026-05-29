@@ -12,5 +12,4 @@ public interface PacienteRepository extends JpaRepository<Paciente, UUID> {
     Optional<Paciente> findByIdAndPsicologaId(UUID id, UUID psicologaId);
     boolean existsByPsicologaIdAndCpf(UUID psicologaId, String cpf);
     int countByPsicologaIdAndAtivo(UUID psicologaId, boolean ativo);
-    int countByPsicologaIdAndCriadoEmGreaterThanEqual(UUID psicologaId, java.time.Instant inicio);
 }

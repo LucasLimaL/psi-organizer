@@ -8,13 +8,9 @@ import { alpha, useTheme } from '@mui/material/styles'
 import EventNoteIcon from '@mui/icons-material/EventNote'
 import EventAvailableIcon from '@mui/icons-material/EventAvailable'
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
-import TrendingUpIcon from '@mui/icons-material/TrendingUp'
-import TrendingDownIcon from '@mui/icons-material/TrendingDown'
-import TrendingFlatIcon from '@mui/icons-material/TrendingFlat'
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutlined'
 import AddIcon from '@mui/icons-material/Add'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
-import CheckCircleIcon from '@mui/icons-material/CheckCircleOutlined'
 import { dashboardApi, type DashboardData } from '../api/dashboard'
 import { useAuth } from '../auth/authContext'
 import { formatarHora } from '../utils/datas'
@@ -36,25 +32,6 @@ function dataLonga(): string {
 
 function brl(v: number): string {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
-
-function pct(v: number | null): string {
-  if (v === null) return '—'
-  return `${Math.round(v * 100)}%`
-}
-
-function deltaPct(atual: number, anterior: number): { dir: 'up' | 'down' | 'flat'; valor: string } {
-  if (anterior === 0) {
-    if (atual === 0) return { dir: 'flat', valor: '—' }
-    return { dir: 'up', valor: 'novo' }
-  }
-  const delta = ((atual - anterior) / anterior) * 100
-  if (Math.abs(delta) < 0.5) return { dir: 'flat', valor: '0%' }
-  const sinal = delta > 0 ? '+' : ''
-  return {
-    dir: delta > 0 ? 'up' : 'down',
-    valor: `${sinal}${Math.round(delta)}%`,
-  }
 }
 
 function iniciais(nome: string): string {
@@ -83,7 +60,6 @@ export default function DashboardPage() {
 
   const status = theme.palette.statusConsulta
 
-  // Maior valor para escala do gráfico
   const maxProximos7 = useMemo(() => {
     if (!dados) return 1
     return Math.max(1, ...dados.proximos7Dias.map(d => d.total))
@@ -95,8 +71,8 @@ export default function DashboardPage() {
         <Skeleton variant="text" width={300} height={48} />
         <Skeleton variant="text" width={220} />
         <Grid container spacing={2}>
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Grid size={{ xs: 12, sm: 6, md: 3 }} key={i}>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
               <Skeleton variant="rounded" height={140} />
             </Grid>
           ))}
@@ -107,11 +83,6 @@ export default function DashboardPage() {
   }
 
   const primeiroNome = psicologa?.nomeCompleto.split(' ')[0] ?? ''
-  const deltaConsultas = deltaPct(dados.mes.total, dados.comparativo.consultasMesAnterior)
-  const deltaFaturamento = deltaPct(
-    dados.mes.faturamentoRealizado,
-    dados.comparativo.faturamentoMesAnterior,
-  )
 
   return (
     <Stack spacing={3}>
@@ -149,43 +120,45 @@ export default function DashboardPage() {
         </Stack>
       </Stack>
 
-      {/* 4 stat cards */}
+      {/* 3 stat cards informativos — sem comparativos */}
       <Grid container spacing={2}>
         <StatCard
           icon={<EventAvailableIcon />}
           corIcone="primary.main"
           fundoIcone={alpha(theme.palette.primary.main, 0.1)}
-          titulo="Atendimentos hoje"
+          titulo="Hoje"
           valor={dados.hoje.total}
+          legenda={dados.hoje.total === 1 ? 'consulta' : 'consultas'}
           extra={
-            <Stack direction="row" spacing={0.75} sx={{ flexWrap: 'wrap', rowGap: 0.5 }}>
-              {dados.hoje.agendadas > 0 && (
-                <Chip size="small" label={`${dados.hoje.agendadas} agendada${dados.hoje.agendadas === 1 ? '' : 's'}`}
-                      sx={{ height: 22, bgcolor: status.agendada.bg, color: status.agendada.fg }} />
-              )}
-              {dados.hoje.confirmadas > 0 && (
-                <Chip size="small" label={`${dados.hoje.confirmadas} confirmada${dados.hoje.confirmadas === 1 ? '' : 's'}`}
-                      sx={{ height: 22, bgcolor: status.confirmada.bg, color: status.confirmada.fg }} />
-              )}
-              {dados.hoje.realizadas > 0 && (
-                <Chip size="small" label={`${dados.hoje.realizadas} realizada${dados.hoje.realizadas === 1 ? '' : 's'}`}
-                      sx={{ height: 22, bgcolor: status.realizada.bg, color: status.realizada.fg }} />
-              )}
-              {dados.hoje.faltas > 0 && (
-                <Chip size="small" label={`${dados.hoje.faltas} falta${dados.hoje.faltas === 1 ? '' : 's'}`}
-                      sx={{
-                        height: 22,
-                        bgcolor: status.falta.bg,
-                        color: status.falta.fg,
-                        border: `1px solid ${status.falta.border}`,
-                      }} />
-              )}
-              {dados.hoje.total === 0 && (
-                <Typography variant="caption" color="text.secondary">
-                  Nenhum atendimento marcado
-                </Typography>
-              )}
-            </Stack>
+            dados.hoje.total > 0 ? (
+              <Stack direction="row" spacing={0.75} sx={{ flexWrap: 'wrap', rowGap: 0.5 }}>
+                {dados.hoje.agendadas > 0 && (
+                  <Chip size="small" label={`${dados.hoje.agendadas} agendada${dados.hoje.agendadas === 1 ? '' : 's'}`}
+                        sx={{ height: 22, bgcolor: status.agendada.bg, color: status.agendada.fg }} />
+                )}
+                {dados.hoje.confirmadas > 0 && (
+                  <Chip size="small" label={`${dados.hoje.confirmadas} confirmada${dados.hoje.confirmadas === 1 ? '' : 's'}`}
+                        sx={{ height: 22, bgcolor: status.confirmada.bg, color: status.confirmada.fg }} />
+                )}
+                {dados.hoje.realizadas > 0 && (
+                  <Chip size="small" label={`${dados.hoje.realizadas} realizada${dados.hoje.realizadas === 1 ? '' : 's'}`}
+                        sx={{ height: 22, bgcolor: status.realizada.bg, color: status.realizada.fg }} />
+                )}
+                {dados.hoje.faltas > 0 && (
+                  <Chip size="small" label={`${dados.hoje.faltas} falta${dados.hoje.faltas === 1 ? '' : 's'}`}
+                        sx={{
+                          height: 22,
+                          bgcolor: status.falta.bg,
+                          color: status.falta.fg,
+                          border: `1px solid ${status.falta.border}`,
+                        }} />
+                )}
+              </Stack>
+            ) : (
+              <Typography variant="caption" color="text.secondary">
+                Nenhum atendimento marcado
+              </Typography>
+            )
           }
         />
 
@@ -193,43 +166,36 @@ export default function DashboardPage() {
           icon={<EventNoteIcon />}
           corIcone="info.main"
           fundoIcone={alpha(theme.palette.info.main, 0.1)}
-          titulo="Atendimentos no mês"
+          titulo="Este mês"
           valor={dados.mes.total}
-          extra={<DeltaIndicador {...deltaConsultas} legenda="vs mês anterior" />}
-        />
-
-        <StatCard
-          icon={<AttachMoneyIcon />}
-          corIcone="success.main"
-          fundoIcone={alpha(theme.palette.success.main, 0.1)}
-          titulo="Faturamento (realizadas)"
-          valor={brl(dados.mes.faturamentoRealizado)}
-          valorTipo="texto"
+          legenda={dados.mes.total === 1 ? 'consulta' : 'consultas'}
           extra={
-            <Stack spacing={0.25}>
-              <DeltaIndicador {...deltaFaturamento} legenda="vs mês anterior" />
+            dados.mes.total > 0 ? (
               <Typography variant="caption" color="text.secondary">
-                {brl(dados.mes.faturamentoPago)} pago ·{' '}
-                <Box component="span" sx={{ color: 'warning.main', fontWeight: 600 }}>
-                  {brl(dados.mes.faturamentoPendente)} pendente
-                </Box>
+                {dados.mes.realizadas} realizada{dados.mes.realizadas === 1 ? '' : 's'} ·{' '}
+                {dados.mes.agendadas + dados.mes.confirmadas} próxima{dados.mes.agendadas + dados.mes.confirmadas === 1 ? '' : 's'}
               </Typography>
-            </Stack>
+            ) : null
           }
         />
 
         <StatCard
-          icon={<CheckCircleIcon />}
-          corIcone="warning.main"
-          fundoIcone={alpha(theme.palette.warning.main, 0.1)}
-          titulo="Taxa de comparecimento"
-          valor={pct(dados.mes.taxaComparecimento)}
+          icon={<AttachMoneyIcon />}
+          corIcone="primary.main"
+          fundoIcone={alpha(theme.palette.primary.main, 0.1)}
+          titulo="Recebido no mês"
+          valor={brl(dados.mes.faturamentoPago)}
           valorTipo="texto"
           extra={
-            <Typography variant="caption" color="text.secondary">
-              {dados.mes.realizadas} realizada{dados.mes.realizadas === 1 ? '' : 's'} ·{' '}
-              {dados.mes.faltas} falta{dados.mes.faltas === 1 ? '' : 's'}
-            </Typography>
+            dados.mes.faturamentoPendente > 0 ? (
+              <Typography variant="caption" color="text.secondary">
+                {brl(dados.mes.faturamentoPendente)} a receber
+              </Typography>
+            ) : dados.mes.faturamentoRealizado > 0 ? (
+              <Typography variant="caption" color="text.secondary">
+                Tudo em dia
+              </Typography>
+            ) : null
           }
         />
       </Grid>
@@ -331,8 +297,11 @@ export default function DashboardPage() {
             p: 2.5, boxShadow: 'none',
             border: `1px solid ${theme.palette.divider}`, height: '100%',
           }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
               Próximos 7 dias
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+              Distribuição da semana
             </Typography>
             <Box sx={{
               display: 'flex',
@@ -423,9 +392,7 @@ export default function DashboardPage() {
                 {dados.pacientes.ativos} paciente{dados.pacientes.ativos === 1 ? '' : 's'} ativo{dados.pacientes.ativos === 1 ? '' : 's'}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {dados.pacientes.novosNoMes > 0
-                  ? `+${dados.pacientes.novosNoMes} cadastrado${dados.pacientes.novosNoMes === 1 ? '' : 's'} este mês`
-                  : 'Nenhum novo este mês'}
+                Toque pra ver a lista completa
               </Typography>
             </Box>
           </Stack>
@@ -448,14 +415,15 @@ type StatCardProps = {
   fundoIcone: string
   titulo: string
   valor: string | number
+  legenda?: string
   valorTipo?: 'numero' | 'texto'
   extra?: React.ReactNode
 }
 
-function StatCard({ icon, corIcone, fundoIcone, titulo, valor, valorTipo = 'numero', extra }: StatCardProps) {
+function StatCard({ icon, corIcone, fundoIcone, titulo, valor, legenda, valorTipo = 'numero', extra }: StatCardProps) {
   const theme = useTheme()
   return (
-    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
       <Paper variant="outlined" sx={{
         p: 2.5, boxShadow: 'none',
         border: `1px solid ${theme.palette.divider}`, height: '100%',
@@ -472,41 +440,27 @@ function StatCard({ icon, corIcone, fundoIcone, titulo, valor, valorTipo = 'nume
             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
               {titulo}
             </Typography>
-            <Typography
-              variant={valorTipo === 'texto' ? 'h5' : 'h4'}
-              sx={{
-                fontWeight: 700,
-                fontVariantNumeric: 'tabular-nums',
-                lineHeight: 1.1,
-              }}
-            >
-              {valor}
-            </Typography>
+            <Stack direction="row" spacing={0.75} sx={{ alignItems: 'baseline' }}>
+              <Typography
+                variant={valorTipo === 'texto' ? 'h5' : 'h4'}
+                sx={{
+                  fontWeight: 700,
+                  fontVariantNumeric: 'tabular-nums',
+                  lineHeight: 1.1,
+                }}
+              >
+                {valor}
+              </Typography>
+              {legenda && (
+                <Typography variant="body2" color="text.secondary">
+                  {legenda}
+                </Typography>
+              )}
+            </Stack>
           </Box>
           {extra}
         </Stack>
       </Paper>
     </Grid>
-  )
-}
-
-function DeltaIndicador({ dir, valor, legenda }: { dir: 'up' | 'down' | 'flat'; valor: string; legenda: string }) {
-  const theme = useTheme()
-  const cor = dir === 'up'
-    ? theme.palette.success.main
-    : dir === 'down'
-      ? theme.palette.error.main
-      : theme.palette.text.secondary
-  const Icone = dir === 'up' ? TrendingUpIcon : dir === 'down' ? TrendingDownIcon : TrendingFlatIcon
-  return (
-    <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
-      <Icone sx={{ fontSize: 16, color: cor }} />
-      <Typography variant="caption" sx={{ color: cor, fontWeight: 600 }}>
-        {valor}
-      </Typography>
-      <Typography variant="caption" color="text.secondary">
-        {legenda}
-      </Typography>
-    </Stack>
   )
 }

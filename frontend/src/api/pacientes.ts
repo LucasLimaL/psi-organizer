@@ -37,4 +37,26 @@ export const pacientesApi = {
     api<void>(`/pacientes/${id}`, { method: 'DELETE' }),
   reativar: (id: string) =>
     api<Paciente>(`/pacientes/${id}/reativar`, { method: 'POST' }),
+  listarConsultas: (id: string, tipo: 'proximas' | 'historico', limit: number, offset: number) =>
+    api<ConsultasPaginado>(
+      `/pacientes/${id}/consultas?tipo=${tipo}&limit=${limit}&offset=${offset}`,
+    ),
+}
+
+export type ConsultaPaciente = {
+  id: string
+  pacienteId: string
+  pacienteNome: string
+  inicio: string
+  duracaoMinutos: number
+  valor: number
+  status: 'AGENDADA' | 'CONFIRMADA' | 'REALIZADA' | 'FALTA'
+  pago: boolean
+  observacoes?: string
+}
+
+export type ConsultasPaginado = {
+  consultas: ConsultaPaciente[]
+  total: number
+  temMais: boolean
 }

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   Stack, Box, Paper, Typography, Button, Chip, Avatar, IconButton,
-  Skeleton, Tooltip,
+  Skeleton, Tooltip, Tabs, Tab,
 } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
@@ -11,6 +11,7 @@ import RestoreIcon from '@mui/icons-material/Restore'
 import { pacientesApi, type Paciente, type PacienteInput } from '../api/pacientes'
 import PacienteForm from '../components/PacienteForm'
 import InativarPacienteDialog from '../components/InativarPacienteDialog'
+import ConsultasPacienteList from '../components/ConsultasPacienteList'
 
 function iniciais(nome: string): string {
   return nome
@@ -26,12 +27,17 @@ function formatarCpf(cpf: string) {
   return `${cpf.slice(0, 3)}.${cpf.slice(3, 6)}.${cpf.slice(6, 9)}-${cpf.slice(9)}`
 }
 
+type AbaId = 'dados' | 'proximas' | 'historico'
+
 export default function PacienteDetalhePage() {
   const theme = useTheme()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [paciente, setPaciente] = useState<Paciente | null>(null)
   const [inativando, setInativando] = useState(false)
+  const [aba, setAba] = useState<AbaId>('dados')
+  const [totalProximas, setTotalProximas] = useState<number | null>(null)
+  const [totalHistorico, setTotalHistorico] = useState<number | null>(null)
 
   const carregar = useCallback(async () => {
     if (!id) return
@@ -51,6 +57,8 @@ export default function PacienteDetalhePage() {
     if (!id) return
     await pacientesApi.inativar(id)
     await carregar()
+    // Após inativar, consultas futuras foram apagadas — recarrega contagem
+    setTotalProximas(null)
   }
 
   async function reativar() {
@@ -76,9 +84,7 @@ export default function PacienteDetalhePage() {
             </Box>
           </Stack>
         </Paper>
-        <Paper variant="outlined" sx={{ p: 3, boxShadow: 'none', border: `1px solid ${theme.palette.divider}` }}>
-          <Skeleton variant="rectangular" height={400} />
-        </Paper>
+        <Skeleton variant="rectangular" height={300} />
       </Stack>
     )
   }
@@ -92,6 +98,10 @@ export default function PacienteDetalhePage() {
     endereco: paciente.endereco,
     valorConsulta: paciente.valorConsulta,
     observacoes: paciente.observacoes ?? '',
+  }
+
+  function rotuloAba(base: string, total: number | null) {
+    return total === null ? base : `${base} (${total})`
   }
 
   return (
@@ -108,7 +118,7 @@ export default function PacienteDetalhePage() {
         </Typography>
       </Stack>
 
-      {/* Header card — identidade + ações */}
+      {/* Header card */}
       <Paper
         variant="outlined"
         sx={{
@@ -151,45 +161,71 @@ export default function PacienteDetalhePage() {
               {paciente.email && <> · {paciente.email}</>}
             </Typography>
           </Box>
-          {paciente.ativo
-            ? (
-              <Button
-                variant="outlined"
-                color="error"
-                startIcon={<DeleteOutlineIcon />}
-                onClick={() => setInativando(true)}
-                sx={{ borderRadius: 999, flexShrink: 0 }}
-              >
-                Inativar
-              </Button>
-            )
-            : (
-              <Button
-                variant="outlined"
-                startIcon={<RestoreIcon />}
-                onClick={reativar}
-                sx={{ borderRadius: 999, flexShrink: 0 }}
-              >
-                Reativar
-              </Button>
-            )}
+          {paciente.ativo ? (
+            <Button
+              variant="outlined"
+              color="error"
+              startIcon={<DeleteOutlineIcon />}
+              onClick={() => setInativando(true)}
+              sx={{ borderRadius: 999, flexShrink: 0 }}
+            >
+              Inativar
+            </Button>
+          ) : (
+            <Button
+              variant="outlined"
+              startIcon={<RestoreIcon />}
+              onClick={reativar}
+              sx={{ borderRadius: 999, flexShrink: 0 }}
+            >
+              Reativar
+            </Button>
+          )}
         </Stack>
       </Paper>
 
-      {/* Formulário de edição */}
-      <Paper
-        variant="outlined"
-        sx={{
-          p: { xs: 2, sm: 3 },
-          boxShadow: 'none',
-          border: `1px solid ${theme.palette.divider}`,
-        }}
-      >
-        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-          Editar dados
-        </Typography>
-        <PacienteForm inicial={inicial} textoBotao="Salvar alterações" onSubmit={salvar} />
-      </Paper>
+      {/* Tabs */}
+      <Box>
+        <Tabs
+          value={aba}
+          onChange={(_, v) => setAba(v)}
+          sx={{ borderBottom: `1px solid ${theme.palette.divider}` }}
+        >
+          <Tab value="dados" label="Dados" />
+          <Tab value="proximas" label={rotuloAba('Próximas', totalProximas)} />
+          <Tab value="historico" label={rotuloAba('Histórico', totalHistorico)} />
+        </Tabs>
+      </Box>
+
+      {/* Tab content */}
+      {aba === 'dados' && (
+        <Paper
+          variant="outlined"
+          sx={{
+            p: { xs: 2, sm: 3 },
+            boxShadow: 'none',
+            border: `1px solid ${theme.palette.divider}`,
+          }}
+        >
+          <PacienteForm inicial={inicial} textoBotao="Salvar alterações" onSubmit={salvar} />
+        </Paper>
+      )}
+
+      {aba === 'proximas' && id && (
+        <ConsultasPacienteList
+          pacienteId={id}
+          tipo="proximas"
+          onTotalCarregado={setTotalProximas}
+        />
+      )}
+
+      {aba === 'historico' && id && (
+        <ConsultasPacienteList
+          pacienteId={id}
+          tipo="historico"
+          onTotalCarregado={setTotalHistorico}
+        />
+      )}
 
       <InativarPacienteDialog
         aberto={inativando}

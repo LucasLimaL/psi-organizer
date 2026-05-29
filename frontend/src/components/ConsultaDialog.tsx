@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button,
   TextField, MenuItem, FormControlLabel, Switch, Alert, Grid, Divider,
@@ -11,13 +11,16 @@ import { consultasApi } from '../api/consultas'
 import type { Paciente } from '../api/pacientes'
 import { pacientesApi } from '../api/pacientes'
 import { toDatetimeLocal, fromDatetimeLocal } from '../utils/datas'
+import { useDirty } from '../hooks/useDirty'
+
+export type ConsultaSalvoResultado = 'criada' | 'criada_recorrente' | 'atualizada' | 'removida'
 
 type Props = {
   aberto: boolean
   consulta: Consulta | null
   inicioPadrao?: Date
   onFechar: () => void
-  onSalvo: () => void
+  onSalvo: (resultado: ConsultaSalvoResultado, qtd?: number) => void
 }
 
 const STATUSES: StatusConsulta[] = ['AGENDADA', 'CONFIRMADA', 'REALIZADA', 'FALTA']
@@ -70,35 +73,69 @@ export default function ConsultaDialog({ aberto, consulta, inicioPadrao, onFecha
   const [erro, setErro] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
 
+  // Snapshot dos campos editáveis. Usado pra dirty-check do botão Salvar.
+  const snapshot = useMemo(() => ({
+    pacienteId, inicio, duracaoMinutos, valor, status, pago, observacoes,
+    recorrente, diaDaSemana, horario, intervaloSemanas, inicioEm, fimEm,
+  }), [pacienteId, inicio, duracaoMinutos, valor, status, pago, observacoes,
+    recorrente, diaDaSemana, horario, intervaloSemanas, inicioEm, fimEm])
+  const { dirty, setBaseline } = useDirty(snapshot)
+
   useEffect(() => {
     if (!aberto) return
     setErro(null)
     pacientesApi.listar(false).then(setPacientes)
+    let proximo: typeof snapshot
     if (consulta) {
-      setPacienteId(consulta.pacienteId)
-      setInicio(toDatetimeLocal(new Date(consulta.inicio)))
-      setDuracao(consulta.duracaoMinutos)
-      setValor(consulta.valor)
-      setStatus(consulta.status)
-      setPago(consulta.pago)
-      setObservacoes(consulta.observacoes ?? '')
-      setRecorrente(false)
+      proximo = {
+        pacienteId: consulta.pacienteId,
+        inicio: toDatetimeLocal(new Date(consulta.inicio)),
+        duracaoMinutos: consulta.duracaoMinutos,
+        valor: consulta.valor,
+        status: consulta.status,
+        pago: consulta.pago,
+        observacoes: consulta.observacoes ?? '',
+        recorrente: false,
+        diaDaSemana: 'SEG' as DiaSemana,
+        horario: '08:00',
+        intervaloSemanas: 1,
+        inicioEm: '',
+        fimEm: '',
+      }
     } else {
       const base = inicioPadrao ?? new Date()
-      setPacienteId('')
-      setInicio(toDatetimeLocal(base))
-      setDuracao(50)
-      setValor(0)
-      setStatus('AGENDADA')
-      setPago(false)
-      setObservacoes('')
-      setRecorrente(false)
-      setDiaDaSemana(diaSemanaDaData(base))
-      setHorario(horarioDaData(base))
-      setIntervaloSemanas(1)
-      setInicioEm(isoDate(base))
-      setFimEm('')
+      proximo = {
+        pacienteId: '',
+        inicio: toDatetimeLocal(base),
+        duracaoMinutos: 50,
+        valor: 0,
+        status: 'AGENDADA' as StatusConsulta,
+        pago: false,
+        observacoes: '',
+        recorrente: false,
+        diaDaSemana: diaSemanaDaData(base),
+        horario: horarioDaData(base),
+        intervaloSemanas: 1,
+        inicioEm: isoDate(base),
+        fimEm: '',
+      }
     }
+    setPacienteId(proximo.pacienteId)
+    setInicio(proximo.inicio)
+    setDuracao(proximo.duracaoMinutos)
+    setValor(proximo.valor)
+    setStatus(proximo.status)
+    setPago(proximo.pago)
+    setObservacoes(proximo.observacoes)
+    setRecorrente(proximo.recorrente)
+    setDiaDaSemana(proximo.diaDaSemana)
+    setHorario(proximo.horario)
+    setIntervaloSemanas(proximo.intervaloSemanas)
+    setInicioEm(proximo.inicioEm)
+    setFimEm(proximo.fimEm)
+    setBaseline(proximo)
+    // setBaseline é estável; queremos rodar apenas quando o dialog reabre / alvo muda
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aberto, consulta, inicioPadrao])
 
   // Pré-preenche valor pelo paciente (criação)
@@ -113,12 +150,15 @@ export default function ConsultaDialog({ aberto, consulta, inicioPadrao, onFecha
     setErro(null)
     setEnviando(true)
     try {
+      let resultado: ConsultaSalvoResultado
+      let qtd: number | undefined
       if (editando && consulta) {
         const payload: ConsultaUpdate = {
           inicio: fromDatetimeLocal(inicio).toISOString(),
           duracaoMinutos, valor: Number(valor), status, pago, observacoes,
         }
         await consultasApi.atualizar(consulta.id, payload)
+        resultado = 'atualizada'
       } else if (recorrente) {
         const payload: ConsultaRecorrenteInput = {
           pacienteId, diaDaSemana, horario,
@@ -127,7 +167,8 @@ export default function ConsultaDialog({ aberto, consulta, inicioPadrao, onFecha
           inicioEm, fimEm, observacoes,
         }
         const criadas = await consultasApi.criarRecorrente(payload)
-        alert(`${criadas.length} consultas criadas.`)
+        resultado = 'criada_recorrente'
+        qtd = criadas.length
       } else {
         const payload: ConsultaInput = {
           pacienteId,
@@ -135,8 +176,9 @@ export default function ConsultaDialog({ aberto, consulta, inicioPadrao, onFecha
           duracaoMinutos, valor: Number(valor), observacoes,
         }
         await consultasApi.criar(payload)
+        resultado = 'criada'
       }
-      onSalvo()
+      onSalvo(resultado, qtd)
       onFechar()
     } catch (err) {
       const e = err as { erro?: string; detalhes?: Record<string, string> }
@@ -151,7 +193,7 @@ export default function ConsultaDialog({ aberto, consulta, inicioPadrao, onFecha
     if (!consulta) return
     if (!confirm('Remover esta consulta?')) return
     await consultasApi.remover(consulta.id)
-    onSalvo()
+    onSalvo('removida')
     onFechar()
   }
 
@@ -265,7 +307,7 @@ export default function ConsultaDialog({ aberto, consulta, inicioPadrao, onFecha
           <Button color="error" onClick={excluir} sx={{ mr: 'auto' }}>Remover</Button>
         )}
         <Button onClick={onFechar}>Cancelar</Button>
-        <Button type="submit" form="consulta-form" variant="contained" disabled={enviando}>
+        <Button type="submit" form="consulta-form" variant="contained" disabled={enviando || !dirty}>
           {enviando ? 'Salvando…' : 'Salvar'}
         </Button>
       </DialogActions>

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Paper, Box, Stack, Typography, IconButton, Button, Chip, Tooltip,
-  ToggleButton, ButtonBase, useMediaQuery,
+  ToggleButton, ButtonBase, useMediaQuery, Snackbar, Alert,
 } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
@@ -16,7 +16,7 @@ import {
   inicioDaSemana, addDias, mesmaData, formatarHora, formatarData,
   primeiroDiaUtilDoMes, formatarMes, formatarDataLonga,
 } from '../utils/datas'
-import ConsultaDialog from '../components/ConsultaDialog'
+import ConsultaDialog, { type ConsultaSalvoResultado } from '../components/ConsultaDialog'
 
 const HORA_INICIO = 7
 const HORA_FIM = 21
@@ -56,6 +56,7 @@ export default function AgendaPage() {
   const [inicioPadrao, setInicioPadrao] = useState<Date | undefined>()
   const [agora, setAgora] = useState(() => new Date())
   const [diaSelecionado, setDiaSelecionado] = useState(() => new Date())
+  const [mensagemSucesso, setMensagemSucesso] = useState<string | null>(null)
 
   // tick a cada 60s pra mover o indicador "agora"
   useEffect(() => {
@@ -571,8 +572,26 @@ export default function AgendaPage() {
         consulta={consultaSelecionada}
         inicioPadrao={inicioPadrao}
         onFechar={() => setDialogAberto(false)}
-        onSalvo={carregar}
+        onSalvo={async (resultado: ConsultaSalvoResultado, qtd?: number) => {
+          await carregar()
+          const msg = resultado === 'criada' ? 'Consulta criada'
+            : resultado === 'criada_recorrente' ? `${qtd ?? 0} consultas criadas`
+              : resultado === 'atualizada' ? 'Consulta atualizada'
+                : 'Consulta removida'
+          setMensagemSucesso(msg)
+        }}
       />
+
+      <Snackbar
+        open={mensagemSucesso !== null}
+        autoHideDuration={3000}
+        onClose={() => setMensagemSucesso(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="success" variant="filled" sx={{ width: '100%' }}>
+          {mensagemSucesso}
+        </Alert>
+      </Snackbar>
     </Stack>
   )
 }

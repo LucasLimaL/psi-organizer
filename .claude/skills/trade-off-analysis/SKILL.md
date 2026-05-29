@@ -1,6 +1,7 @@
 ---
-name: trade_off_analysis
+name: trade-off-analysis
 description: Força apresentação explícita de trade-offs antes de recomendar uma decisão arquitetural ou de produto. Útil quando há 2-4 opções viáveis e o usuário pede "o que acha?". Produz tabela de prós/contras/quando-usar/custo-de-migrar + recomendação opinada com critério.
+disable-model-invocation: true
 ---
 
 # trade_off_analysis

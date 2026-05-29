@@ -99,10 +99,12 @@ Skills project-level automatizam fluxos repetidos do projeto. Invoque com `/<nom
 
 | Skill | Quando usar |
 |---|---|
-| [`psi_estado`](.claude/skills/psi_estado/SKILL.md) | Início de sessão — carrega contexto rápido (~200 palavras) |
-| [`psi_pr_merge_seguro`](.claude/skills/psi_pr_merge_seguro/SKILL.md) `<numero>` | Mergear PR seguindo o protocolo (multi-tenant check + stack management + rebase + force-push) |
-| [`psi_novo_endpoint`](.claude/skills/psi_novo_endpoint/SKILL.md) | Adicionar endpoint REST cumprindo todos os 12 passos do padrão |
-| [`psi_docs_sync`](.claude/skills/psi_docs_sync/SKILL.md) `<pr>` | Depois de mergear feature — identifica gaps de doc e propõe diffs |
-| [`trade_off_analysis`](.claude/skills/trade_off_analysis/SKILL.md) | Decisão arquitetural com 2-4 opções — produz mini-ADR opinado |
+| [`/psi-estado`](.claude/skills/psi-estado/SKILL.md) | Início de sessão — carrega contexto rápido (~200 palavras) |
+| [`/psi-pr-merge-seguro`](.claude/skills/psi-pr-merge-seguro/SKILL.md) `<numero>` | Mergear PR seguindo o protocolo (multi-tenant check + stack management + rebase + force-push) |
+| [`/psi-novo-endpoint`](.claude/skills/psi-novo-endpoint/SKILL.md) | Adicionar endpoint REST cumprindo todos os 12 passos do padrão |
+| [`/psi-docs-sync`](.claude/skills/psi-docs-sync/SKILL.md) `<pr>` | Depois de mergear feature — identifica gaps de doc e propõe diffs |
+| [`/trade-off-analysis`](.claude/skills/trade-off-analysis/SKILL.md) | Decisão arquitetural com 2-4 opções — produz mini-ADR opinado |
 
-**Recomendação**: começar toda sessão com `/psi_estado`.
+**Recomendação**: começar toda sessão com `/psi-estado`.
+
+Todas marcadas com `disable-model-invocation: true` — só rodam quando você digita `/<nome>`, nunca automaticamente.

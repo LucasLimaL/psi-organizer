@@ -1,6 +1,7 @@
 ---
-name: psi_estado
-description: Carrega contexto rápido do psi-organizer no início de uma sessão. Lê branch atual, PRs abertas, últimos commits e próximos itens pendentes do SPEC.md §11. Retorna resumo conciso (~200 palavras). Invoque com `/psi_estado` sempre que abrir uma sessão nova ou voltar depois de uma pausa longa.
+name: psi-estado
+description: Carrega contexto rápido do psi-organizer no início de uma sessão. Lê branch atual, PRs abertas, últimos commits e próximos itens pendentes do SPEC.md §11. Retorna resumo conciso (~200 palavras). Invoque com `/psi-estado` sempre que abrir uma sessão nova ou voltar depois de uma pausa longa.
+disable-model-invocation: true
 ---
 
 # psi_estado

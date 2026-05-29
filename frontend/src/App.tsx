@@ -3,6 +3,7 @@ import AppShell from './components/AppShell'
 import ProtectedRoute from './auth/ProtectedRoute'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
+import DashboardPage from './pages/DashboardPage'
 import AgendaPage from './pages/AgendaPage'
 import PacientesPage from './pages/PacientesPage'
 import PacienteDetalhePage from './pages/PacienteDetalhePage'
@@ -15,7 +16,8 @@ function App() {
       <Route path="/signup" element={<SignupPage />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
-          <Route path="/" element={<AgendaPage />} />
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/agenda" element={<AgendaPage />} />
           <Route path="/pacientes" element={<PacientesPage />} />
           <Route path="/pacientes/:id" element={<PacienteDetalhePage />} />
           <Route path="/perfil" element={<PerfilPage />} />

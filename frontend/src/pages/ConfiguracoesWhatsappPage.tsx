@@ -9,6 +9,7 @@ import {
   type ConfiguracaoWhatsapp,
 } from '../api/whatsapp'
 import { useAuth } from '../auth/authContext'
+import { useDirty } from '../hooks/useDirty'
 
 const LIMITE_CARACTERES = 1024
 const ALERTA_CARACTERES = 900
@@ -32,18 +33,21 @@ export default function ConfiguracoesWhatsappPage() {
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [sucesso, setSucesso] = useState(false)
+  const { dirty, setBaseline } = useDirty(config)
 
   const carregar = useCallback(async () => {
     setCarregando(true)
     try {
-      setConfig(await whatsappApi.obter())
+      const atual = await whatsappApi.obter()
+      setConfig(atual)
+      setBaseline(atual)
     } catch (err) {
       const e = err as { erro?: string }
       setErro(e?.erro ?? 'Falha ao carregar configuração')
     } finally {
       setCarregando(false)
     }
-  }, [])
+  }, [setBaseline])
 
   useEffect(() => { void carregar() }, [carregar])
 
@@ -70,6 +74,7 @@ export default function ConfiguracoesWhatsappPage() {
         horarioEnvioLembrete: config.horarioEnvioLembrete,
       })
       setConfig(atualizada)
+      setBaseline(atualizada)
       setSucesso(true)
     } catch (err) {
       const e = err as { erro?: string; detalhes?: Record<string, string> }
@@ -238,7 +243,7 @@ export default function ConfiguracoesWhatsappPage() {
       </Paper>
 
       <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-        <Button variant="contained" onClick={() => void salvar()} disabled={salvando}>
+        <Button variant="contained" onClick={() => void salvar()} disabled={salvando || !dirty}>
           {salvando ? 'Salvando…' : 'Salvar'}
         </Button>
       </Box>
@@ -247,8 +252,12 @@ export default function ConfiguracoesWhatsappPage() {
         open={sucesso}
         autoHideDuration={3000}
         onClose={() => setSucesso(false)}
-        message="Configuração salva"
-      />
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="success" variant="filled" sx={{ width: '100%' }}>
+          Configuração salva com sucesso
+        </Alert>
+      </Snackbar>
     </Stack>
   )
 }

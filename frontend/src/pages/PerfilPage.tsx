@@ -8,6 +8,7 @@ import LockIcon from '@mui/icons-material/LockOutlined'
 import { perfilApi, type AtualizarPerfilInput, type PerfilCompleto } from '../api/perfil'
 import EnderecoForm, { type EnderecoFormValor } from '../components/EnderecoForm'
 import { useAuth } from '../auth/authContext'
+import { useDirty } from '../hooks/useDirty'
 
 function iniciais(nome: string): string {
   return nome
@@ -54,17 +55,20 @@ export default function PerfilPage() {
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [salvoEm, setSalvoEm] = useState<number | null>(null)
+  const { dirty, setBaseline } = useDirty(form)
 
   const carregar = useCallback(async () => {
     const p = await perfilApi.buscar()
     setPerfil(p)
-    setForm({
+    const inicial: AtualizarPerfilInput = {
       nomeCompleto: p.nomeCompleto,
       crp: p.crp,
       telefone: p.telefone,
       endereco: { ...p.endereco, complemento: p.endereco.complemento ?? '' },
-    })
-  }, [])
+    }
+    setForm(inicial)
+    setBaseline(inicial)
+  }, [setBaseline])
 
   useEffect(() => { carregar() }, [carregar])
 
@@ -89,6 +93,8 @@ export default function PerfilPage() {
         crp: atualizado.crp,
         telefone: atualizado.telefone,
       })
+      // Baseline vira o estado pós-save → botão desabilita até a próxima edição
+      setBaseline(form)
       setSalvoEm(Date.now())
     } catch (err) {
       const e = err as { erro?: string; detalhes?: Record<string, string> }
@@ -247,7 +253,7 @@ export default function PerfilPage() {
               type="submit"
               variant="contained"
               size="large"
-              disabled={enviando}
+              disabled={enviando || !dirty}
               sx={{ borderRadius: 2, px: 4 }}
             >
               {enviando ? 'Salvando…' : 'Salvar alterações'}

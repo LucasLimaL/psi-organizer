@@ -4,7 +4,7 @@ import {
   Stack, Box, Typography, Button, TextField, Chip,
   Table, TableHead, TableRow, TableCell, TableBody, IconButton, Dialog,
   DialogTitle, DialogContent, Paper, ButtonBase, Avatar, useMediaQuery,
-  InputAdornment, Tooltip,
+  InputAdornment, Tooltip, Snackbar, Alert,
 } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined'
@@ -42,6 +42,7 @@ export default function PacientesPage() {
   const [busca, setBusca] = useState('')
   const [criando, setCriando] = useState(false)
   const [pacienteParaInativar, setPacienteParaInativar] = useState<Paciente | null>(null)
+  const [mensagemSucesso, setMensagemSucesso] = useState<string | null>(null)
 
   const carregar = useCallback(async () => {
     const lista = await pacientesApi.listar(incluirInativos)
@@ -67,17 +68,21 @@ export default function PacientesPage() {
     await pacientesApi.criar(p)
     setCriando(false)
     await carregar()
+    setMensagemSucesso('Paciente criado com sucesso')
   }
 
   async function confirmarInativar() {
     if (!pacienteParaInativar) return
+    const nome = pacienteParaInativar.nome
     await pacientesApi.inativar(pacienteParaInativar.id)
     await carregar()
+    setMensagemSucesso(`${nome} inativada`)
   }
 
   async function reativar(p: Paciente) {
     await pacientesApi.reativar(p.id)
     await carregar()
+    setMensagemSucesso(`${p.nome} reativada`)
   }
 
   const totalAtivos = pacientes.filter(p => p.ativo).length
@@ -361,6 +366,17 @@ export default function PacientesPage() {
         onFechar={() => setPacienteParaInativar(null)}
         onConfirmar={confirmarInativar}
       />
+
+      <Snackbar
+        open={mensagemSucesso !== null}
+        autoHideDuration={3000}
+        onClose={() => setMensagemSucesso(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="success" variant="filled" sx={{ width: '100%' }}>
+          {mensagemSucesso}
+        </Alert>
+      </Snackbar>
     </Stack>
   )
 }

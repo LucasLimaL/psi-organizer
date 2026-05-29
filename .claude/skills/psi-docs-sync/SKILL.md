@@ -1,7 +1,7 @@
 ---
 name: psi-docs-sync
-description: Identifica quais documentos do psi-organizer precisam de atualização após uma PR mergeada (SPEC §11 checklist, API.md, BUSINESS_RULES.md, design/README.md histórico, ARCHITECTURE.md se aplicável). Propõe diffs e pergunta arquivo por arquivo. Use sempre depois de mergear uma feature visível.
-disable-model-invocation: true
+description: Identifica gaps de documentação após uma PR mergeada (SPEC §11, API.md, BUSINESS_RULES.md, design/README.md, ARCHITECTURE.md) e propõe diffs específicos arquivo por arquivo, com aprovação um a um.
+when_to_use: Invocar logo após mergear uma PR de feature visível, ou quando o usuário pedir "atualiza os docs", "sincroniza documentação", "que docs precisam mudar?", "doc sync da #N". NÃO invocar para PRs puramente refactor sem efeito externo.
 argument-hint: <pr_numero>
 ---
 

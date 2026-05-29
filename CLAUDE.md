@@ -105,6 +105,4 @@ Skills project-level automatizam fluxos repetidos do projeto. Invoque com `/<nom
 | [`/psi-docs-sync`](.claude/skills/psi-docs-sync/SKILL.md) `<pr>` | Depois de mergear feature — identifica gaps de doc e propõe diffs |
 | [`/trade-off-analysis`](.claude/skills/trade-off-analysis/SKILL.md) | Decisão arquitetural com 2-4 opções — produz mini-ADR opinado |
 
-**Recomendação**: começar toda sessão com `/psi-estado`.
-
-Todas marcadas com `disable-model-invocation: true` — só rodam quando você digita `/<nome>`, nunca automaticamente.
+**Auto-invocação ativa.** O Claude decide sozinho quando carregar cada skill com base no que você pedir (ex: "mergeia o #12" dispara `psi-pr-merge-seguro`; "adiciona GET /pacientes/X" dispara `psi-novo-endpoint`). Você pode forçar manual com `/<nome>`. Se o auto-trigger virar incômodo (carregando demais ou de menos), me avise — calibra-se via `when_to_use` no SKILL.md.

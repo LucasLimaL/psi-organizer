@@ -92,3 +92,17 @@ Quando o banco está vazio e o profile **não** é `prod`, `SeedDataRunner` inse
 | [docs/design/](docs/design/) | Design system: audit, roadmap, componentes |
 
 Antes de qualquer mudança não-trivial, **leia o doc relevante** — eles refletem decisões já fechadas que não devem ser revertidas sem discussão.
+
+## Skills custom (`.claude/skills/`)
+
+Skills project-level automatizam fluxos repetidos do projeto. Invoque com `/<nome>`:
+
+| Skill | Quando usar |
+|---|---|
+| [`psi_estado`](.claude/skills/psi_estado/SKILL.md) | Início de sessão — carrega contexto rápido (~200 palavras) |
+| [`psi_pr_merge_seguro`](.claude/skills/psi_pr_merge_seguro/SKILL.md) `<numero>` | Mergear PR seguindo o protocolo (multi-tenant check + stack management + rebase + force-push) |
+| [`psi_novo_endpoint`](.claude/skills/psi_novo_endpoint/SKILL.md) | Adicionar endpoint REST cumprindo todos os 12 passos do padrão |
+| [`psi_docs_sync`](.claude/skills/psi_docs_sync/SKILL.md) `<pr>` | Depois de mergear feature — identifica gaps de doc e propõe diffs |
+| [`trade_off_analysis`](.claude/skills/trade_off_analysis/SKILL.md) | Decisão arquitetural com 2-4 opções — produz mini-ADR opinado |
+
+**Recomendação**: começar toda sessão com `/psi_estado`.

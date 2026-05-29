@@ -1,7 +1,7 @@
 ---
 name: psi-novo-endpoint
-description: Cria um novo endpoint REST no psi-organizer seguindo TODAS as convenções (MVC strict, multi-tenant filter, @Operation pt-BR, ApiException, DTO só no Controller, cliente tipado no frontend, linha em docs/API.md). Use quando precisar adicionar `GET/POST/PUT/DELETE` em qualquer feature.
-disable-model-invocation: true
+description: Cria endpoint REST no psi-organizer seguindo as 12 etapas do padrão — DTO Request/Response, service com `@Transactional` + multi-tenant filter, Controller com `@Operation` pt-BR, cliente tipado em `api/`, linha em `docs/API.md`, sugestão de update em BUSINESS_RULES se houver regra nova.
+when_to_use: Invocar quando o usuário pedir um endpoint novo ou mudança de contrato em existente — exemplos "adiciona GET /pacientes/X", "cria um POST que retorne Y", "preciso de uma rota pra Z", "endpoint pra listar W". NÃO invocar para refactor interno sem mudança de contrato externo, ou para discussão de design ainda em aberto.
 argument-hint: <feature> <metodo> <path> "<summary>"
 ---
 

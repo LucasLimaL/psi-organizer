@@ -1,7 +1,7 @@
 ---
 name: trade-off-analysis
-description: Força apresentação explícita de trade-offs antes de recomendar uma decisão arquitetural ou de produto. Útil quando há 2-4 opções viáveis e o usuário pede "o que acha?". Produz tabela de prós/contras/quando-usar/custo-de-migrar + recomendação opinada com critério.
-disable-model-invocation: true
+description: Produz mini-ADR estruturado para decisões arquiteturais com 2-4 opções viáveis — tabela prós/contras/quando-usar/custo-de-migrar por opção + recomendação opinada com critério explícito + seção "se a recomendação estiver errada o que indicaria".
+when_to_use: Invocar quando o usuário pedir opinião em decisão arquitetural ou de produto com efeito de longo prazo — exemplos "o que acha?", "prós e contras de X vs Y?", "qual abordagem é melhor pra Z?", ou estiver claramente em dúvida entre alternativas viáveis. NÃO invocar para decisão trivial, reversível sem custo (nomes, ordem de campos), ou quando a resposta é objetivamente conhecida.
 ---
 
 # trade_off_analysis

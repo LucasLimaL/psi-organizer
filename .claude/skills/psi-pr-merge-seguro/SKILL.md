@@ -1,6 +1,8 @@
 ---
-name: psi_pr_merge_seguro
+name: psi-pr-merge-seguro
 description: Mergea uma PR do psi-organizer seguindo o protocolo correto (multi-tenant check, dança de PRs empilhadas, squash+delete, rebase de stack, force-push-with-lease). Use sempre que precisar mergear uma PR — não use `gh pr merge` direto.
+disable-model-invocation: true
+argument-hint: <pr_numero> [proxima_pr]
 ---
 
 # psi_pr_merge_seguro

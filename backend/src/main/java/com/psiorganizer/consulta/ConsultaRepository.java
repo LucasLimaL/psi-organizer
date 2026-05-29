@@ -59,4 +59,14 @@ public interface ConsultaRepository extends JpaRepository<Consulta, UUID> {
     List<Consulta> proximasConsultas(@Param("psicologaId") UUID psicologaId,
                                      @Param("agora") Instant agora,
                                      org.springframework.data.domain.Pageable pageable);
+
+    @Query("""
+            select count(c) from Consulta c
+            where c.psicologaId = :psicologaId
+              and c.inicio > :agora
+              and c.status in (com.psiorganizer.consulta.StatusConsulta.AGENDADA,
+                               com.psiorganizer.consulta.StatusConsulta.CONFIRMADA)
+            """)
+    long contarFuturasAgendadas(@Param("psicologaId") UUID psicologaId,
+                                @Param("agora") Instant agora);
 }

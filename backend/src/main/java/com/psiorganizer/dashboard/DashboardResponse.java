@@ -9,18 +9,17 @@ import java.util.UUID;
 import com.psiorganizer.consulta.StatusConsulta;
 
 /**
- * Métricas agregadas para a tela inicial. Tudo em uma única chamada
- * pra evitar N round-trips do frontend.
- *
- * Filosofia: informacional, não performativo. Sem comparativos vs
- * mês anterior, sem incentivos a "crescer". O dashboard ajuda a
- * planejar o dia/mês, não a empurrar produtividade.
+ * Métricas agregadas para os widgets do dashboard.
+ * Frontend escolhe quais widgets ativar — backend retorna tudo
+ * e quem decide o que mostrar é o usuário.
  */
 public record DashboardResponse(
         HojeStats hoje,
         MesStats mes,
+        ComparativoStats comparativo,
         List<DiaStats> proximos7Dias,
         PacientesStats pacientes,
+        long consultasFuturasAgendadas,
         List<ProximaConsulta> proximasConsultas) {
 
     public record HojeStats(
@@ -38,11 +37,17 @@ public record DashboardResponse(
             int faltas,
             BigDecimal faturamentoRealizado,
             BigDecimal faturamentoPago,
-            BigDecimal faturamentoPendente) {}
+            BigDecimal faturamentoPendente,
+            /** null se ainda não houve consulta com status REALIZADA ou FALTA. */
+            Double taxaComparecimento) {}
+
+    public record ComparativoStats(
+            int consultasMesAnterior,
+            BigDecimal faturamentoMesAnterior) {}
 
     public record DiaStats(LocalDate dia, int total) {}
 
-    public record PacientesStats(int ativos) {}
+    public record PacientesStats(int ativos, int novosNoMes) {}
 
     public record ProximaConsulta(
             UUID id,

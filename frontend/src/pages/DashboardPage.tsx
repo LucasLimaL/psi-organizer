@@ -1,19 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Stack, Box, Paper, Typography, Button, Grid, Skeleton, Chip,
-  IconButton, ButtonBase, Avatar, Tooltip,
+  Stack, Box, Typography, Button, Skeleton, Tooltip, IconButton,
 } from '@mui/material'
-import { alpha, useTheme } from '@mui/material/styles'
 import EventNoteIcon from '@mui/icons-material/EventNote'
-import EventAvailableIcon from '@mui/icons-material/EventAvailable'
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
-import PeopleOutlineIcon from '@mui/icons-material/PeopleOutlined'
 import AddIcon from '@mui/icons-material/Add'
-import ChevronRightIcon from '@mui/icons-material/ChevronRight'
+import TuneIcon from '@mui/icons-material/Tune'
 import { dashboardApi, type DashboardData } from '../api/dashboard'
 import { useAuth } from '../auth/authContext'
-import { formatarHora } from '../utils/datas'
+import DashboardGrid from '../dashboard/DashboardGrid'
+import WidgetSettings from '../dashboard/WidgetSettings'
+import { WIDGETS } from '../dashboard/widgets'
+import { PREF_STORAGE_KEY, type DashboardPreferencias, type WidgetId } from '../dashboard/types'
 
 function saudacao(): string {
   const h = new Date().getHours()
@@ -30,26 +28,39 @@ function dataLonga(): string {
   })
 }
 
-function brl(v: number): string {
-  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+function carregarPreferencias(): DashboardPreferencias {
+  const padrao: DashboardPreferencias = {
+    ativos: WIDGETS.filter(w => w.defaultAtivo).map(w => w.id),
+    ordem: WIDGETS.filter(w => w.defaultAtivo).map(w => w.id),
+  }
+  try {
+    const raw = localStorage.getItem(PREF_STORAGE_KEY)
+    if (!raw) return padrao
+    const parsed = JSON.parse(raw) as DashboardPreferencias
+    // Higieniza: remove widgets que não existem mais; adiciona novos defaultAtivos
+    const idsValidos = new Set(WIDGETS.map(w => w.id))
+    const ativos = parsed.ativos.filter(id => idsValidos.has(id))
+    const ordem = parsed.ordem.filter(id => ativos.includes(id))
+    // Garante que ativos sem posição venham ao fim
+    for (const id of ativos) {
+      if (!ordem.includes(id)) ordem.push(id)
+    }
+    return { ativos, ordem }
+  } catch {
+    return padrao
+  }
 }
 
-function iniciais(nome: string): string {
-  return nome
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(s => s[0]?.toUpperCase() ?? '')
-    .join('')
+function salvarPreferencias(prefs: DashboardPreferencias) {
+  localStorage.setItem(PREF_STORAGE_KEY, JSON.stringify(prefs))
 }
-
-const DIAS_CURTO = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
 
 export default function DashboardPage() {
-  const theme = useTheme()
   const navigate = useNavigate()
   const { psicologa } = useAuth()
   const [dados, setDados] = useState<DashboardData | null>(null)
+  const [prefs, setPrefs] = useState<DashboardPreferencias>(() => carregarPreferencias())
+  const [settingsAberto, setSettingsAberto] = useState(false)
 
   const carregar = useCallback(async () => {
     const d = await dashboardApi.get()
@@ -58,31 +69,38 @@ export default function DashboardPage() {
 
   useEffect(() => { carregar() }, [carregar])
 
-  const status = theme.palette.statusConsulta
+  useEffect(() => {
+    salvarPreferencias(prefs)
+  }, [prefs])
 
-  const maxProximos7 = useMemo(() => {
-    if (!dados) return 1
-    return Math.max(1, ...dados.proximos7Dias.map(d => d.total))
-  }, [dados])
-
-  if (!dados) {
-    return (
-      <Stack spacing={2}>
-        <Skeleton variant="text" width={300} height={48} />
-        <Skeleton variant="text" width={220} />
-        <Grid container spacing={2}>
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
-              <Skeleton variant="rounded" height={140} />
-            </Grid>
-          ))}
-        </Grid>
-        <Skeleton variant="rounded" height={240} />
-      </Stack>
-    )
+  function onReorder(novaOrdem: WidgetId[]) {
+    setPrefs(p => ({ ...p, ordem: novaOrdem }))
   }
 
-  const primeiroNome = psicologa?.nomeCompleto.split(' ')[0] ?? ''
+  function onToggleWidget(id: WidgetId) {
+    setPrefs(p => {
+      const ativos = p.ativos.includes(id)
+        ? p.ativos.filter(x => x !== id)
+        : [...p.ativos, id]
+      const ordem = p.ordem.includes(id)
+        ? p.ordem.filter(x => ativos.includes(x))
+        : [...p.ordem, id]
+      return { ativos, ordem }
+    })
+  }
+
+  function onResetar() {
+    const padrao: DashboardPreferencias = {
+      ativos: WIDGETS.filter(w => w.defaultAtivo).map(w => w.id),
+      ordem: WIDGETS.filter(w => w.defaultAtivo).map(w => w.id),
+    }
+    setPrefs(padrao)
+  }
+
+  const primeiroNome = useMemo(
+    () => psicologa?.nomeCompleto.split(' ')[0] ?? '',
+    [psicologa],
+  )
 
   return (
     <Stack spacing={3}>
@@ -101,6 +119,15 @@ export default function DashboardPage() {
           </Typography>
         </Box>
         <Stack direction="row" spacing={1}>
+          <Tooltip title="Configurar widgets">
+            <IconButton
+              onClick={() => setSettingsAberto(true)}
+              sx={{ borderRadius: 2, border: theme => `1px solid ${theme.palette.divider}` }}
+              aria-label="Configurar widgets"
+            >
+              <TuneIcon />
+            </IconButton>
+          </Tooltip>
           <Button
             variant="outlined"
             startIcon={<EventNoteIcon />}
@@ -120,347 +147,46 @@ export default function DashboardPage() {
         </Stack>
       </Stack>
 
-      {/* 3 stat cards informativos — sem comparativos */}
-      <Grid container spacing={2}>
-        <StatCard
-          icon={<EventAvailableIcon />}
-          corIcone="primary.main"
-          fundoIcone={alpha(theme.palette.primary.main, 0.1)}
-          titulo="Hoje"
-          valor={dados.hoje.total}
-          legenda={dados.hoje.total === 1 ? 'consulta' : 'consultas'}
-          extra={
-            dados.hoje.total > 0 ? (
-              <Stack direction="row" spacing={0.75} sx={{ flexWrap: 'wrap', rowGap: 0.5 }}>
-                {dados.hoje.agendadas > 0 && (
-                  <Chip size="small" label={`${dados.hoje.agendadas} agendada${dados.hoje.agendadas === 1 ? '' : 's'}`}
-                        sx={{ height: 22, bgcolor: status.agendada.bg, color: status.agendada.fg }} />
-                )}
-                {dados.hoje.confirmadas > 0 && (
-                  <Chip size="small" label={`${dados.hoje.confirmadas} confirmada${dados.hoje.confirmadas === 1 ? '' : 's'}`}
-                        sx={{ height: 22, bgcolor: status.confirmada.bg, color: status.confirmada.fg }} />
-                )}
-                {dados.hoje.realizadas > 0 && (
-                  <Chip size="small" label={`${dados.hoje.realizadas} realizada${dados.hoje.realizadas === 1 ? '' : 's'}`}
-                        sx={{ height: 22, bgcolor: status.realizada.bg, color: status.realizada.fg }} />
-                )}
-                {dados.hoje.faltas > 0 && (
-                  <Chip size="small" label={`${dados.hoje.faltas} falta${dados.hoje.faltas === 1 ? '' : 's'}`}
-                        sx={{
-                          height: 22,
-                          bgcolor: status.falta.bg,
-                          color: status.falta.fg,
-                          border: `1px solid ${status.falta.border}`,
-                        }} />
-                )}
-              </Stack>
-            ) : (
-              <Typography variant="caption" color="text.secondary">
-                Nenhum atendimento marcado
-              </Typography>
-            )
-          }
-        />
+      {/* Grid de widgets */}
+      {!dados ? (
+        <Box sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',
+            sm: 'repeat(2, 1fr)',
+            md: 'repeat(3, 1fr)',
+            lg: 'repeat(4, 1fr)',
+          },
+          gap: 2,
+        }}>
+          {Array.from({ length: prefs.ordem.length || 6 }).map((_, i) => (
+            <Skeleton key={i} variant="rounded" height={200} />
+          ))}
+        </Box>
+      ) : prefs.ordem.length === 0 ? (
+        <Box sx={{
+          p: 4, textAlign: 'center',
+          border: theme => `1px dashed ${theme.palette.divider}`,
+          borderRadius: 3,
+        }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Nenhum widget selecionado.
+          </Typography>
+          <Button variant="contained" startIcon={<TuneIcon />} onClick={() => setSettingsAberto(true)}>
+            Escolher widgets
+          </Button>
+        </Box>
+      ) : (
+        <DashboardGrid dados={dados} ordem={prefs.ordem} onReorder={onReorder} />
+      )}
 
-        <StatCard
-          icon={<EventNoteIcon />}
-          corIcone="info.main"
-          fundoIcone={alpha(theme.palette.info.main, 0.1)}
-          titulo="Este mês"
-          valor={dados.mes.total}
-          legenda={dados.mes.total === 1 ? 'consulta' : 'consultas'}
-          extra={
-            dados.mes.total > 0 ? (
-              <Typography variant="caption" color="text.secondary">
-                {dados.mes.realizadas} realizada{dados.mes.realizadas === 1 ? '' : 's'} ·{' '}
-                {dados.mes.agendadas + dados.mes.confirmadas} próxima{dados.mes.agendadas + dados.mes.confirmadas === 1 ? '' : 's'}
-              </Typography>
-            ) : null
-          }
-        />
-
-        <StatCard
-          icon={<AttachMoneyIcon />}
-          corIcone="primary.main"
-          fundoIcone={alpha(theme.palette.primary.main, 0.1)}
-          titulo="Recebido no mês"
-          valor={brl(dados.mes.faturamentoPago)}
-          valorTipo="texto"
-          extra={
-            dados.mes.faturamentoPendente > 0 ? (
-              <Typography variant="caption" color="text.secondary">
-                {brl(dados.mes.faturamentoPendente)} a receber
-              </Typography>
-            ) : dados.mes.faturamentoRealizado > 0 ? (
-              <Typography variant="caption" color="text.secondary">
-                Tudo em dia
-              </Typography>
-            ) : null
-          }
-        />
-      </Grid>
-
-      {/* Linha 2: Próximas consultas + chart 7 dias */}
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 7 }}>
-          <Paper variant="outlined" sx={{
-            p: 2.5, boxShadow: 'none',
-            border: `1px solid ${theme.palette.divider}`, height: '100%',
-          }}>
-            <Stack direction="row" sx={{ alignItems: 'center', mb: 2 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600, flexGrow: 1 }}>
-                Próximas consultas
-              </Typography>
-              <Button
-                size="small"
-                endIcon={<ChevronRightIcon />}
-                onClick={() => navigate('/agenda')}
-              >
-                Ver agenda
-              </Button>
-            </Stack>
-            {dados.proximasConsultas.length === 0 ? (
-              <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
-                Nenhuma consulta agendada nos próximos dias.
-              </Typography>
-            ) : (
-              <Stack spacing={1}>
-                {dados.proximasConsultas.map(c => {
-                  const d = new Date(c.inicio)
-                  const ehHoje = d.toDateString() === new Date().toDateString()
-                  const cor = status[c.status.toLowerCase() as keyof typeof status]
-                  return (
-                    <ButtonBase
-                      key={c.id}
-                      onClick={() => navigate('/agenda')}
-                      sx={{
-                        width: '100%',
-                        p: 1.25,
-                        borderRadius: 2,
-                        border: `1px solid ${theme.palette.divider}`,
-                        borderLeft: `4px solid ${cor.bg}`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1.5,
-                        textAlign: 'left',
-                        bgcolor: 'background.paper',
-                        transition: theme.transitions.create(['background-color', 'box-shadow'], {
-                          duration: theme.transitions.duration.short,
-                        }),
-                        '&:hover': {
-                          bgcolor: alpha(theme.palette.primary.main, 0.04),
-                          boxShadow: theme.shadows[1],
-                        },
-                      }}
-                    >
-                      <Avatar sx={{
-                        width: 36, height: 36, fontSize: 13, fontWeight: 600,
-                        bgcolor: alpha(theme.palette.primary.main, 0.12),
-                        color: 'primary.main',
-                        flexShrink: 0,
-                      }}>
-                        {iniciais(c.pacienteNome)}
-                      </Avatar>
-                      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                        <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
-                          {c.pacienteNome}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary"
-                                    sx={{ fontVariantNumeric: 'tabular-nums' }}>
-                          {ehHoje
-                            ? `Hoje, ${formatarHora(d)}`
-                            : d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })
-                              + ', ' + formatarHora(d)}
-                          {' · '}{c.duracaoMinutos}min
-                        </Typography>
-                      </Box>
-                      <Chip
-                        size="small"
-                        label={c.status.toLowerCase()}
-                        sx={{
-                          height: 22,
-                          textTransform: 'capitalize',
-                          bgcolor: cor.bg, color: cor.fg,
-                          fontWeight: 600,
-                        }}
-                      />
-                    </ButtonBase>
-                  )
-                })}
-              </Stack>
-            )}
-          </Paper>
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 5 }}>
-          <Paper variant="outlined" sx={{
-            p: 2.5, boxShadow: 'none',
-            border: `1px solid ${theme.palette.divider}`, height: '100%',
-          }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
-              Próximos 7 dias
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-              Distribuição da semana
-            </Typography>
-            <Box sx={{
-              display: 'flex',
-              alignItems: 'flex-end',
-              justifyContent: 'space-between',
-              height: 140,
-              gap: 0.5,
-            }}>
-              {dados.proximos7Dias.map((d, i) => {
-                const date = new Date(d.dia + 'T00:00:00')
-                const ehHoje = i === 0
-                const altura = (d.total / maxProximos7) * 100
-                return (
-                  <Tooltip
-                    key={d.dia}
-                    title={`${d.total} consulta${d.total === 1 ? '' : 's'}`}
-                    placement="top"
-                  >
-                    <Stack sx={{
-                      flex: 1, alignItems: 'center',
-                      height: '100%',
-                      justifyContent: 'flex-end',
-                      gap: 0.5,
-                    }}>
-                      <Typography variant="caption" sx={{
-                        fontVariantNumeric: 'tabular-nums', fontWeight: 600, fontSize: 10,
-                        color: d.total > 0 ? 'text.primary' : 'text.disabled',
-                        height: 14,
-                      }}>
-                        {d.total > 0 ? d.total : ''}
-                      </Typography>
-                      <Box sx={{
-                        width: '100%',
-                        height: `${Math.max(altura, d.total > 0 ? 8 : 4)}%`,
-                        minHeight: 4,
-                        bgcolor: ehHoje
-                          ? 'primary.main'
-                          : alpha(theme.palette.primary.main, 0.4),
-                        borderRadius: 1,
-                        transition: theme.transitions.create('background-color', {
-                          duration: theme.transitions.duration.short,
-                        }),
-                      }} />
-                      <Typography variant="caption" sx={{
-                        fontWeight: ehHoje ? 700 : 500,
-                        color: ehHoje ? 'primary.main' : 'text.secondary',
-                        fontSize: 10,
-                      }}>
-                        {DIAS_CURTO[date.getDay()]}
-                      </Typography>
-                      <Typography variant="caption" sx={{
-                        color: ehHoje ? 'primary.main' : 'text.disabled',
-                        fontSize: 9,
-                        fontVariantNumeric: 'tabular-nums',
-                      }}>
-                        {date.getDate()}
-                      </Typography>
-                    </Stack>
-                  </Tooltip>
-                )
-              })}
-            </Box>
-          </Paper>
-        </Grid>
-      </Grid>
-
-      {/* Linha 3: Pacientes */}
-      <Paper variant="outlined" sx={{
-        p: 2.5, boxShadow: 'none',
-        border: `1px solid ${theme.palette.divider}`,
-      }}>
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={2}
-          sx={{ alignItems: { xs: 'flex-start', sm: 'center' } }}
-        >
-          <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', flexGrow: 1 }}>
-            <Box sx={{
-              width: 44, height: 44, borderRadius: 2,
-              bgcolor: alpha(theme.palette.primary.main, 0.1),
-              color: 'primary.main',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <PeopleOutlineIcon />
-            </Box>
-            <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                {dados.pacientes.ativos} paciente{dados.pacientes.ativos === 1 ? '' : 's'} ativo{dados.pacientes.ativos === 1 ? '' : 's'}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Toque pra ver a lista completa
-              </Typography>
-            </Box>
-          </Stack>
-          <IconButton onClick={() => navigate('/pacientes')} aria-label="Ver pacientes">
-            <ChevronRightIcon />
-          </IconButton>
-        </Stack>
-      </Paper>
+      <WidgetSettings
+        aberto={settingsAberto}
+        ativos={prefs.ativos}
+        onFechar={() => setSettingsAberto(false)}
+        onToggle={onToggleWidget}
+        onResetar={onResetar}
+      />
     </Stack>
-  )
-}
-
-// ────────────────────────────────────────────────────────────
-// Sub-componentes
-// ────────────────────────────────────────────────────────────
-
-type StatCardProps = {
-  icon: React.ReactNode
-  corIcone: string
-  fundoIcone: string
-  titulo: string
-  valor: string | number
-  legenda?: string
-  valorTipo?: 'numero' | 'texto'
-  extra?: React.ReactNode
-}
-
-function StatCard({ icon, corIcone, fundoIcone, titulo, valor, legenda, valorTipo = 'numero', extra }: StatCardProps) {
-  const theme = useTheme()
-  return (
-    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-      <Paper variant="outlined" sx={{
-        p: 2.5, boxShadow: 'none',
-        border: `1px solid ${theme.palette.divider}`, height: '100%',
-      }}>
-        <Stack spacing={1.5}>
-          <Box sx={{
-            width: 36, height: 36, borderRadius: 2,
-            bgcolor: fundoIcone, color: corIcone,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            {icon}
-          </Box>
-          <Box>
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
-              {titulo}
-            </Typography>
-            <Stack direction="row" spacing={0.75} sx={{ alignItems: 'baseline' }}>
-              <Typography
-                variant={valorTipo === 'texto' ? 'h5' : 'h4'}
-                sx={{
-                  fontWeight: 700,
-                  fontVariantNumeric: 'tabular-nums',
-                  lineHeight: 1.1,
-                }}
-              >
-                {valor}
-              </Typography>
-              {legenda && (
-                <Typography variant="body2" color="text.secondary">
-                  {legenda}
-                </Typography>
-              )}
-            </Stack>
-          </Box>
-          {extra}
-        </Stack>
-      </Paper>
-    </Grid>
   )
 }

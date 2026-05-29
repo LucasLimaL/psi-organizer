@@ -37,6 +37,7 @@ public class DashboardService {
 
     @Transactional(readOnly = true)
     public DashboardResponse calcular(UUID psicologaId) {
+        Instant agora = Instant.now();
         LocalDate hoje = LocalDate.now(ZONA);
         Instant hojeIni = hoje.atStartOfDay(ZONA).toInstant();
         Instant hojeFim = hoje.plusDays(1).atStartOfDay(ZONA).toInstant();
@@ -45,27 +46,34 @@ public class DashboardService {
         Instant mesAtualIni = mesAtual.atDay(1).atStartOfDay(ZONA).toInstant();
         Instant mesAtualFim = mesAtual.plusMonths(1).atDay(1).atStartOfDay(ZONA).toInstant();
 
+        YearMonth mesAnterior = mesAtual.minusMonths(1);
+        Instant mesAntIni = mesAnterior.atDay(1).atStartOfDay(ZONA).toInstant();
+        Instant mesAntFim = mesAtualIni;
+
         Instant proxima7Fim = hoje.plusDays(7).atStartOfDay(ZONA).toInstant();
-        Instant janelaInicio = mesAtualIni.isBefore(hojeIni) ? mesAtualIni : hojeIni;
 
-        // Carrega tudo do início do mês até daqui a 7 dias — uma query só.
-        List<Consulta> janela = consultaRepository.listarIntervalo(psicologaId, janelaInicio, proxima7Fim);
+        // Carrega tudo do mês anterior até daqui a 7 dias — uma query só.
+        List<Consulta> janela = consultaRepository.listarIntervalo(psicologaId, mesAntIni, proxima7Fim);
 
-        // Próximas consultas (limitadas)
         List<Consulta> proximas = consultaRepository.proximasConsultas(
-                psicologaId, Instant.now(), PageRequest.of(0, 5));
+                psicologaId, agora, PageRequest.of(0, 5));
         Map<UUID, String> nomes = nomesDePacientes(
                 proximas.stream().map(Consulta::getPacienteId).distinct().toList());
 
         var hojeStats = calcularHoje(janela, hojeIni, hojeFim);
         var mesStats = calcularMes(janela, mesAtualIni, mesAtualFim);
+        var comp = calcularComparativo(janela, mesAntIni, mesAntFim);
         var dias7 = calcularProximos7Dias(janela, hoje);
 
         int ativos = pacienteRepository.countByPsicologaIdAndAtivo(psicologaId, true);
+        int novosNoMes = pacienteRepository.countByPsicologaIdAndCriadoEmGreaterThanEqual(
+                psicologaId, mesAtualIni);
+        long futuras = consultaRepository.contarFuturasAgendadas(psicologaId, agora);
 
         return new DashboardResponse(
-                hojeStats, mesStats, dias7,
-                new DashboardResponse.PacientesStats(ativos),
+                hojeStats, mesStats, comp, dias7,
+                new DashboardResponse.PacientesStats(ativos, novosNoMes),
+                futuras,
                 proximas.stream()
                         .map(c -> new DashboardResponse.ProximaConsulta(
                                 c.getId(), c.getInicio(), c.getDuracaoMinutos(),
@@ -100,9 +108,22 @@ public class DashboardService {
         BigDecimal faturamentoPendente = somarValores(mes,
                 c -> c.getStatus() == StatusConsulta.REALIZADA && !c.isPago());
 
+        Double taxa = (realizadas + faltas) == 0
+                ? null
+                : (double) realizadas / (realizadas + faltas);
+
         return new DashboardResponse.MesStats(
                 mes.size(), agendadas, confirmadas, realizadas, faltas,
-                faturamentoRealizado, faturamentoPago, faturamentoPendente);
+                faturamentoRealizado, faturamentoPago, faturamentoPendente, taxa);
+    }
+
+    private DashboardResponse.ComparativoStats calcularComparativo(List<Consulta> janela,
+                                                                   Instant ini, Instant fim) {
+        List<Consulta> mes = janela.stream()
+                .filter(c -> !c.getInicio().isBefore(ini) && c.getInicio().isBefore(fim))
+                .toList();
+        BigDecimal faturamento = somarValores(mes, c -> c.getStatus() == StatusConsulta.REALIZADA);
+        return new DashboardResponse.ComparativoStats(mes.size(), faturamento);
     }
 
     private List<DashboardResponse.DiaStats> calcularProximos7Dias(List<Consulta> janela, LocalDate hoje) {

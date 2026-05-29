@@ -2,12 +2,13 @@ import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import {
   Stack, TextField, Button, Link, Alert, Grid, Typography, Divider,
-  InputAdornment, IconButton,
+  InputAdornment, IconButton, CircularProgress,
 } from '@mui/material'
 import VisibilityIcon from '@mui/icons-material/VisibilityOutlined'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOffOutlined'
 import { useAuth } from '../auth/authContext'
 import AuthShell from '../components/AuthShell'
+import { useAutofillCep } from '../hooks/useAutofillCep'
 
 type Form = {
   nomeCompleto: string
@@ -68,6 +69,19 @@ export default function SignupPage() {
   function setEnd<K extends keyof Form['endereco']>(k: K, v: string) {
     setForm(f => ({ ...f, endereco: { ...f.endereco, [k]: v } }))
   }
+
+  const buscandoCep = useAutofillCep(form.endereco.cep, end => {
+    setForm(f => ({
+      ...f,
+      endereco: {
+        ...f.endereco,
+        logradouro: end.logradouro || f.endereco.logradouro,
+        bairro: end.bairro || f.endereco.bairro,
+        cidade: end.cidade || f.endereco.cidade,
+        uf: end.uf || f.endereco.uf,
+      },
+    }))
+  })
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
@@ -165,10 +179,22 @@ export default function SignupPage() {
         <Secao titulo="Endereço do consultório">
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField fullWidth label="CEP" required
-                         autoComplete="postal-code"
-                         value={form.endereco.cep}
-                         onChange={e => setEnd('cep', e.target.value)} />
+              <TextField
+                fullWidth label="CEP" required
+                autoComplete="postal-code"
+                helperText="Preenche endereço automaticamente"
+                value={form.endereco.cep}
+                onChange={e => setEnd('cep', e.target.value)}
+                slotProps={{
+                  input: {
+                    endAdornment: buscandoCep ? (
+                      <InputAdornment position="end">
+                        <CircularProgress size={16} aria-label="Buscando CEP" />
+                      </InputAdornment>
+                    ) : undefined,
+                  },
+                }}
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField fullWidth label="Logradouro" required

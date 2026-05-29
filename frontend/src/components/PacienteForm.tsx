@@ -1,6 +1,10 @@
 import { useState, type FormEvent } from 'react'
-import { Box, TextField, Button, Grid, Typography, Alert } from '@mui/material'
+import {
+  Box, TextField, Button, Grid, Typography, Alert,
+  InputAdornment, CircularProgress,
+} from '@mui/material'
 import type { PacienteInput } from '../api/pacientes'
+import { useAutofillCep } from '../hooks/useAutofillCep'
 
 type Props = {
   inicial?: PacienteInput
@@ -25,6 +29,19 @@ export default function PacienteForm({ inicial, textoBotao, onSubmit }: Props) {
   function setEnd<K extends keyof PacienteInput['endereco']>(k: K, v: string) {
     setForm(f => ({ ...f, endereco: { ...f.endereco, [k]: v } }))
   }
+
+  const buscandoCep = useAutofillCep(form.endereco.cep, end => {
+    setForm(f => ({
+      ...f,
+      endereco: {
+        ...f.endereco,
+        logradouro: end.logradouro || f.endereco.logradouro,
+        bairro: end.bairro || f.endereco.bairro,
+        cidade: end.cidade || f.endereco.cidade,
+        uf: end.uf || f.endereco.uf,
+      },
+    }))
+  })
 
   async function handle(e: FormEvent) {
     e.preventDefault()
@@ -69,8 +86,23 @@ export default function PacienteForm({ inicial, textoBotao, onSubmit }: Props) {
           value={form.observacoes ?? ''} onChange={e => setCampo('observacoes', e.target.value)} /></Grid>
 
         <Grid size={12}><Typography variant="subtitle1" sx={{ mt: 1 }}>Endereço</Typography></Grid>
-        <Grid size={3}><TextField fullWidth label="CEP" required value={form.endereco.cep}
-          onChange={e => setEnd('cep', e.target.value)} /></Grid>
+        <Grid size={3}>
+          <TextField
+            fullWidth label="CEP" required
+            helperText="Preenche endereço"
+            value={form.endereco.cep}
+            onChange={e => setEnd('cep', e.target.value)}
+            slotProps={{
+              input: {
+                endAdornment: buscandoCep ? (
+                  <InputAdornment position="end">
+                    <CircularProgress size={16} aria-label="Buscando CEP" />
+                  </InputAdornment>
+                ) : undefined,
+              },
+            }}
+          />
+        </Grid>
         <Grid size={6}><TextField fullWidth label="Logradouro" required value={form.endereco.logradouro}
           onChange={e => setEnd('logradouro', e.target.value)} /></Grid>
         <Grid size={3}><TextField fullWidth label="Número" required value={form.endereco.numero}

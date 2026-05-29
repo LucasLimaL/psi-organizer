@@ -46,8 +46,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setPsicologa(null)
   }
 
+  function atualizarPsicologa(p: Psicologa) {
+    localStorage.setItem(USER_KEY, JSON.stringify(p))
+    setPsicologa(p)
+  }
+
   return (
-    <AuthContext.Provider value={{ psicologa, carregando, login, signup, logout }}>
+    <AuthContext.Provider value={{
+      psicologa, carregando, login, signup, logout, atualizarPsicologa,
+    }}>
       {children}
     </AuthContext.Provider>
   )

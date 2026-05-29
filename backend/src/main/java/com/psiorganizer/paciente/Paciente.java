@@ -47,6 +47,12 @@ public class Paciente {
     @Column(name = "ativo", nullable = false)
     private boolean ativo;
 
+    @Column(name = "opt_in_whatsapp", nullable = false)
+    private boolean optInWhatsapp;
+
+    @Column(name = "opt_in_whatsapp_em")
+    private Instant optInWhatsappEm;
+
     @Column(name = "criado_em", nullable = false)
     private Instant criadoEm;
 
@@ -89,5 +95,19 @@ public class Paciente {
     public void setObservacoes(String o) { this.observacoes = o; }
     public boolean isAtivo() { return ativo; }
     public void setAtivo(boolean ativo) { this.ativo = ativo; }
+
+    public boolean isOptInWhatsapp() { return optInWhatsapp; }
+
+    public void setOptInWhatsapp(boolean optIn) {
+        if (optIn && !this.optInWhatsapp) {
+            this.optInWhatsappEm = Instant.now();
+        } else if (!optIn) {
+            this.optInWhatsappEm = null;
+        }
+        this.optInWhatsapp = optIn;
+    }
+
+    public Instant getOptInWhatsappEm() { return optInWhatsappEm; }
+
     public Instant getCriadoEm() { return criadoEm; }
 }

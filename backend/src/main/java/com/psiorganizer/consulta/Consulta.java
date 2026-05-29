@@ -36,6 +36,13 @@ public class Consulta {
     @Column(name = "pago", nullable = false)
     private boolean pago;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status_confirmacao", nullable = false, length = 32)
+    private StatusConfirmacao statusConfirmacao;
+
+    @Column(name = "confirmada_pela_paciente_em")
+    private Instant confirmadaPelaPacienteEm;
+
     @Column(name = "observacoes", columnDefinition = "text")
     private String observacoes;
 
@@ -54,6 +61,7 @@ public class Consulta {
         this.valor = valor;
         this.status = StatusConsulta.AGENDADA;
         this.pago = false;
+        this.statusConfirmacao = StatusConfirmacao.AGUARDANDO;
         this.observacoes = observacoes;
         this.criadoEm = Instant.now();
     }
@@ -75,6 +83,13 @@ public class Consulta {
     public void setStatus(StatusConsulta s) { this.status = s; }
     public boolean isPago() { return pago; }
     public void setPago(boolean pago) { this.pago = pago; }
+
+    public StatusConfirmacao getStatusConfirmacao() { return statusConfirmacao; }
+    public void setStatusConfirmacao(StatusConfirmacao s) { this.statusConfirmacao = s; }
+
+    public Instant getConfirmadaPelaPacienteEm() { return confirmadaPelaPacienteEm; }
+    public void setConfirmadaPelaPacienteEm(Instant c) { this.confirmadaPelaPacienteEm = c; }
+
     public String getObservacoes() { return observacoes; }
     public void setObservacoes(String o) { this.observacoes = o; }
     public Instant getCriadoEm() { return criadoEm; }

@@ -15,15 +15,18 @@ export type Paciente = {
   nome: string
   cpf: string
   dataNascimento: string
+  /** Esperado em E.164 (`+55DDNNNNNNNNN`). Pacientes pré-feature podem ter formato livre. */
   telefone: string
   email?: string
   endereco: Endereco
   valorConsulta: number
   observacoes?: string
   ativo: boolean
+  optInWhatsapp: boolean
+  optInWhatsappEm?: string | null
 }
 
-export type PacienteInput = Omit<Paciente, 'id' | 'ativo'>
+export type PacienteInput = Omit<Paciente, 'id' | 'ativo' | 'optInWhatsappEm'>
 
 export const pacientesApi = {
   listar: (incluirInativos = false) =>

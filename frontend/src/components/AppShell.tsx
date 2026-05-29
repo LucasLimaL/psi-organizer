@@ -9,6 +9,7 @@ import DashboardIcon from '@mui/icons-material/DashboardOutlined'
 import EventNoteIcon from '@mui/icons-material/EventNote'
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt'
 import PersonOutlineIcon from '@mui/icons-material/PersonOutlined'
+import SettingsIcon from '@mui/icons-material/SettingsOutlined'
 import LogoutIcon from '@mui/icons-material/Logout'
 import SpaIcon from '@mui/icons-material/Spa'
 import { Outlet, Link as RouterLink, useLocation, useNavigate } from 'react-router-dom'
@@ -21,6 +22,7 @@ const NAV = [
   { to: '/agenda', label: 'Agenda', icon: <EventNoteIcon /> },
   { to: '/pacientes', label: 'Pacientes', icon: <PeopleAltIcon /> },
   { to: '/perfil', label: 'Perfil', icon: <PersonOutlineIcon /> },
+  { to: '/configuracoes/whatsapp', label: 'WhatsApp', icon: <SettingsIcon /> },
 ]
 
 const { drawerWidth, appBarHeight } = globalTokens.layout
@@ -29,6 +31,7 @@ function tituloDaRota(pathname: string): string {
   if (pathname.startsWith('/agenda')) return 'Agenda'
   if (pathname.startsWith('/pacientes')) return 'Pacientes'
   if (pathname.startsWith('/perfil')) return 'Perfil'
+  if (pathname.startsWith('/configuracoes/whatsapp')) return 'WhatsApp'
   return 'Início'
 }
 

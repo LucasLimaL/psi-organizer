@@ -2,13 +2,15 @@ import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import {
   Stack, TextField, Button, Link, Alert, Grid, Typography, Divider,
-  InputAdornment, IconButton, CircularProgress,
+  InputAdornment, IconButton,
 } from '@mui/material'
 import VisibilityIcon from '@mui/icons-material/VisibilityOutlined'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOffOutlined'
 import { useAuth } from '../auth/authContext'
 import AuthShell from '../components/AuthShell'
-import { useAutofillCep } from '../hooks/useAutofillCep'
+import EnderecoForm from '../components/EnderecoForm'
+
+import type { EnderecoFormValor } from '../components/EnderecoForm'
 
 type Form = {
   nomeCompleto: string
@@ -17,15 +19,7 @@ type Form = {
   cpf: string
   crp: string
   telefone: string
-  endereco: {
-    cep: string
-    logradouro: string
-    numero: string
-    complemento: string
-    bairro: string
-    cidade: string
-    uf: string
-  }
+  endereco: EnderecoFormValor
 }
 
 const inicial: Form = {
@@ -66,22 +60,6 @@ export default function SignupPage() {
   function set<K extends keyof Form>(k: K, v: Form[K]) {
     setForm(f => ({ ...f, [k]: v }))
   }
-  function setEnd<K extends keyof Form['endereco']>(k: K, v: string) {
-    setForm(f => ({ ...f, endereco: { ...f.endereco, [k]: v } }))
-  }
-
-  const { buscando: buscandoCep, autoPreenchido } = useAutofillCep(form.endereco.cep, end => {
-    setForm(f => ({
-      ...f,
-      endereco: {
-        ...f.endereco,
-        logradouro: end.logradouro || f.endereco.logradouro,
-        bairro: end.bairro || f.endereco.bairro,
-        cidade: end.cidade || f.endereco.cidade,
-        uf: end.uf || f.endereco.uf,
-      },
-    }))
-  })
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
@@ -177,65 +155,10 @@ export default function SignupPage() {
         <Divider />
 
         <Secao titulo="Endereço do consultório">
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField
-                fullWidth label="CEP" required
-                autoComplete="postal-code"
-                helperText="Preenche endereço automaticamente"
-                value={form.endereco.cep}
-                onChange={e => setEnd('cep', e.target.value)}
-                slotProps={{
-                  input: {
-                    endAdornment: buscandoCep ? (
-                      <InputAdornment position="end">
-                        <CircularProgress size={16} aria-label="Buscando CEP" />
-                      </InputAdornment>
-                    ) : undefined,
-                  },
-                }}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField fullWidth label="Logradouro" required
-                         autoComplete="address-line1"
-                         disabled={autoPreenchido}
-                         value={form.endereco.logradouro}
-                         onChange={e => setEnd('logradouro', e.target.value)} />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 2 }}>
-              <TextField fullWidth label="Número" required
-                         value={form.endereco.numero}
-                         onChange={e => setEnd('numero', e.target.value)} />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField fullWidth label="Complemento"
-                         autoComplete="address-line2"
-                         value={form.endereco.complemento}
-                         onChange={e => setEnd('complemento', e.target.value)} />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField fullWidth label="Bairro" required
-                         disabled={autoPreenchido}
-                         value={form.endereco.bairro}
-                         onChange={e => setEnd('bairro', e.target.value)} />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 8 }}>
-              <TextField fullWidth label="Cidade" required
-                         autoComplete="address-level2"
-                         disabled={autoPreenchido}
-                         value={form.endereco.cidade}
-                         onChange={e => setEnd('cidade', e.target.value)} />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField fullWidth label="UF" required
-                         autoComplete="address-level1"
-                         disabled={autoPreenchido}
-                         slotProps={{ htmlInput: { maxLength: 2 } }}
-                         value={form.endereco.uf}
-                         onChange={e => setEnd('uf', e.target.value.toUpperCase())} />
-            </Grid>
-          </Grid>
+          <EnderecoForm
+            value={form.endereco}
+            onChange={endereco => setForm(f => ({ ...f, endereco }))}
+          />
         </Secao>
 
         <Button

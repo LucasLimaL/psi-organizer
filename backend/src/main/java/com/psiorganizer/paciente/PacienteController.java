@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.psiorganizer.common.security.PsicologaPrincipal;
+import com.psiorganizer.consulta.ConsultaService;
+import com.psiorganizer.consulta.dto.ConsultasPaginadoResponse;
 import com.psiorganizer.paciente.dto.PacienteRequest;
 import com.psiorganizer.paciente.dto.PacienteResponse;
 
@@ -22,8 +24,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class PacienteController {
 
     private final PacienteService service;
+    private final ConsultaService consultaService;
 
-    public PacienteController(PacienteService service) {
+    public PacienteController(PacienteService service, ConsultaService consultaService) {
+        this.consultaService = consultaService;
         this.service = service;
     }
 
@@ -76,5 +80,22 @@ public class PacienteController {
     public PacienteResponse reativar(@PathVariable UUID id) {
         UUID psicologaId = PsicologaPrincipal.corrente().id();
         return PacienteResponse.fromDomain(service.reativar(psicologaId, id));
+    }
+
+    @GetMapping("/{id}/consultas")
+    @Operation(summary = "Lista paginada de consultas do paciente. "
+            + "tipo=proximas (inicio > agora, ordem asc) ou historico (inicio <= agora, ordem desc).")
+    public ConsultasPaginadoResponse listarConsultas(
+            @PathVariable UUID id,
+            @RequestParam(name = "tipo", defaultValue = "historico") String tipoStr,
+            @RequestParam(name = "limit", defaultValue = "5") int limit,
+            @RequestParam(name = "offset", defaultValue = "0") int offset) {
+        UUID psicologaId = PsicologaPrincipal.corrente().id();
+        ConsultaService.TipoListagem tipo = "proximas".equalsIgnoreCase(tipoStr)
+                ? ConsultaService.TipoListagem.PROXIMAS
+                : ConsultaService.TipoListagem.HISTORICO;
+        int limitSeguro = Math.max(1, Math.min(50, limit));
+        int offsetSeguro = Math.max(0, offset);
+        return consultaService.listarDoPaciente(psicologaId, id, tipo, limitSeguro, offsetSeguro);
     }
 }

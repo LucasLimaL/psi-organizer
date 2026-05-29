@@ -69,4 +69,40 @@ public interface ConsultaRepository extends JpaRepository<Consulta, UUID> {
             """)
     long contarFuturasAgendadas(@Param("psicologaId") UUID psicologaId,
                                 @Param("agora") Instant agora);
+
+    @Query("""
+            select c from Consulta c
+            where c.pacienteId = :pacienteId
+              and c.inicio > :agora
+            order by c.inicio asc
+            """)
+    List<Consulta> proximasDoPaciente(@Param("pacienteId") UUID pacienteId,
+                                      @Param("agora") Instant agora,
+                                      org.springframework.data.domain.Pageable pageable);
+
+    @Query("""
+            select count(c) from Consulta c
+            where c.pacienteId = :pacienteId
+              and c.inicio > :agora
+            """)
+    long contarProximasDoPaciente(@Param("pacienteId") UUID pacienteId,
+                                  @Param("agora") Instant agora);
+
+    @Query("""
+            select c from Consulta c
+            where c.pacienteId = :pacienteId
+              and c.inicio <= :agora
+            order by c.inicio desc
+            """)
+    List<Consulta> historicoDoPaciente(@Param("pacienteId") UUID pacienteId,
+                                       @Param("agora") Instant agora,
+                                       org.springframework.data.domain.Pageable pageable);
+
+    @Query("""
+            select count(c) from Consulta c
+            where c.pacienteId = :pacienteId
+              and c.inicio <= :agora
+            """)
+    long contarHistoricoDoPaciente(@Param("pacienteId") UUID pacienteId,
+                                   @Param("agora") Instant agora);
 }

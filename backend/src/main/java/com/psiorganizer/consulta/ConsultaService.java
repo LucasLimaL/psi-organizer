@@ -117,6 +117,39 @@ public class ConsultaService {
         return consultaRepository.saveAll(consultas);
     }
 
+    /**
+     * Tipo de listagem para o histórico do paciente.
+     */
+    public enum TipoListagem { PROXIMAS, HISTORICO }
+
+    @Transactional(readOnly = true)
+    public com.psiorganizer.consulta.dto.ConsultasPaginadoResponse listarDoPaciente(
+            UUID psicologaId, UUID pacienteId, TipoListagem tipo, int limit, int offset) {
+        // Garante que o paciente pertence à psicóloga
+        Paciente p = pacienteRepository.findByIdAndPsicologaId(pacienteId, psicologaId)
+                .orElseThrow(() -> ApiException.naoEncontrado("Paciente não encontrado"));
+
+        Instant agora = Instant.now();
+        org.springframework.data.domain.Pageable page =
+                org.springframework.data.domain.PageRequest.of(offset / Math.max(limit, 1), limit);
+
+        List<Consulta> consultas;
+        long total;
+        if (tipo == TipoListagem.PROXIMAS) {
+            consultas = consultaRepository.proximasDoPaciente(pacienteId, agora, page);
+            total = consultaRepository.contarProximasDoPaciente(pacienteId, agora);
+        } else {
+            consultas = consultaRepository.historicoDoPaciente(pacienteId, agora, page);
+            total = consultaRepository.contarHistoricoDoPaciente(pacienteId, agora);
+        }
+
+        boolean temMais = offset + consultas.size() < total;
+        List<com.psiorganizer.consulta.dto.ConsultaResponse> itens = consultas.stream()
+                .map(c -> com.psiorganizer.consulta.dto.ConsultaResponse.from(c, p.getNome()))
+                .toList();
+        return new com.psiorganizer.consulta.dto.ConsultasPaginadoResponse(itens, total, temMais);
+    }
+
     @Transactional
     public void remover(UUID psicologaId, UUID id) {
         Consulta c = buscar(psicologaId, id);

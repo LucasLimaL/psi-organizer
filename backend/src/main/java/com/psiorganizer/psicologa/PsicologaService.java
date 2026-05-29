@@ -48,4 +48,15 @@ public class PsicologaService {
         return repository.findById(id)
                 .orElseThrow(() -> ApiException.naoEncontrado("Psicóloga não encontrada"));
     }
+
+    @Transactional
+    public Psicologa atualizarPerfil(UUID id, String nomeCompleto, String crp,
+                                     String telefone, Endereco endereco) {
+        Psicologa p = buscarPorId(id);
+        p.setNomeCompleto(nomeCompleto);
+        p.setCrp(crp);
+        p.setTelefone(telefone);
+        p.setEndereco(endereco);
+        return repository.save(p);
+    }
 }

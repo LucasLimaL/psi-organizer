@@ -15,6 +15,8 @@ export type AuthCtx = {
   login: (email: string, senha: string) => Promise<void>
   signup: (payload: unknown) => Promise<void>
   logout: () => void
+  /** Atualiza a psicóloga no contexto e em localStorage. */
+  atualizarPsicologa: (p: Psicologa) => void
 }
 
 export const AuthContext = createContext<AuthCtx | undefined>(undefined)

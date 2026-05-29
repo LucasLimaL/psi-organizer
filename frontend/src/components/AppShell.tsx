@@ -5,6 +5,7 @@ import {
   Tooltip,
 } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
+import DashboardIcon from '@mui/icons-material/DashboardOutlined'
 import EventNoteIcon from '@mui/icons-material/EventNote'
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt'
 import PersonOutlineIcon from '@mui/icons-material/PersonOutlined'
@@ -16,7 +17,8 @@ import { globalTokens } from '../theme/tokens'
 import PaletteSwitcher from './PaletteSwitcher'
 
 const NAV = [
-  { to: '/', label: 'Agenda', icon: <EventNoteIcon /> },
+  { to: '/', label: 'Início', icon: <DashboardIcon /> },
+  { to: '/agenda', label: 'Agenda', icon: <EventNoteIcon /> },
   { to: '/pacientes', label: 'Pacientes', icon: <PeopleAltIcon /> },
   { to: '/perfil', label: 'Perfil', icon: <PersonOutlineIcon /> },
 ]
@@ -24,9 +26,10 @@ const NAV = [
 const { drawerWidth, appBarHeight } = globalTokens.layout
 
 function tituloDaRota(pathname: string): string {
+  if (pathname.startsWith('/agenda')) return 'Agenda'
   if (pathname.startsWith('/pacientes')) return 'Pacientes'
   if (pathname.startsWith('/perfil')) return 'Perfil'
-  return 'Agenda'
+  return 'Início'
 }
 
 function iniciais(nome: string): string {

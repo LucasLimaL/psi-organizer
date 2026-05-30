@@ -31,6 +31,13 @@ psi:
     expiracao-horas: 24
   cors:
     allowed-origins: http://localhost:5173
+  whatsapp:
+    # Padrão é true — usa MockWhatsappClient (loga, retorna id sintético).
+    # Pra mandar mensagem real via Meta Cloud API, set false + as 3 envs abaixo.
+    mock: ${WHATSAPP_MOCK:true}
+    graph-api-version: ${WHATSAPP_GRAPH_API_VERSION:v21.0}
+    phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:}
+    access-token: ${WHATSAPP_ACCESS_TOKEN:}
 
 springdoc:
   swagger-ui:

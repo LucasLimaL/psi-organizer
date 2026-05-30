@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  Alert, Box, Button, FormControlLabel, MenuItem, Paper, Snackbar, Stack,
-  Switch, TextField, Tooltip, Typography,
+  Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogContentText,
+  DialogTitle, FormControlLabel, MenuItem, Paper, Snackbar, Stack,
+  Switch, TextField, Typography,
 } from '@mui/material'
 import WhatsAppIcon from '@mui/icons-material/WhatsApp'
 import {
@@ -10,6 +11,7 @@ import {
 } from '../api/whatsapp'
 import { useAuth } from '../auth/authContext'
 import { useDirty } from '../hooks/useDirty'
+import { formatarTelefoneBr, paraE164Br } from '../utils/telefones'
 
 const LIMITE_CARACTERES = 1024
 const ALERTA_CARACTERES = 900
@@ -34,6 +36,40 @@ export default function ConfiguracoesWhatsappPage() {
   const [erro, setErro] = useState<string | null>(null)
   const [sucesso, setSucesso] = useState(false)
   const { dirty, setBaseline } = useDirty(config)
+
+  // Dialog "Enviar teste"
+  const [testeAberto, setTesteAberto] = useState(false)
+  const [testeTelefone, setTesteTelefone] = useState('')
+  const [testeEnviando, setTesteEnviando] = useState(false)
+  const [testeErro, setTesteErro] = useState<string | null>(null)
+  const [testeSucesso, setTesteSucesso] = useState<string | null>(null)
+  const telefoneE164 = paraE164Br(testeTelefone)
+  const erroFormatoTelefone = testeTelefone && !telefoneE164
+    ? 'Use DDD + número (10 ou 11 dígitos)'
+    : null
+
+  function abrirTeste() {
+    setTesteTelefone('')
+    setTesteErro(null)
+    setTesteAberto(true)
+  }
+
+  async function enviarTeste() {
+    if (!telefoneE164) return
+    setTesteErro(null)
+    setTesteEnviando(true)
+    try {
+      const r = await whatsappApi.enviarTeste(telefoneE164)
+      setTesteAberto(false)
+      setTesteSucesso(`Mensagem despachada (id: ${r.mensagemIdExterna.slice(0, 40)}…)`)
+    } catch (err) {
+      const e = err as { erro?: string; detalhes?: Record<string, string> }
+      const det = e?.detalhes ? ' — ' + Object.values(e.detalhes).join('; ') : ''
+      setTesteErro((e?.erro ?? 'Falha ao enviar') + det)
+    } finally {
+      setTesteEnviando(false)
+    }
+  }
 
   const carregar = useCallback(async () => {
     setCarregando(true)
@@ -230,15 +266,11 @@ export default function ConfiguracoesWhatsappPage() {
               Enviar mensagem de teste
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Útil pra ver como a paciente recebe. Disponível após a aprovação do template
-              pela Meta (PR B).
+              Dispara o template <code>hello_world</code> da Meta pro número informado.
+              Útil pra confirmar que o canal funciona antes de ativar lembretes pra paciente real.
             </Typography>
           </Box>
-          <Tooltip title="Disponível após a aprovação do template pela Meta (PR B)">
-            <span>
-              <Button variant="outlined" disabled>Enviar teste</Button>
-            </span>
-          </Tooltip>
+          <Button variant="outlined" onClick={abrirTeste}>Enviar teste</Button>
         </Box>
       </Paper>
 
@@ -258,6 +290,48 @@ export default function ConfiguracoesWhatsappPage() {
           Configuração salva com sucesso
         </Alert>
       </Snackbar>
+
+      <Snackbar
+        open={testeSucesso !== null}
+        autoHideDuration={5000}
+        onClose={() => setTesteSucesso(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="success" variant="filled" sx={{ width: '100%' }}>
+          {testeSucesso}
+        </Alert>
+      </Snackbar>
+
+      <Dialog open={testeAberto} onClose={() => setTesteAberto(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Enviar mensagem de teste</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            Vai disparar o template <code>hello_world</code> da Meta pro número abaixo.
+            O número precisa estar verificado como destinatário permitido no painel
+            Meta (modo dev).
+          </DialogContentText>
+          {testeErro && <Alert severity="error" sx={{ mb: 2 }}>{testeErro}</Alert>}
+          <TextField
+            fullWidth autoFocus
+            label="Telefone"
+            placeholder="(11) 96666-3333"
+            value={testeTelefone}
+            onChange={e => setTesteTelefone(formatarTelefoneBr(e.target.value))}
+            error={!!erroFormatoTelefone}
+            helperText={erroFormatoTelefone ?? (telefoneE164 ? `Será enviado como ${telefoneE164}` : 'Salvo como E.164 (+55…)')}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setTesteAberto(false)}>Cancelar</Button>
+          <Button
+            variant="contained"
+            onClick={() => void enviarTeste()}
+            disabled={testeEnviando || !telefoneE164}
+          >
+            {testeEnviando ? 'Enviando…' : 'Enviar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Stack>
   )
 }

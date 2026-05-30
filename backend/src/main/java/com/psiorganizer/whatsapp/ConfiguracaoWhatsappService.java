@@ -1,23 +1,38 @@
 package com.psiorganizer.whatsapp;
 
 import java.time.LocalTime;
+import java.util.List;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.psiorganizer.common.exception.ApiException;
+import com.psiorganizer.whatsapp.client.EnvioResultado;
+import com.psiorganizer.whatsapp.client.WhatsappClient;
+import com.psiorganizer.whatsapp.client.WhatsappException;
 
 @Service
 public class ConfiguracaoWhatsappService {
 
+    private static final Logger log = LoggerFactory.getLogger(ConfiguracaoWhatsappService.class);
+
     static final int HORA_MINIMA = 7;
     static final int HORA_MAXIMA = 20;
 
-    private final ConfiguracaoWhatsappRepository repository;
+    /** Template HSM padrão da Meta, aprovado em todas as contas. Usado no botão "Enviar teste". */
+    private static final String TEMPLATE_HELLO_WORLD = "hello_world";
+    private static final String LANG_EN_US = "en_US";
 
-    public ConfiguracaoWhatsappService(ConfiguracaoWhatsappRepository repository) {
+    private final ConfiguracaoWhatsappRepository repository;
+    private final WhatsappClient whatsappClient;
+
+    public ConfiguracaoWhatsappService(
+            ConfiguracaoWhatsappRepository repository, WhatsappClient whatsappClient) {
         this.repository = repository;
+        this.whatsappClient = whatsappClient;
     }
 
     @Transactional
@@ -41,6 +56,26 @@ public class ConfiguracaoWhatsappService {
                 || horario.getHour() > HORA_MAXIMA) {
             throw ApiException.requisicaoInvalida(
                     "Horário de envio deve ser uma hora cheia entre 07:00 e 20:00");
+        }
+    }
+
+    /**
+     * Smoke test do canal. Dispara o template hello_world (HSM padrão Meta) pro número
+     * informado. Não persiste lembrete_enviado — é só pra a psi confirmar que o
+     * canal funciona antes de ativar lembretes pra paciente real.
+     */
+    public String enviarTeste(UUID psicologaId, String telefoneE164) {
+        log.info("Enviando hello_world de teste para={} psi={}", telefoneE164, psicologaId);
+        try {
+            EnvioResultado r = whatsappClient.enviarTemplate(
+                    telefoneE164, TEMPLATE_HELLO_WORLD, LANG_EN_US, List.of());
+            return r.mensagemIdExterna();
+        } catch (WhatsappException e) {
+            log.warn(
+                    "Falha ao enviar teste para={} codigo={} descricao={}",
+                    telefoneE164, e.getCodigo(), e.getMessage());
+            throw ApiException.requisicaoInvalida(
+                    "Falha ao enviar pelo WhatsApp (" + e.getCodigo() + "): " + e.getMessage());
         }
     }
 }

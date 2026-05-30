@@ -14,12 +14,21 @@ export type AtualizarConfiguracaoWhatsappInput = {
   horarioEnvioLembrete: string
 }
 
+export type EnviarTesteResposta = {
+  mensagemIdExterna: string
+}
+
 export const whatsappApi = {
   obter: () => api<ConfiguracaoWhatsapp>('/me/whatsapp'),
   atualizar: (input: AtualizarConfiguracaoWhatsappInput) =>
     api<ConfiguracaoWhatsapp>('/me/whatsapp', {
       method: 'PUT',
       body: JSON.stringify(input),
+    }),
+  enviarTeste: (telefoneE164: string) =>
+    api<EnviarTesteResposta>('/me/whatsapp/teste', {
+      method: 'POST',
+      body: JSON.stringify({ telefoneE164 }),
     }),
 }
 

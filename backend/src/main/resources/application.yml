@@ -38,6 +38,14 @@ psi:
     graph-api-version: ${WHATSAPP_GRAPH_API_VERSION:v21.0}
     phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:}
     access-token: ${WHATSAPP_ACCESS_TOKEN:}
+    # Template HSM do lembrete — precisa estar aprovado na Meta (categoria UTILITY,
+    # idioma pt_BR, 4 variáveis: {{1}}=paciente, {{2}}=psicologa, {{3}}=data, {{4}}=hora,
+    # + 2 reply buttons Confirmar / Cancelar). Override por env se nome mudar.
+    template-lembrete-nome: ${WHATSAPP_TEMPLATE_LEMBRETE_NOME:lembrete_consulta_v1}
+    template-lembrete-idioma: ${WHATSAPP_TEMPLATE_LEMBRETE_IDIOMA:pt_BR}
+    # Cron do scheduler em UTC. Default: hora cheia. Pra dev/teste, sobrescreva pra
+    # algo tipo "0 */2 * * * *" (a cada 2 min) — exemplo em README.
+    scheduler-cron: ${WHATSAPP_SCHEDULER_CRON:0 0 * * * *}
 
 springdoc:
   swagger-ui:

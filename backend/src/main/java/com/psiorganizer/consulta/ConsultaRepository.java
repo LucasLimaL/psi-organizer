@@ -105,4 +105,50 @@ public interface ConsultaRepository extends JpaRepository<Consulta, UUID> {
             """)
     long contarHistoricoDoPaciente(@Param("pacienteId") UUID pacienteId,
                                    @Param("agora") Instant agora);
+
+    /**
+     * Passo (a) — envio do dia. Consultas de uma psi entre amanhã 00:00 e 23:59:59 (SP)
+     * com status_confirmacao = AGUARDANDO, status operacional AGENDADA/CONFIRMADA, e que
+     * ainda não têm lembrete_enviado.
+     */
+    @Query("""
+            select c from Consulta c
+            where c.psicologaId = :psicologaId
+              and c.inicio >= :amanhaInicio
+              and c.inicio < :amanhaFim
+              and c.statusConfirmacao = com.psiorganizer.consulta.StatusConfirmacao.AGUARDANDO
+              and c.status in (com.psiorganizer.consulta.StatusConsulta.AGENDADA,
+                               com.psiorganizer.consulta.StatusConsulta.CONFIRMADA)
+              and not exists (
+                  select 1 from LembreteEnviado le where le.consultaId = c.id
+              )
+            order by c.inicio asc
+            """)
+    List<Consulta> findPendentesEnvioDoDia(@Param("psicologaId") UUID psicologaId,
+                                           @Param("amanhaInicio") Instant amanhaInicio,
+                                           @Param("amanhaFim") Instant amanhaFim);
+
+    /**
+     * Passo (b) — late-bound. Consultas criadas após o horário escolhido da psi (hoje em SP),
+     * com inicio entre agora+2h e agora+36h, AGUARDANDO, status AGENDADA/CONFIRMADA, sem
+     * lembrete_enviado.
+     */
+    @Query("""
+            select c from Consulta c
+            where c.psicologaId = :psicologaId
+              and c.inicio > :inicioMin
+              and c.inicio <= :inicioMax
+              and c.criadoEm > :criadoApos
+              and c.statusConfirmacao = com.psiorganizer.consulta.StatusConfirmacao.AGUARDANDO
+              and c.status in (com.psiorganizer.consulta.StatusConsulta.AGENDADA,
+                               com.psiorganizer.consulta.StatusConsulta.CONFIRMADA)
+              and not exists (
+                  select 1 from LembreteEnviado le where le.consultaId = c.id
+              )
+            order by c.inicio asc
+            """)
+    List<Consulta> findPendentesEnvioLateBound(@Param("psicologaId") UUID psicologaId,
+                                               @Param("inicioMin") Instant inicioMin,
+                                               @Param("inicioMax") Instant inicioMax,
+                                               @Param("criadoApos") Instant criadoApos);
 }

@@ -14,7 +14,10 @@ public record WhatsappProperties(
         boolean mock,
         String graphApiVersion,
         String phoneNumberId,
-        String accessToken) {
+        String accessToken,
+        String templateLembreteNome,
+        String templateLembreteIdioma,
+        String schedulerCron) {
 
     public String baseUrl() {
         return "https://graph.facebook.com/" + graphApiVersion;

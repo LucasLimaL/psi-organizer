@@ -19,6 +19,8 @@ import com.psiorganizer.consulta.dto.ConsultaRecorrenteRequest;
 import com.psiorganizer.consulta.dto.ConsultaRequest;
 import com.psiorganizer.consulta.dto.ConsultaResponse;
 import com.psiorganizer.consulta.dto.ConsultaUpdateRequest;
+import com.psiorganizer.whatsapp.LembreteEnviado;
+import com.psiorganizer.whatsapp.LembreteEnviadoRepository;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,9 +33,27 @@ public class ConsultaController {
     private static final ZoneId ZONA = ZoneId.of("America/Sao_Paulo");
 
     private final ConsultaService service;
+    private final LembreteEnviadoRepository lembreteRepo;
 
-    public ConsultaController(ConsultaService service) {
+    public ConsultaController(ConsultaService service, LembreteEnviadoRepository lembreteRepo) {
         this.service = service;
+        this.lembreteRepo = lembreteRepo;
+    }
+
+    private Map<UUID, LembreteEnviado> lembretes(List<Consulta> consultas) {
+        if (consultas.isEmpty()) return Map.of();
+        List<UUID> ids = consultas.stream().map(Consulta::getId).toList();
+        return lembreteRepo.findByConsultaIdIn(ids).stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        LembreteEnviado::getConsultaId, l -> l));
+    }
+
+    private ConsultaResponse enriquecer(Consulta c, String pacienteNome,
+                                        Map<UUID, LembreteEnviado> map) {
+        LembreteEnviado le = map.get(c.getId());
+        if (le == null) return ConsultaResponse.from(c, pacienteNome);
+        return ConsultaResponse.from(
+                c, pacienteNome, le.getEtapa(), le.getStatusEntrega(), le.getEnviadoEm());
     }
 
     @GetMapping
@@ -47,8 +67,9 @@ public class ConsultaController {
         List<Consulta> consultas = service.listar(psicologaId, ini, fimExcl);
         Map<UUID, String> nomes = service.nomesPacientes(
                 consultas.stream().map(Consulta::getPacienteId).distinct().toList());
+        Map<UUID, LembreteEnviado> lembretes = lembretes(consultas);
         return consultas.stream()
-                .map(c -> ConsultaResponse.from(c, nomes.getOrDefault(c.getPacienteId(), "?")))
+                .map(c -> enriquecer(c, nomes.getOrDefault(c.getPacienteId(), "?"), lembretes))
                 .toList();
     }
 
@@ -58,7 +79,7 @@ public class ConsultaController {
         UUID psicologaId = PsicologaPrincipal.corrente().id();
         Consulta c = service.buscar(psicologaId, id);
         Map<UUID, String> nomes = service.nomesPacientes(List.of(c.getPacienteId()));
-        return ConsultaResponse.from(c, nomes.getOrDefault(c.getPacienteId(), "?"));
+        return enriquecer(c, nomes.getOrDefault(c.getPacienteId(), "?"), lembretes(List.of(c)));
     }
 
     @PostMapping

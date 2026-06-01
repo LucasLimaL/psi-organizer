@@ -46,6 +46,14 @@ psi:
     # Cron do scheduler em UTC. Default: hora cheia. Pra dev/teste, sobrescreva pra
     # algo tipo "0 */2 * * * *" (a cada 2 min) — exemplo em README.
     scheduler-cron: ${WHATSAPP_SCHEDULER_CRON:0 0 * * * *}
+    # Secret do app Meta — usado pra validar HMAC-SHA256 do webhook. Quando em branco,
+    # webhook rejeita todo POST com 401 (modo seguro pra dev local sem Meta real).
+    app-secret: ${WHATSAPP_APP_SECRET:}
+    # Token de verificação do handshake inicial do webhook. Inventado por nós.
+    verify-token: ${WHATSAPP_VERIFY_TOKEN:dev-verify-token}
+    # Quando true, ativa endpoints de simulação em /dev/whatsapp/* (POST simular-resposta).
+    # Não usar em prod — não há autenticação no /dev/**.
+    dev-tools: ${WHATSAPP_DEV_TOOLS:false}
 
 springdoc:
   swagger-ui:

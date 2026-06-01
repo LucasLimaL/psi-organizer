@@ -23,7 +23,7 @@ type Props = {
   onSalvo: (resultado: ConsultaSalvoResultado, qtd?: number) => void
 }
 
-const STATUSES: StatusConsulta[] = ['AGENDADA', 'CONFIRMADA', 'REALIZADA', 'FALTA']
+const STATUSES: StatusConsulta[] = ['AGENDADA', 'CONFIRMADA', 'REALIZADA', 'FALTA', 'CANCELADA']
 
 const DIAS: { value: DiaSemana; label: string }[] = [
   { value: 'SEG', label: 'Segunda' },
@@ -203,6 +203,13 @@ export default function ConsultaDialog({ aberto, consulta, inicioPadrao, onFecha
       <DialogContent>
         <form id="consulta-form" onSubmit={salvar}>
           {erro && <Alert severity="error" sx={{ mb: 2, mt: 1 }}>{erro}</Alert>}
+          {editando && consulta?.lembreteEnviadoEm
+            && inicio !== toDatetimeLocal(new Date(consulta.inicio)) && (
+            <Alert severity="warning" sx={{ mb: 2, mt: 1 }}>
+              O lembrete já foi enviado pra paciente. Avise a mudança manualmente —
+              o sistema não dispara novo lembrete em reagendamento.
+            </Alert>
+          )}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
             <Grid size={12}>
               <TextField select fullWidth label="Paciente" required disabled={editando}

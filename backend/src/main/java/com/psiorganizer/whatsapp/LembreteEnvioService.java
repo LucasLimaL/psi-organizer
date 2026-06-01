@@ -21,6 +21,7 @@ import com.psiorganizer.paciente.Paciente;
 import com.psiorganizer.paciente.PacienteRepository;
 import com.psiorganizer.psicologa.Psicologa;
 import com.psiorganizer.psicologa.PsicologaRepository;
+import com.psiorganizer.whatsapp.client.Botao;
 import com.psiorganizer.whatsapp.client.EnvioResultado;
 import com.psiorganizer.whatsapp.client.WhatsappClient;
 import com.psiorganizer.whatsapp.client.WhatsappException;
@@ -48,6 +49,14 @@ public class LembreteEnvioService {
 
     private static final PhoneNumberUtil PHONE_UTIL = PhoneNumberUtil.getInstance();
 
+    // IDs dos botões do template aprovado pela Meta (Msg 1)
+    public static final String BTN_CONFIRMAR = "confirmar";
+    public static final String BTN_CANCELAR = "cancelar";
+    // IDs dos botões de Msg 2 (confirmação dupla)
+    public static final String BTN_SIM_CONFIRMAR = "sim_confirmar";
+    public static final String BTN_SIM_CANCELAR = "sim_cancelar";
+    public static final String BTN_VOLTAR = "voltar";
+
     private final LembreteEnviadoRepository lembreteRepo;
     private final PacienteRepository pacienteRepo;
     private final PsicologaRepository psicologaRepo;
@@ -64,6 +73,70 @@ public class LembreteEnvioService {
         this.psicologaRepo = psicologaRepo;
         this.whatsappClient = whatsappClient;
         this.props = props;
+    }
+
+    public Paciente buscarPaciente(UUID id) {
+        return pacienteRepo.findById(id).orElse(null);
+    }
+
+    public Psicologa buscarPsicologa(UUID id) {
+        return psicologaRepo.findById(id).orElse(null);
+    }
+
+    /**
+     * Envia Msg 2 (confirmação dupla) — texto livre + 2 botões dentro da service window.
+     * Atualiza mensagem_confirmacao_dupla_id, confirmacao_dupla_enviada_em e incrementa
+     * confirmacao_dupla_tentativas.
+     */
+    public EnvioResultado enviarMsg2(LembreteEnviado le, EscolhaLembrete escolha,
+                                     Paciente paciente, Consulta consulta) {
+        String acaoVerbo = escolha == EscolhaLembrete.CONFIRMAR ? "confirmar" : "cancelar";
+        java.time.LocalDateTime inicioSp = java.time.LocalDateTime.ofInstant(
+                consulta.getInicio(), ZONA_BR);
+        String texto = String.format(
+                "Você escolheu %s a consulta de %s às %s. Tem certeza?",
+                acaoVerbo, inicioSp.format(DATA_FMT), inicioSp.format(HORA_FMT));
+        String btnSimId = escolha == EscolhaLembrete.CONFIRMAR ? BTN_SIM_CONFIRMAR : BTN_SIM_CANCELAR;
+        String btnSimTitulo = "Sim, " + acaoVerbo;
+        List<Botao> botoes = List.of(
+                new Botao(btnSimId, btnSimTitulo),
+                new Botao(BTN_VOLTAR, "Voltar"));
+        String telefoneE164 = normalizarE164(paciente.getTelefone());
+        return whatsappClient.enviarTextoLivreComBotoes(telefoneE164, texto, botoes);
+    }
+
+    /**
+     * Reenvia "Msg 1" quando paciente clica Voltar em Msg 2. Como já tem service window
+     * aberta, usamos texto livre + 2 botões (Confirmar/Cancelar) — não é o template HSM.
+     */
+    public EnvioResultado reenviarMsg1ComoTextoLivre(
+            LembreteEnviado le, Paciente paciente, Psicologa psi, Consulta consulta) {
+        java.time.LocalDateTime inicioSp = java.time.LocalDateTime.ofInstant(
+                consulta.getInicio(), ZONA_BR);
+        String texto = String.format(
+                "Olá, %s! Sobre a sua consulta com %s em %s às %s — pode confirmar abaixo?",
+                primeiroNome(paciente.getNome()),
+                psi.getNomeCompleto(),
+                inicioSp.format(DATA_FMT),
+                inicioSp.format(HORA_FMT));
+        List<Botao> botoes = List.of(
+                new Botao(BTN_CONFIRMAR, "Confirmar"),
+                new Botao(BTN_CANCELAR, "Cancelar"));
+        String telefoneE164 = normalizarE164(paciente.getTelefone());
+        return whatsappClient.enviarTextoLivreComBotoes(telefoneE164, texto, botoes);
+    }
+
+    /**
+     * Msg 3 (despedida) enviada quando paciente clica Voltar pela 4ª vez. Encerra
+     * o fluxo em CONGELADO_POR_LOOP.
+     */
+    public EnvioResultado enviarMsg3Despedida(
+            LembreteEnviado le, Paciente paciente, Psicologa psi) {
+        String texto = String.format(
+                "Tudo bem! Se precisar de ajuda, fale direto com %s.",
+                psi.getNomeCompleto());
+        String telefoneE164 = normalizarE164(paciente.getTelefone());
+        return whatsappClient.enviarTextoLivre(telefoneE164, texto);
     }
 
     /**

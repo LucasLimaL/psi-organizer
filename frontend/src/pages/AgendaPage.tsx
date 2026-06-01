@@ -32,6 +32,36 @@ const MAPA_STATUS: Record<Consulta['status'], 'agendada' | 'confirmada' | 'reali
   CONFIRMADA: 'confirmada',
   REALIZADA: 'realizada',
   FALTA: 'falta',
+  CANCELADA: 'falta', // reaproveita o token visual de "falta" (cinza/tachado)
+}
+
+function tooltipStatusConfirmacao(c: Consulta): string {
+  if (c.statusConfirmacao === 'CONFIRMADA') {
+    return c.confirmadaPelaPacienteEm
+      ? `Confirmada pela paciente em ${new Date(c.confirmadaPelaPacienteEm).toLocaleString('pt-BR')}`
+      : 'Confirmada pela paciente'
+  }
+  if (c.statusConfirmacao === 'CANCELADA_PELA_PACIENTE') {
+    return 'Cancelada pela paciente via WhatsApp'
+  }
+  // AGUARDANDO — depende do estágio do lembrete
+  if (!c.lembreteEnviadoEm) return 'Lembrete será enviado 1 dia antes'
+  if (c.lembreteEtapa === 'AGUARDANDO_CONFIRMACAO_DUPLA') return 'Paciente iniciou confirmação'
+  if (c.lembreteEtapa === 'EXPIRADO') return 'Paciente não finalizou a confirmação'
+  if (c.lembreteEtapa === 'CONGELADO_POR_LOOP') return 'Confirmação cancelada após múltiplas voltas — fale com a paciente'
+  return 'Aguardando confirmação da paciente'
+}
+
+function corStatusConfirmacao(
+  c: Consulta,
+  palette: { success: string; error: string; warning: string; muted: string },
+): string {
+  if (c.statusConfirmacao === 'CONFIRMADA') return palette.success
+  if (c.statusConfirmacao === 'CANCELADA_PELA_PACIENTE') return palette.error
+  if (c.lembreteEtapa === 'CONGELADO_POR_LOOP' || c.lembreteEtapa === 'EXPIRADO') {
+    return palette.warning
+  }
+  return palette.muted
 }
 
 export default function AgendaPage() {
@@ -448,10 +478,17 @@ export default function AgendaPage() {
                   const { top, altura } = topoEAltura(c)
                   const cor = status[MAPA_STATUS[c.status]]
                   const ePequena = altura < 36
+                  const cancelada = c.statusConfirmacao === 'CANCELADA_PELA_PACIENTE'
+                  const corConf = corStatusConfirmacao(c, {
+                    success: theme.palette.success.main,
+                    error: theme.palette.error.main,
+                    warning: theme.palette.warning.main,
+                    muted: theme.palette.text.disabled,
+                  })
                   return (
                     <Tooltip
                       key={c.id}
-                      title={`${formatarHora(new Date(c.inicio))} · ${c.pacienteNome} · ${c.status.toLowerCase()}`}
+                      title={`${formatarHora(new Date(c.inicio))} · ${c.pacienteNome} · ${c.status.toLowerCase()}\n${tooltipStatusConfirmacao(c)}`}
                       placement="right"
                     >
                       <Box
@@ -470,6 +507,8 @@ export default function AgendaPage() {
                           fontSize: 12, lineHeight: 1.3,
                           overflow: 'hidden',
                           cursor: 'pointer',
+                          opacity: cancelada ? 0.6 : 1,
+                          textDecoration: cancelada ? 'line-through' : 'none',
                           transition: theme.transitions.create(['box-shadow', 'transform'], {
                             duration: theme.transitions.duration.short,
                           }),
@@ -480,6 +519,18 @@ export default function AgendaPage() {
                           },
                         }}
                       >
+                        {/* Indicador de status de confirmação no canto sup. direito */}
+                        <Box
+                          aria-hidden
+                          sx={{
+                            position: 'absolute',
+                            top: 4, right: 4,
+                            width: 8, height: 8,
+                            borderRadius: '50%',
+                            bgcolor: corConf,
+                            boxShadow: `0 0 0 2px ${theme.palette.background.paper}`,
+                          }}
+                        />
                         <Stack
                           direction={ePequena ? 'row' : 'column'}
                           spacing={ePequena ? 0.75 : 0}

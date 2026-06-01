@@ -17,7 +17,9 @@ public record WhatsappProperties(
         String accessToken,
         String templateLembreteNome,
         String templateLembreteIdioma,
-        String schedulerCron) {
+        String schedulerCron,
+        String appSecret,
+        String verifyToken) {
 
     public String baseUrl() {
         return "https://graph.facebook.com/" + graphApiVersion;

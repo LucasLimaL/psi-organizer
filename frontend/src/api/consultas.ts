@@ -1,6 +1,17 @@
 import { api } from './client'
 
-export type StatusConsulta = 'AGENDADA' | 'CONFIRMADA' | 'REALIZADA' | 'FALTA'
+export type StatusConsulta = 'AGENDADA' | 'CONFIRMADA' | 'REALIZADA' | 'FALTA' | 'CANCELADA'
+
+export type StatusConfirmacao = 'AGUARDANDO' | 'CONFIRMADA' | 'CANCELADA_PELA_PACIENTE'
+
+export type EtapaLembrete =
+  | 'AGUARDANDO_ESCOLHA'
+  | 'AGUARDANDO_CONFIRMACAO_DUPLA'
+  | 'FINALIZADO'
+  | 'EXPIRADO'
+  | 'CONGELADO_POR_LOOP'
+
+export type StatusEntregaLembrete = 'PENDENTE' | 'ENVIADO' | 'ENTREGUE' | 'LIDO' | 'FALHOU'
 
 export type Consulta = {
   id: string
@@ -12,6 +23,11 @@ export type Consulta = {
   status: StatusConsulta
   pago: boolean
   observacoes?: string
+  statusConfirmacao: StatusConfirmacao
+  confirmadaPelaPacienteEm?: string | null
+  lembreteEtapa?: EtapaLembrete | null
+  lembreteStatusEntrega?: StatusEntregaLembrete | null
+  lembreteEnviadoEm?: string | null
 }
 
 export type ConsultaInput = {

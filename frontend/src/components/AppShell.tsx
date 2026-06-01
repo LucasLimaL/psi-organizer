@@ -16,6 +16,7 @@ import { Outlet, Link as RouterLink, useLocation, useNavigate } from 'react-rout
 import { useAuth } from '../auth/authContext'
 import { globalTokens } from '../theme/tokens'
 import PaletteSwitcher from './PaletteSwitcher'
+import NotificacoesBadge from './NotificacoesBadge'
 
 const NAV = [
   { to: '/', label: 'Início', icon: <DashboardIcon /> },
@@ -167,6 +168,7 @@ export default function AppShell() {
           <Typography variant="h6" component="h1" sx={{ flexGrow: 1, fontWeight: 600 }}>
             {tituloDaRota(location.pathname)}
           </Typography>
+          <NotificacoesBadge />
           <PaletteSwitcher />
         </Toolbar>
       </AppBar>

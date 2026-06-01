@@ -39,6 +39,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/auth/**").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
+                        // Webhook Meta — público. Autenticidade verificada via HMAC-SHA256
+                        // pelo próprio controller (header X-Hub-Signature-256).
+                        .requestMatchers("/webhooks/whatsapp").permitAll()
+                        // Endpoint dev pra simular resposta — só sobe quando profile dev.
+                        .requestMatchers("/dev/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

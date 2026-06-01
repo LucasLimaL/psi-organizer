@@ -42,13 +42,19 @@ public class LembreteScheduler {
     private final ConfiguracaoWhatsappRepository configRepo;
     private final ConsultaRepository consultaRepo;
     private final LembreteEnvioService envioService;
+    private final LembreteEnviadoRepository lembreteRepo;
+    private final com.psiorganizer.paciente.PacienteRepository pacienteRepo;
 
     public LembreteScheduler(ConfiguracaoWhatsappRepository configRepo,
                              ConsultaRepository consultaRepo,
-                             LembreteEnvioService envioService) {
+                             LembreteEnvioService envioService,
+                             LembreteEnviadoRepository lembreteRepo,
+                             com.psiorganizer.paciente.PacienteRepository pacienteRepo) {
         this.configRepo = configRepo;
         this.consultaRepo = consultaRepo;
         this.envioService = envioService;
+        this.lembreteRepo = lembreteRepo;
+        this.pacienteRepo = pacienteRepo;
     }
 
     @Scheduled(cron = "${psi.whatsapp.scheduler-cron}", zone = "UTC")
@@ -83,10 +89,56 @@ public class LembreteScheduler {
             totalDia += processarEnvioDoDia(cfg, horaLocal, amanhaInicio, amanhaFim);
             totalLate += processarEnvioLateBound(cfg, agoraSp, agora);
         }
+        int[] retry = processarRetryConfirmacaoDupla(agora);
 
         log.info(
-                "[scheduler] concluído enviados_dia={} enviados_late={}",
-                totalDia, totalLate);
+                "[scheduler] concluído enviados_dia={} enviados_late={} msg2_retry={} expirados={}",
+                totalDia, totalLate, retry[0], retry[1]);
+    }
+
+    /**
+     * Passo (c) do spec §4.3. Pra cada lembrete em AGUARDANDO_CONFIRMACAO_DUPLA com
+     * última Msg 2 > 1h atrás:
+     *   - tentativas < 3 → reenvia Msg 2 (texto livre + botões na service window)
+     *   - tentativas == 3 → marca EXPIRADO (paciente desistiu)
+     */
+    private int[] processarRetryConfirmacaoDupla(Instant agora) {
+        Instant limite = agora.minusSeconds(3600);
+        java.util.List<LembreteEnviado> pendentes = lembreteRepo.findPendentesConfirmacaoDupla(limite);
+        int reenviados = 0;
+        int expirados = 0;
+        for (LembreteEnviado le : pendentes) {
+            if (le.getConfirmacaoDuplaTentativas() >= 3) {
+                le.setEtapa(EtapaLembrete.EXPIRADO);
+                le.setFinalizadoEm(agora);
+                lembreteRepo.save(le);
+                expirados++;
+                log.info("[scheduler-c] expirado lembrete={}", le.getId());
+                continue;
+            }
+            Consulta consulta = consultaRepo.findById(le.getConsultaId()).orElse(null);
+            if (consulta == null || le.getEscolhaInicial() == null) continue;
+            com.psiorganizer.paciente.Paciente paciente = pacienteRepo
+                    .findById(consulta.getPacienteId()).orElse(null);
+            if (paciente == null) continue;
+            try {
+                com.psiorganizer.whatsapp.client.EnvioResultado r = envioService.enviarMsg2(
+                        le, le.getEscolhaInicial(), paciente, consulta);
+                le.setMensagemConfirmacaoDuplaId(r.mensagemIdExterna());
+                le.setConfirmacaoDuplaEnviadaEm(agora);
+                le.setConfirmacaoDuplaTentativas(le.getConfirmacaoDuplaTentativas() + 1);
+                lembreteRepo.save(le);
+                reenviados++;
+                log.info(
+                        "[scheduler-c] msg2_retry lembrete={} tentativa={}/3",
+                        le.getId(), le.getConfirmacaoDuplaTentativas());
+            } catch (com.psiorganizer.whatsapp.client.WhatsappException e) {
+                log.warn(
+                        "[scheduler-c] msg2_retry_falhou lembrete={} codigo={}",
+                        le.getId(), e.getCodigo());
+            }
+        }
+        return new int[] { reenviados, expirados };
     }
 
     /**

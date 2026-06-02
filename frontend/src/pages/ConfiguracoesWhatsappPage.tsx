@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link as RouterLink } from 'react-router-dom'
 import {
   Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogContentText,
   DialogTitle, FormControlLabel, MenuItem, Paper, Snackbar, Stack,
@@ -271,6 +272,25 @@ export default function ConfiguracoesWhatsappPage() {
             </Typography>
           </Box>
           <Button variant="outlined" onClick={abrirTeste}>Enviar teste</Button>
+        </Box>
+      </Paper>
+
+      <Paper variant="outlined" sx={{ p: 3 }}>
+        <Box sx={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2,
+        }}>
+          <Box>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+              Histórico de lembretes
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Auditoria de envios com status de entrega, etapa da máquina de estados
+              e escolha final.
+            </Typography>
+          </Box>
+          <Button component={RouterLink} to="/configuracoes/whatsapp/historico" variant="outlined">
+            Ver histórico
+          </Button>
         </Box>
       </Paper>
 

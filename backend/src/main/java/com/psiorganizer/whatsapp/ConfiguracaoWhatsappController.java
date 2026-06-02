@@ -1,9 +1,13 @@
 package com.psiorganizer.whatsapp;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.UUID;
 
 import jakarta.validation.Valid;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.psiorganizer.common.security.PsicologaPrincipal;
@@ -18,6 +23,7 @@ import com.psiorganizer.whatsapp.dto.AtualizarConfiguracaoWhatsappRequest;
 import com.psiorganizer.whatsapp.dto.ConfiguracaoWhatsappResponse;
 import com.psiorganizer.whatsapp.dto.EnviarTesteRequest;
 import com.psiorganizer.whatsapp.dto.EnviarTesteResponse;
+import com.psiorganizer.whatsapp.dto.LembretesEnvelope;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,10 +33,15 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "WhatsApp", description = "Configuração de lembretes automáticos via WhatsApp")
 public class ConfiguracaoWhatsappController {
 
-    private final ConfiguracaoWhatsappService service;
+    private static final ZoneId ZONA_BR = ZoneId.of("America/Sao_Paulo");
 
-    public ConfiguracaoWhatsappController(ConfiguracaoWhatsappService service) {
+    private final ConfiguracaoWhatsappService service;
+    private final HistoricoLembretesService historicoService;
+
+    public ConfiguracaoWhatsappController(ConfiguracaoWhatsappService service,
+                                          HistoricoLembretesService historicoService) {
         this.service = service;
+        this.historicoService = historicoService;
     }
 
     @GetMapping
@@ -65,5 +76,26 @@ public class ConfiguracaoWhatsappController {
         String mensagemId = service.enviarTeste(psicologaId, req.telefoneE164());
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(new EnviarTesteResponse(mensagemId));
+    }
+
+    @GetMapping("/lembretes")
+    @Operation(summary = "Histórico paginado de lembretes pra auditoria")
+    public LembretesEnvelope listarHistorico(
+            @RequestParam(required = false) UUID consultaId,
+            @RequestParam(required = false) EtapaLembrete etapa,
+            @RequestParam(required = false) StatusEntrega statusEntrega,
+            @RequestParam(required = false)
+                    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicioEm,
+            @RequestParam(required = false)
+                    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fimEm,
+            @RequestParam(defaultValue = "50") int limit,
+            @RequestParam(defaultValue = "0") int offset) {
+        UUID psicologaId = PsicologaPrincipal.corrente().id();
+        Instant enviadoApos = inicioEm == null ? null
+                : inicioEm.atStartOfDay(ZONA_BR).toInstant();
+        Instant enviadoAntes = fimEm == null ? null
+                : fimEm.plusDays(1).atStartOfDay(ZONA_BR).toInstant();
+        return historicoService.listar(psicologaId, consultaId, etapa, statusEntrega,
+                enviadoApos, enviadoAntes, limit, offset);
     }
 }

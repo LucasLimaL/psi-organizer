@@ -60,3 +60,21 @@ springdoc:
     path: /swagger-ui.html
   api-docs:
     path: /v3/api-docs
+
+# Observabilidade — Actuator + Prometheus (PR D do spec WhatsApp).
+# /actuator/health já era público (SecurityConfig).
+# /actuator/prometheus expõe métricas Micrometer pra scraping; expomos
+# também aqui pra deixar dashboards possíveis em dev sem auth, e em prod
+# isso fica atrás de proxy/firewall típico de stack Prometheus.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+  prometheus:
+    metrics:
+      export:
+        enabled: true

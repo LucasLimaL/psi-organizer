@@ -39,11 +39,15 @@ public class WebhookController {
 
     private final WhatsappProperties props;
     private final WebhookService webhookService;
+    private final WhatsappMetricas metricas;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public WebhookController(WhatsappProperties props, WebhookService webhookService) {
+    public WebhookController(WhatsappProperties props,
+                             WebhookService webhookService,
+                             WhatsappMetricas metricas) {
         this.props = props;
         this.webhookService = webhookService;
+        this.metricas = metricas;
     }
 
     @GetMapping
@@ -68,6 +72,7 @@ public class WebhookController {
     public ResponseEntity<Void> receber(
             @RequestHeader(name = "X-Hub-Signature-256", required = false) String assinatura,
             @RequestBody byte[] body) {
+        long inicio = System.nanoTime();
         if (!HmacValidator.validar(body, assinatura, props.appSecret())) {
             log.warn("[webhook] hmac_invalido assinatura={}", assinatura);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -78,6 +83,8 @@ public class WebhookController {
             webhookService.processar(payload);
         } catch (Exception e) {
             log.error("[webhook] falha ao parsear payload", e);
+        } finally {
+            metricas.webhookLatencia(java.time.Duration.ofNanos(System.nanoTime() - inicio));
         }
         return ResponseEntity.ok().build();
     }

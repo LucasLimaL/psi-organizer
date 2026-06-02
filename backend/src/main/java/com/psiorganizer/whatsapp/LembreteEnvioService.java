@@ -62,17 +62,20 @@ public class LembreteEnvioService {
     private final PsicologaRepository psicologaRepo;
     private final WhatsappClient whatsappClient;
     private final WhatsappProperties props;
+    private final WhatsappMetricas metricas;
 
     public LembreteEnvioService(LembreteEnviadoRepository lembreteRepo,
                                 PacienteRepository pacienteRepo,
                                 PsicologaRepository psicologaRepo,
                                 WhatsappClient whatsappClient,
-                                WhatsappProperties props) {
+                                WhatsappProperties props,
+                                WhatsappMetricas metricas) {
         this.lembreteRepo = lembreteRepo;
         this.pacienteRepo = pacienteRepo;
         this.psicologaRepo = psicologaRepo;
         this.whatsappClient = whatsappClient;
         this.props = props;
+        this.metricas = metricas;
     }
 
     public Paciente buscarPaciente(UUID id) {
@@ -102,7 +105,9 @@ public class LembreteEnvioService {
                 new Botao(btnSimId, btnSimTitulo),
                 new Botao(BTN_VOLTAR, "Voltar"));
         String telefoneE164 = normalizarE164(paciente.getTelefone());
-        return whatsappClient.enviarTextoLivreComBotoes(telefoneE164, texto, botoes);
+        EnvioResultado r = whatsappClient.enviarTextoLivreComBotoes(telefoneE164, texto, botoes);
+        metricas.enviadoMsg2();
+        return r;
     }
 
     /**
@@ -136,7 +141,9 @@ public class LembreteEnvioService {
                 "Tudo bem! Se precisar de ajuda, fale direto com %s.",
                 psi.getNomeCompleto());
         String telefoneE164 = normalizarE164(paciente.getTelefone());
-        return whatsappClient.enviarTextoLivre(telefoneE164, texto);
+        EnvioResultado r = whatsappClient.enviarTextoLivre(telefoneE164, texto);
+        metricas.enviadoMsg3();
+        return r;
     }
 
     /**
@@ -156,11 +163,13 @@ public class LembreteEnvioService {
         if (!paciente.isAtivo()) {
             log.info("[lembrete-pulado] motivo=paciente_inativo consulta={} paciente={} psi={}",
                     consulta.getId(), paciente.getId(), consulta.getPsicologaId());
+            metricas.pulado("paciente_inativo");
             return Optional.empty();
         }
         if (!paciente.isOptInWhatsapp()) {
             log.info("[lembrete-pulado] motivo=opt_in_ausente consulta={} paciente={} psi={}",
                     consulta.getId(), paciente.getId(), consulta.getPsicologaId());
+            metricas.pulado("opt_in_ausente");
             return Optional.empty();
         }
         String telefoneE164 = normalizarE164(paciente.getTelefone());
@@ -169,6 +178,7 @@ public class LembreteEnvioService {
                     "[lembrete-pulado] motivo=telefone_invalido consulta={} paciente={} psi={} telefone={}",
                     consulta.getId(), paciente.getId(), consulta.getPsicologaId(),
                     paciente.getTelefone());
+            metricas.pulado("telefone_invalido");
             return Optional.empty();
         }
 
@@ -199,6 +209,7 @@ public class LembreteEnvioService {
                     "[lembrete-enviado] consulta={} paciente={} psi={} wamid={} template={}",
                     consulta.getId(), paciente.getId(), psi.getId(),
                     r.mensagemIdExterna(), props.templateLembreteNome());
+            metricas.enviadoMsg1();
         } catch (WhatsappException e) {
             le.setStatusEntrega(StatusEntrega.FALHOU);
             le.setErroCodigo(e.getCodigo());
@@ -207,6 +218,7 @@ public class LembreteEnvioService {
                     "[lembrete-falhou] consulta={} paciente={} psi={} codigo={} transitorio={}",
                     consulta.getId(), paciente.getId(), psi.getId(),
                     e.getCodigo(), e.isTransitorio());
+            metricas.falha(e.getCodigo());
         }
 
         return Optional.of(lembreteRepo.save(le));

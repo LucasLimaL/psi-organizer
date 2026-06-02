@@ -18,6 +18,48 @@ export type EnviarTesteResposta = {
   mensagemIdExterna: string
 }
 
+export type EtapaLembrete =
+  | 'AGUARDANDO_ESCOLHA'
+  | 'AGUARDANDO_CONFIRMACAO_DUPLA'
+  | 'FINALIZADO'
+  | 'EXPIRADO'
+  | 'CONGELADO_POR_LOOP'
+
+export type StatusEntregaLembrete = 'PENDENTE' | 'ENVIADO' | 'ENTREGUE' | 'LIDO' | 'FALHOU'
+
+export type EscolhaLembrete = 'CONFIRMAR' | 'CANCELAR'
+
+export type LembreteResumo = {
+  id: string
+  consultaId: string
+  pacienteNome: string
+  consultaInicio?: string | null
+  enviadoEm?: string | null
+  statusEntrega: StatusEntregaLembrete
+  etapa: EtapaLembrete
+  escolhaInicial?: EscolhaLembrete | null
+  escolhaFinal?: EscolhaLembrete | null
+  ciclosVoltar: number
+  confirmacaoDuplaTentativas: number
+  erroCodigo?: string | null
+  erroDescricao?: string | null
+}
+
+export type LembretesEnvelope = {
+  lembretes: LembreteResumo[]
+  total: number
+  temMais: boolean
+}
+
+export type FiltrosHistorico = {
+  etapa?: EtapaLembrete
+  statusEntrega?: StatusEntregaLembrete
+  inicioEm?: string  // YYYY-MM-DD em SP
+  fimEm?: string
+  limit?: number
+  offset?: number
+}
+
 export const whatsappApi = {
   obter: () => api<ConfiguracaoWhatsapp>('/me/whatsapp'),
   atualizar: (input: AtualizarConfiguracaoWhatsappInput) =>
@@ -30,6 +72,16 @@ export const whatsappApi = {
       method: 'POST',
       body: JSON.stringify({ telefoneE164 }),
     }),
+  listarHistorico: (f: FiltrosHistorico = {}) => {
+    const qs = new URLSearchParams()
+    if (f.etapa) qs.set('etapa', f.etapa)
+    if (f.statusEntrega) qs.set('statusEntrega', f.statusEntrega)
+    if (f.inicioEm) qs.set('inicioEm', f.inicioEm)
+    if (f.fimEm) qs.set('fimEm', f.fimEm)
+    qs.set('limit', String(f.limit ?? 50))
+    qs.set('offset', String(f.offset ?? 0))
+    return api<LembretesEnvelope>(`/me/whatsapp/lembretes?${qs}`)
+  },
 }
 
 /** Horas cheias permitidas no Select. */

@@ -76,4 +76,44 @@ public interface LembreteEnviadoRepository extends JpaRepository<LembreteEnviado
             """)
     List<LembreteEnviado> findPendentesConfirmacaoDupla(
             @Param("limiteUmaHora") java.time.Instant limiteUmaHora);
+
+    /**
+     * Histórico paginado pra auditoria — /me/whatsapp/lembretes.
+     * Filtros opcionais (null = sem filtro): etapa, statusEntrega, janela de enviadoEm.
+     */
+    @Query("""
+            select le from LembreteEnviado le
+            where le.psicologaId = :psicologaId
+              and (:consultaId is null or le.consultaId = :consultaId)
+              and (:etapa is null or le.etapa = :etapa)
+              and (:statusEntrega is null or le.statusEntrega = :statusEntrega)
+              and (:enviadoApos is null or le.enviadoEm >= :enviadoApos)
+              and (:enviadoAntes is null or le.enviadoEm < :enviadoAntes)
+            order by le.enviadoEm desc nulls last, le.id desc
+            """)
+    List<LembreteEnviado> historicoPaginado(
+            @Param("psicologaId") UUID psicologaId,
+            @Param("consultaId") UUID consultaId,
+            @Param("etapa") com.psiorganizer.whatsapp.EtapaLembrete etapa,
+            @Param("statusEntrega") com.psiorganizer.whatsapp.StatusEntrega statusEntrega,
+            @Param("enviadoApos") java.time.Instant enviadoApos,
+            @Param("enviadoAntes") java.time.Instant enviadoAntes,
+            org.springframework.data.domain.Pageable pageable);
+
+    @Query("""
+            select count(le) from LembreteEnviado le
+            where le.psicologaId = :psicologaId
+              and (:consultaId is null or le.consultaId = :consultaId)
+              and (:etapa is null or le.etapa = :etapa)
+              and (:statusEntrega is null or le.statusEntrega = :statusEntrega)
+              and (:enviadoApos is null or le.enviadoEm >= :enviadoApos)
+              and (:enviadoAntes is null or le.enviadoEm < :enviadoAntes)
+            """)
+    long historicoCount(
+            @Param("psicologaId") UUID psicologaId,
+            @Param("consultaId") UUID consultaId,
+            @Param("etapa") com.psiorganizer.whatsapp.EtapaLembrete etapa,
+            @Param("statusEntrega") com.psiorganizer.whatsapp.StatusEntrega statusEntrega,
+            @Param("enviadoApos") java.time.Instant enviadoApos,
+            @Param("enviadoAntes") java.time.Instant enviadoAntes);
 }

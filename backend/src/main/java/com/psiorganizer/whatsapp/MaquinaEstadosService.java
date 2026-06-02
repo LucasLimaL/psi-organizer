@@ -41,15 +41,18 @@ public class MaquinaEstadosService {
     private final LembreteEnvioService envioService;
     private final ConsultaRepository consultaRepo;
     private final NotificacaoService notificacaoService;
+    private final WhatsappMetricas metricas;
 
     public MaquinaEstadosService(LembreteEnviadoRepository lembreteRepo,
                                  LembreteEnvioService envioService,
                                  ConsultaRepository consultaRepo,
-                                 NotificacaoService notificacaoService) {
+                                 NotificacaoService notificacaoService,
+                                 WhatsappMetricas metricas) {
         this.lembreteRepo = lembreteRepo;
         this.envioService = envioService;
         this.consultaRepo = consultaRepo;
         this.notificacaoService = notificacaoService;
+        this.metricas = metricas;
     }
 
     /**
@@ -68,6 +71,7 @@ public class MaquinaEstadosService {
         log.info(
                 "[maquina] processando lembrete={} etapa={} botao={} texto={}",
                 le.getId(), etapaAtual, botaoId, abreviar(textoLivre));
+        metricas.resposta(etapaAtual, botaoId);
 
         switch (etapaAtual) {
             case AGUARDANDO_ESCOLHA -> processarEscolhaInicial(le, botaoId);
@@ -221,6 +225,7 @@ public class MaquinaEstadosService {
         le.setFinalizadoEm(Instant.now());
         lembreteRepo.save(le);
         log.info("[maquina] congelado_por_loop lembrete={}", le.getId());
+        metricas.congeladoPorLoop();
     }
 
     /**

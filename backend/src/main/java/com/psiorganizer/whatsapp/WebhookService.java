@@ -24,10 +24,14 @@ public class WebhookService {
 
     private final LembreteEnviadoRepository lembreteRepo;
     private final MaquinaEstadosService maquina;
+    private final WhatsappMetricas metricas;
 
-    public WebhookService(LembreteEnviadoRepository lembreteRepo, MaquinaEstadosService maquina) {
+    public WebhookService(LembreteEnviadoRepository lembreteRepo,
+                          MaquinaEstadosService maquina,
+                          WhatsappMetricas metricas) {
         this.lembreteRepo = lembreteRepo;
         this.maquina = maquina;
+        this.metricas = metricas;
     }
 
     /**
@@ -66,6 +70,7 @@ public class WebhookService {
             log.warn(
                     "[webhook] resposta_orfa tipo={} from={} contextId={}",
                     tipo, from, contextId);
+            metricas.eventoOrfao();
             return;
         }
 

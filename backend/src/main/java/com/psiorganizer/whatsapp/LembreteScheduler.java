@@ -44,17 +44,20 @@ public class LembreteScheduler {
     private final LembreteEnvioService envioService;
     private final LembreteEnviadoRepository lembreteRepo;
     private final com.psiorganizer.paciente.PacienteRepository pacienteRepo;
+    private final WhatsappMetricas metricas;
 
     public LembreteScheduler(ConfiguracaoWhatsappRepository configRepo,
                              ConsultaRepository consultaRepo,
                              LembreteEnvioService envioService,
                              LembreteEnviadoRepository lembreteRepo,
-                             com.psiorganizer.paciente.PacienteRepository pacienteRepo) {
+                             com.psiorganizer.paciente.PacienteRepository pacienteRepo,
+                             WhatsappMetricas metricas) {
         this.configRepo = configRepo;
         this.consultaRepo = consultaRepo;
         this.envioService = envioService;
         this.lembreteRepo = lembreteRepo;
         this.pacienteRepo = pacienteRepo;
+        this.metricas = metricas;
     }
 
     @Scheduled(cron = "${psi.whatsapp.scheduler-cron}", zone = "UTC")
@@ -113,6 +116,7 @@ public class LembreteScheduler {
                 le.setFinalizadoEm(agora);
                 lembreteRepo.save(le);
                 expirados++;
+                metricas.expirado();
                 log.info("[scheduler-c] expirado lembrete={}", le.getId());
                 continue;
             }
@@ -129,6 +133,7 @@ public class LembreteScheduler {
                 le.setConfirmacaoDuplaTentativas(le.getConfirmacaoDuplaTentativas() + 1);
                 lembreteRepo.save(le);
                 reenviados++;
+                metricas.confirmacaoDuplaReenviada();
                 log.info(
                         "[scheduler-c] msg2_retry lembrete={} tentativa={}/3",
                         le.getId(), le.getConfirmacaoDuplaTentativas());

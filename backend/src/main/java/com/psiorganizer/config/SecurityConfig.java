@@ -38,7 +38,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/auth/**").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/prometheus").permitAll()
                         // Webhook Meta — público. Autenticidade verificada via HMAC-SHA256
                         // pelo próprio controller (header X-Hub-Signature-256).
                         .requestMatchers("/webhooks/whatsapp").permitAll()

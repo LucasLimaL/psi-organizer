@@ -9,6 +9,7 @@ import PacientesPage from './pages/PacientesPage'
 import PacienteDetalhePage from './pages/PacienteDetalhePage'
 import PerfilPage from './pages/PerfilPage'
 import ConfiguracoesWhatsappPage from './pages/ConfiguracoesWhatsappPage'
+import HistoricoWhatsappPage from './pages/HistoricoWhatsappPage'
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="/pacientes/:id" element={<PacienteDetalhePage />} />
           <Route path="/perfil" element={<PerfilPage />} />
           <Route path="/configuracoes/whatsapp" element={<ConfiguracoesWhatsappPage />} />
+          <Route path="/configuracoes/whatsapp/historico" element={<HistoricoWhatsappPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -49,6 +49,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
     private static final String SENTINEL_PREFLIGHT = "cors-preflight";
     private static final String SENTINEL_WEBHOOK_META = "meta-webhook";
     private static final String SENTINEL_PRE_AUTH = "pre-auth";
+    private static final String SENTINEL_SCHEDULER = "scheduler-interno";
     private static final String SENTINEL_UNAUTH = "unauthenticated";
 
     @Override
@@ -207,6 +208,8 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
             MDC.put(LogFields.PSICOLOGA_ID, SENTINEL_PREFLIGHT);
         } else if (path.startsWith("/webhooks/")) {
             MDC.put(LogFields.PSICOLOGA_ID, SENTINEL_WEBHOOK_META);
+        } else if (path.startsWith("/internal/")) {
+            MDC.put(LogFields.PSICOLOGA_ID, SENTINEL_SCHEDULER);
         } else if (path.startsWith("/auth/")) {
             MDC.put(LogFields.PSICOLOGA_ID, SENTINEL_PRE_AUTH);
         } else {

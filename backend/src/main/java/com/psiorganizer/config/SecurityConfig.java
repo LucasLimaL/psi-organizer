@@ -45,6 +45,9 @@ public class SecurityConfig {
                         // Webhook Meta — público. Autenticidade verificada via HMAC-SHA256
                         // pelo próprio controller (header X-Hub-Signature-256).
                         .requestMatchers("/webhooks/whatsapp").permitAll()
+                        // Gatilho do Cloud Scheduler — protegido por token compartilhado
+                        // no controller (X-Tick-Token); sem token configurado, 401 sempre.
+                        .requestMatchers("/internal/whatsapp/tick").permitAll()
                         // Endpoint dev pra simular resposta — só sobe quando profile dev.
                         .requestMatchers("/dev/**").permitAll()
                         .anyRequest().authenticated())

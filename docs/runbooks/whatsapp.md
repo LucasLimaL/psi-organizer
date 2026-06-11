@@ -48,6 +48,8 @@ Operação do canal WhatsApp: o que checar quando algo trava, como observar saú
 | `whatsapp.estados.orfaos.total` | — | lembrete cuja consulta/paciente foi deletado após o envio; flow segue sem ação — spike indica deleções em massa ou bug de integridade |
 | `whatsapp.webhook.latencia` | — | p99 acima de 2s = Meta vai retentar agressivamente |
 
+> **Deploy Cloud Run:** o cron interno (`@Scheduled`) é desligado com `WHATSAPP_SCHEDULER_CRON="-"`; quem dispara o tick é o **Cloud Scheduler** chamando `POST /internal/whatsapp/tick` (header `X-Tick-Token` = `SCHEDULER_TICK_TOKEN`). Tick não rodando? Cheque o job no Cloud Scheduler e o token antes de suspeitar do app. ShedLock segue prevenindo disparo duplo.
+
 ### Logs estruturados
 
 Prefixos no log:

@@ -89,6 +89,12 @@ Toda resposta de erro segue o mesmo envelope:
 | `POST` | `/me/whatsapp/teste` | Dispara o template `hello_world` da Meta pro telefone informado (smoke test do canal) | `202` · `400` |
 | `GET` | `/me/whatsapp/lembretes` | Histórico paginado de lembretes pra auditoria. Filtros opcionais: `consultaId`, `etapa`, `statusEntrega`, `inicioEm`, `fimEm`; `limit` ∈ [1, 200]. | `200` · `401` |
 
+### Interno (fora da API pública, oculto do Swagger)
+
+| Método | Path | Sumário | Códigos |
+|---|---|---|---|
+| `POST` | `/internal/whatsapp/tick` | Gatilho do scheduler de lembretes pra Cloud Run (Cloud Scheduler chama de hora em hora). Auth por header `X-Tick-Token` (constant-time); token não configurado = sempre `401`. | `204` · `401` |
+
 ---
 
 ## Códigos HTTP por convenção

@@ -44,6 +44,7 @@ Operação do canal WhatsApp: o que checar quando algo trava, como observar saú
 | `whatsapp.pulados.total` | `motivo=opt_in_ausente\|telefone_invalido\|paciente_inativo` | normal ter alguns; valor anormalmente alto = problema de dados |
 | `whatsapp.respostas.total` | `etapa, escolha` | distribuição mostra adesão das pacientes ao fluxo |
 | `whatsapp.eventos.orfaos.total` | — | webhook recebendo evento sem `context.id` resolvível — investigar |
+| `whatsapp.eventos.ambiguos.total` | — | fallback por telefone achou lembretes ativos de 2+ psicólogas pra mesma paciente; resposta descartada por segurança — se recorrente, orientar paciente a usar os botões |
 | `whatsapp.webhook.latencia` | — | p99 acima de 2s = Meta vai retentar agressivamente |
 
 ### Logs estruturados

@@ -51,8 +51,13 @@ public interface LembreteEnviadoRepository extends JpaRepository<LembreteEnviado
     Optional<LembreteEnviado> findByMensagemExterna(@Param("externalId") String externalId);
 
     /**
-     * Fallback do webhook: telefone normalizado (apenas dígitos) + janela 48h. Usa
-     * regexp_replace pra normalizar o telefone do paciente.
+     * Fallback do webhook: telefone normalizado (apenas dígitos) + janela 48h, restrito
+     * a etapas ativas (estados terminais descartam resposta de qualquer forma).
+     *
+     * Retorna TODOS os candidatos da janela, mais recente primeiro — o número Meta é
+     * único pra todos os tenants, então o telefone sozinho não identifica a psicóloga.
+     * O caller (WebhookService) só usa o resultado se os candidatos pertencerem a UMA
+     * psicóloga; candidatos de 2+ tenants = ambíguo, resposta descartada.
      */
     @Query(
             value = """
@@ -61,11 +66,11 @@ public interface LembreteEnviadoRepository extends JpaRepository<LembreteEnviado
                     JOIN paciente p ON p.id = c.paciente_id
                     WHERE regexp_replace(p.telefone, '\\D', '', 'g') = :telefoneDigitos
                       AND le.enviado_em > NOW() - INTERVAL '48 hours'
+                      AND le.etapa IN ('AGUARDANDO_ESCOLHA', 'AGUARDANDO_CONFIRMACAO_DUPLA')
                     ORDER BY le.enviado_em DESC
-                    LIMIT 1
                     """,
             nativeQuery = true)
-    Optional<LembreteEnviado> findByTelefoneRecente(
+    List<LembreteEnviado> candidatosPorTelefoneRecente(
             @Param("telefoneDigitos") String telefoneDigitos);
 
     /** Passo (c) do scheduler: lembretes em AGUARDANDO_CONFIRMACAO_DUPLA pra retry/EXPIRADO. */

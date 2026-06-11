@@ -96,16 +96,31 @@ public class WebhookService {
     }
 
     private Optional<LembreteEnviado> resolverLembrete(String contextId, String from) {
-        // Camada 1: lookup por context.id
+        // Camada 1: lookup por context.id (wamid é globalmente único — identifica o tenant)
         if (contextId != null) {
             Optional<LembreteEnviado> le = lembreteRepo.findByMensagemExterna(contextId);
             if (le.isPresent()) return le;
         }
-        // Camada 2: fallback por telefone + janela 48h
+        // Camada 2: fallback por telefone + janela 48h, só etapas ativas. O número Meta
+        // é único pra todos os tenants, então o telefone não identifica a psicóloga: se
+        // os candidatos abrangem 2+ psicólogas (mesma paciente atendida por ambas),
+        // descartar é o único seguro — atribuir ao mais recente podia confirmar/cancelar
+        // a consulta do tenant errado. Spec §5.3.
         if (from != null) {
             String digitos = from.replaceAll("\\D", "");
-            Optional<LembreteEnviado> le = lembreteRepo.findByTelefoneRecente(digitos);
-            if (le.isPresent()) return le;
+            List<LembreteEnviado> candidatos = lembreteRepo.candidatosPorTelefoneRecente(digitos);
+            if (candidatos.isEmpty()) {
+                return Optional.empty();
+            }
+            boolean unicoTenant = candidatos.stream()
+                    .map(LembreteEnviado::getPsicologaId)
+                    .distinct()
+                    .count() == 1;
+            if (!unicoTenant) {
+                metricas.eventoAmbiguo();
+                return Optional.empty();
+            }
+            return Optional.of(candidatos.get(0));
         }
         return Optional.empty();
     }

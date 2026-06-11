@@ -241,3 +241,5 @@ Verifique se o backend está em `localhost:8080` e se a env var `VITE_API_BASE_U
 | Como adicionar um widget no dashboard? | Olhar `frontend/src/dashboard/widgets.tsx` — copiar um existente, registrar no array `WIDGETS` |
 | Como adicionar uma paleta nova? | Olhar `frontend/src/theme/palettes.ts` — copiar uma existente e trocar cores |
 | Como o design system está estruturado? | [docs/design/](design/) |
+| Como adicionar log num endpoint/flow? | [OBSERVABILITY.md — recipe](OBSERVABILITY.md#como-adicionar-log-num-flow-novo--recipe) |
+| Onde a senha/CPF/token NÃO podem vazar? | [OBSERVABILITY.md — redação](OBSERVABILITY.md#redação) |

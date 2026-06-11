@@ -78,6 +78,7 @@ Quando o banco está vazio e o profile **não** é `prod`, `SeedDataRunner` inse
 - **JWT stateless** (HS256, 24h). Header `Authorization: Bearer <token>`.
 - **Timezone**: backend persiste em UTC; conversões para `America/Sao_Paulo` na borda (Controller e frontend).
 - **Erros** padronizados como `{ "erro": "mensagem", "detalhes": {...} }` via `GlobalExceptionHandler`.
+- **Logs**: 1 entrada por ação completa, MDC em todo lugar, **nunca `log.error` em service** — só `GlobalExceptionHandler` e wrappers de flow async logam. Body nunca aparece em plaintext. **Leia [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md) antes de tocar em qualquer `log.*`.**
 - **Idioma**: tudo em **pt-BR** — código, validações, commits, docs.
 
 ## Documentação
@@ -89,6 +90,7 @@ Quando o banco está vazio e o profile **não** é `prod`, `SeedDataRunner` inse
 | [docs/BUSINESS_RULES.md](docs/BUSINESS_RULES.md) | Regras de negócio consolidadas |
 | [docs/API.md](docs/API.md) | Sumário de endpoints + link Swagger |
 | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | Setup local + workflow de PR |
+| [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md) | Política de logs: 1 log por ação, MDC, redação LGPD, single error log |
 | [docs/design/](docs/design/) | Design system: audit, roadmap, componentes |
 
 Antes de qualquer mudança não-trivial, **leia o doc relevante** — eles refletem decisões já fechadas que não devem ser revertidas sem discussão.

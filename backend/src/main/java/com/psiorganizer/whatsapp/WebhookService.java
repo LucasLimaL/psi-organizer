@@ -4,8 +4,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
@@ -19,8 +17,6 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class WebhookService {
-
-    private static final Logger log = LoggerFactory.getLogger(WebhookService.class);
 
     private final LembreteEnviadoRepository lembreteRepo;
     private final MaquinaEstadosService maquina;
@@ -40,26 +36,22 @@ public class WebhookService {
      * absorvida pelas guardas idempotentes da máquina de estados).
      */
     public void processar(Map<String, Object> payload) {
-        try {
-            for (Map<String, Object> entry : asList(payload.get("entry"))) {
-                for (Map<String, Object> change : asList(entry.get("changes"))) {
-                    Map<String, Object> value = asMap(change.get("value"));
-                    if (value == null) continue;
-                    for (Map<String, Object> msg : asList(value.get("messages"))) {
-                        processarMensagem(msg);
-                    }
-                    for (Map<String, Object> status : asList(value.get("statuses"))) {
-                        processarStatus(status);
-                    }
+        // Sem try/catch — o WebhookController engole + loga. Não duplicar.
+        for (Map<String, Object> entry : asList(payload.get("entry"))) {
+            for (Map<String, Object> change : asList(entry.get("changes"))) {
+                Map<String, Object> value = asMap(change.get("value"));
+                if (value == null) continue;
+                for (Map<String, Object> msg : asList(value.get("messages"))) {
+                    processarMensagem(msg);
+                }
+                for (Map<String, Object> status : asList(value.get("statuses"))) {
+                    processarStatus(status);
                 }
             }
-        } catch (RuntimeException e) {
-            log.error("[webhook] falha inesperada processando payload", e);
         }
     }
 
     private void processarMensagem(Map<String, Object> msg) {
-        String tipo = (String) msg.get("type");
         String from = (String) msg.get("from");
         String contextId = Optional.ofNullable(asMap(msg.get("context")))
                 .map(c -> (String) c.get("id"))
@@ -67,9 +59,8 @@ public class WebhookService {
 
         Optional<LembreteEnviado> le = resolverLembrete(contextId, from);
         if (le.isEmpty()) {
-            log.warn(
-                    "[webhook] resposta_orfa tipo={} from={} contextId={}",
-                    tipo, from, contextId);
+            // Resposta sem lembrete correspondente — métrica detecta, log agregado
+            // do request mostra a contagem via X-Request-Id se for hot path.
             metricas.eventoOrfao();
             return;
         }
@@ -114,12 +105,7 @@ public class WebhookService {
         if (from != null) {
             String digitos = from.replaceAll("\\D", "");
             Optional<LembreteEnviado> le = lembreteRepo.findByTelefoneRecente(digitos);
-            if (le.isPresent()) {
-                log.info(
-                        "[webhook] fallback_telefone usado from={} lembrete={}",
-                        from, le.get().getId());
-                return le;
-            }
+            if (le.isPresent()) return le;
         }
         return Optional.empty();
     }

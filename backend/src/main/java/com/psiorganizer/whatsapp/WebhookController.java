@@ -29,6 +29,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
  * GET — handshake de verificação (Meta envia hub.challenge, devolvemos o valor literal).
  * POST — eventos (messages + statuses). Autenticidade verificada por HMAC-SHA256 do
  * body bruto contra WHATSAPP_APP_SECRET.
+ *
+ * Política de log: Meta exige sempre 200 OK — o controller absorve qualquer exceção
+ * pra evitar retry da Meta. Como a exceção é engolida, este é o único lugar que
+ * pode vê-la → ele loga (regra "quem captura, loga" em docs/OBSERVABILITY.md).
  */
 @RestController
 @RequestMapping("/webhooks/whatsapp")
@@ -59,11 +63,8 @@ public class WebhookController {
         if ("subscribe".equals(modo)
                 && props.verifyToken() != null
                 && props.verifyToken().equals(token)) {
-            log.info("[webhook] handshake ok");
             return ResponseEntity.ok().contentType(MediaType.TEXT_PLAIN).body(challenge);
         }
-        log.warn("[webhook] handshake rejeitado modo={} token_match={}",
-                modo, props.verifyToken() != null && props.verifyToken().equals(token));
         return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
     }
 
@@ -74,7 +75,6 @@ public class WebhookController {
             @RequestBody byte[] body) {
         long inicio = System.nanoTime();
         if (!HmacValidator.validar(body, assinatura, props.appSecret())) {
-            log.warn("[webhook] hmac_invalido assinatura={}", assinatura);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         try {
@@ -82,7 +82,9 @@ public class WebhookController {
             Map<String, Object> payload = mapper.readValue(body, Map.class);
             webhookService.processar(payload);
         } catch (Exception e) {
-            log.error("[webhook] falha ao parsear payload", e);
+            // Meta exige sempre 200 — engolimos a exceção pra evitar retry. Log único
+            // aqui porque ninguém mais vai ver esse erro propagado.
+            log.error("webhook_falhou ao processar payload", e);
         } finally {
             metricas.webhookLatencia(java.time.Duration.ofNanos(System.nanoTime() - inicio));
         }

@@ -25,6 +25,7 @@
         <libphonenumber.version>8.13.50</libphonenumber.version>
         <shedlock.version>5.16.0</shedlock.version>
         <logstash-encoder.version>8.0</logstash-encoder.version>
+        <cloud-sql-connector.version>1.21.0</cloud-sql-connector.version>
     </properties>
 
     <dependencies>
@@ -66,6 +67,16 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Deploy GCP: conexão Cloud Run → Cloud SQL via socket factory (sem expor IP
+             público do banco nem pagar VPC connector). Inerte em dev — só ativa quando
+             a JDBC URL (DB_URL) referencia o SocketFactory. -->
+        <dependency>
+            <groupId>com.google.cloud.sql</groupId>
+            <artifactId>postgres-socket-factory</artifactId>
+            <version>${cloud-sql-connector.version}</version>
             <scope>runtime</scope>
         </dependency>
 

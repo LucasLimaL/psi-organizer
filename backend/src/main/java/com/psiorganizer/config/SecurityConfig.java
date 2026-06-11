@@ -22,11 +22,14 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
     private final String allowedOrigins;
+    private final String allowedHeaders;
 
     public SecurityConfig(JwtAuthFilter jwtAuthFilter,
-                          @Value("${psi.cors.allowed-origins}") String allowedOrigins) {
+                          @Value("${psi.cors.allowed-origins}") String allowedOrigins,
+                          @Value("${psi.cors.allowed-headers:*}") String allowedHeaders) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.allowedOrigins = allowedOrigins;
+        this.allowedHeaders = allowedHeaders;
     }
 
     @Bean
@@ -54,7 +57,7 @@ public class SecurityConfig {
         CorsConfiguration cfg = new CorsConfiguration();
         cfg.setAllowedOrigins(List.of(allowedOrigins.split(",")));
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        cfg.setAllowedHeaders(List.of("*"));
+        cfg.setAllowedHeaders(List.of(allowedHeaders.split(",")));
         cfg.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", cfg);

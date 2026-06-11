@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.psiorganizer.common.Fusos;
 import com.psiorganizer.consulta.Consulta;
 import com.psiorganizer.consulta.ConsultaRepository;
 import com.psiorganizer.consulta.StatusConsulta;
@@ -23,8 +23,6 @@ import com.psiorganizer.paciente.PacienteRepository;
 
 @Service
 public class DashboardService {
-
-    private static final ZoneId ZONA = ZoneId.of("America/Sao_Paulo");
 
     private final ConsultaRepository consultaRepository;
     private final PacienteRepository pacienteRepository;
@@ -38,19 +36,19 @@ public class DashboardService {
     @Transactional(readOnly = true)
     public DashboardResponse calcular(UUID psicologaId) {
         Instant agora = Instant.now();
-        LocalDate hoje = LocalDate.now(ZONA);
-        Instant hojeIni = hoje.atStartOfDay(ZONA).toInstant();
-        Instant hojeFim = hoje.plusDays(1).atStartOfDay(ZONA).toInstant();
+        LocalDate hoje = LocalDate.now(Fusos.ZONA_BR);
+        Instant hojeIni = hoje.atStartOfDay(Fusos.ZONA_BR).toInstant();
+        Instant hojeFim = hoje.plusDays(1).atStartOfDay(Fusos.ZONA_BR).toInstant();
 
         YearMonth mesAtual = YearMonth.from(hoje);
-        Instant mesAtualIni = mesAtual.atDay(1).atStartOfDay(ZONA).toInstant();
-        Instant mesAtualFim = mesAtual.plusMonths(1).atDay(1).atStartOfDay(ZONA).toInstant();
+        Instant mesAtualIni = mesAtual.atDay(1).atStartOfDay(Fusos.ZONA_BR).toInstant();
+        Instant mesAtualFim = mesAtual.plusMonths(1).atDay(1).atStartOfDay(Fusos.ZONA_BR).toInstant();
 
         YearMonth mesAnterior = mesAtual.minusMonths(1);
-        Instant mesAntIni = mesAnterior.atDay(1).atStartOfDay(ZONA).toInstant();
+        Instant mesAntIni = mesAnterior.atDay(1).atStartOfDay(Fusos.ZONA_BR).toInstant();
         Instant mesAntFim = mesAtualIni;
 
-        Instant proxima7Fim = hoje.plusDays(7).atStartOfDay(ZONA).toInstant();
+        Instant proxima7Fim = hoje.plusDays(7).atStartOfDay(Fusos.ZONA_BR).toInstant();
 
         // Carrega tudo do mês anterior até daqui a 7 dias — uma query só.
         List<Consulta> janela = consultaRepository.listarIntervalo(psicologaId, mesAntIni, proxima7Fim);
@@ -83,24 +81,15 @@ public class DashboardService {
     }
 
     private DashboardResponse.HojeStats calcularHoje(List<Consulta> janela, Instant ini, Instant fim) {
-        List<Consulta> hoje = janela.stream()
-                .filter(c -> !c.getInicio().isBefore(ini) && c.getInicio().isBefore(fim))
-                .toList();
-        int agendadas = (int) hoje.stream().filter(c -> c.getStatus() == StatusConsulta.AGENDADA).count();
-        int confirmadas = (int) hoje.stream().filter(c -> c.getStatus() == StatusConsulta.CONFIRMADA).count();
-        int realizadas = (int) hoje.stream().filter(c -> c.getStatus() == StatusConsulta.REALIZADA).count();
-        int faltas = (int) hoje.stream().filter(c -> c.getStatus() == StatusConsulta.FALTA).count();
-        return new DashboardResponse.HojeStats(hoje.size(), agendadas, confirmadas, realizadas, faltas);
+        List<Consulta> hoje = filtrarPorInicio(janela, ini, fim);
+        ContagemPorStatus contagem = contarPorStatus(hoje);
+        return new DashboardResponse.HojeStats(hoje.size(), contagem.agendadas(),
+                contagem.confirmadas(), contagem.realizadas(), contagem.faltas());
     }
 
     private DashboardResponse.MesStats calcularMes(List<Consulta> janela, Instant ini, Instant fim) {
-        List<Consulta> mes = janela.stream()
-                .filter(c -> !c.getInicio().isBefore(ini) && c.getInicio().isBefore(fim))
-                .toList();
-        int agendadas = (int) mes.stream().filter(c -> c.getStatus() == StatusConsulta.AGENDADA).count();
-        int confirmadas = (int) mes.stream().filter(c -> c.getStatus() == StatusConsulta.CONFIRMADA).count();
-        int realizadas = (int) mes.stream().filter(c -> c.getStatus() == StatusConsulta.REALIZADA).count();
-        int faltas = (int) mes.stream().filter(c -> c.getStatus() == StatusConsulta.FALTA).count();
+        List<Consulta> mes = filtrarPorInicio(janela, ini, fim);
+        ContagemPorStatus contagem = contarPorStatus(mes);
 
         BigDecimal faturamentoRealizado = somarValores(mes, c -> c.getStatus() == StatusConsulta.REALIZADA);
         BigDecimal faturamentoPago = somarValores(mes,
@@ -108,28 +97,55 @@ public class DashboardService {
         BigDecimal faturamentoPendente = somarValores(mes,
                 c -> c.getStatus() == StatusConsulta.REALIZADA && !c.isPago());
 
+        int realizadas = contagem.realizadas();
+        int faltas = contagem.faltas();
         Double taxa = (realizadas + faltas) == 0
                 ? null
                 : (double) realizadas / (realizadas + faltas);
 
         return new DashboardResponse.MesStats(
-                mes.size(), agendadas, confirmadas, realizadas, faltas,
+                mes.size(), contagem.agendadas(), contagem.confirmadas(), realizadas, faltas,
                 faturamentoRealizado, faturamentoPago, faturamentoPendente, taxa);
     }
 
     private DashboardResponse.ComparativoStats calcularComparativo(List<Consulta> janela,
                                                                    Instant ini, Instant fim) {
-        List<Consulta> mes = janela.stream()
-                .filter(c -> !c.getInicio().isBefore(ini) && c.getInicio().isBefore(fim))
-                .toList();
+        List<Consulta> mes = filtrarPorInicio(janela, ini, fim);
         BigDecimal faturamento = somarValores(mes, c -> c.getStatus() == StatusConsulta.REALIZADA);
         return new DashboardResponse.ComparativoStats(mes.size(), faturamento);
+    }
+
+    /** Consultas cujo início cai em [ini, fim). */
+    private static List<Consulta> filtrarPorInicio(List<Consulta> janela, Instant ini, Instant fim) {
+        return janela.stream()
+                .filter(c -> !c.getInicio().isBefore(ini) && c.getInicio().isBefore(fim))
+                .toList();
+    }
+
+    private record ContagemPorStatus(int agendadas, int confirmadas, int realizadas, int faltas) {}
+
+    /** CANCELADA não entra em nenhum contador — só no total (size da lista filtrada). */
+    private static ContagemPorStatus contarPorStatus(List<Consulta> consultas) {
+        int agendadas = 0;
+        int confirmadas = 0;
+        int realizadas = 0;
+        int faltas = 0;
+        for (Consulta c : consultas) {
+            switch (c.getStatus()) {
+                case AGENDADA -> agendadas++;
+                case CONFIRMADA -> confirmadas++;
+                case REALIZADA -> realizadas++;
+                case FALTA -> faltas++;
+                default -> { }
+            }
+        }
+        return new ContagemPorStatus(agendadas, confirmadas, realizadas, faltas);
     }
 
     private List<DashboardResponse.DiaStats> calcularProximos7Dias(List<Consulta> janela, LocalDate hoje) {
         Map<LocalDate, Integer> porDia = new HashMap<>();
         for (Consulta c : janela) {
-            LocalDate dia = c.getInicio().atZone(ZONA).toLocalDate();
+            LocalDate dia = c.getInicio().atZone(Fusos.ZONA_BR).toLocalDate();
             porDia.merge(dia, 1, Integer::sum);
         }
         return java.util.stream.IntStream.range(0, 7)

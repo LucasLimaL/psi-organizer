@@ -25,8 +25,6 @@ public interface ConsultaRepository extends JpaRepository<Consulta, UUID> {
                                    @Param("inicio") Instant inicio,
                                    @Param("fim") Instant fim);
 
-    List<Consulta> findByPacienteIdOrderByInicioDesc(UUID pacienteId);
-
     @Query("""
             select c from Consulta c
             where c.psicologaId = :psicologaId

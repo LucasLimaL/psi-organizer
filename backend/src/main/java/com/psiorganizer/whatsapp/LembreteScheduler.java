@@ -2,7 +2,6 @@ package com.psiorganizer.whatsapp;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -10,6 +9,7 @@ import org.slf4j.MDC;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import com.psiorganizer.common.Fusos;
 import com.psiorganizer.common.observability.FlowLogger;
 import com.psiorganizer.common.observability.LogFields;
 import com.psiorganizer.consulta.Consulta;
@@ -35,7 +35,6 @@ import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 @Component
 public class LembreteScheduler {
 
-    private static final ZoneId ZONA_BR = ZoneId.of("America/Sao_Paulo");
     private static final int JANELA_INICIO = 7;   // inclusivo
     private static final int JANELA_FIM = 20;     // inclusivo
 
@@ -67,7 +66,7 @@ public class LembreteScheduler {
     }
 
     private void rodar() {
-        ZonedDateTime agoraSp = ZonedDateTime.now(ZONA_BR);
+        ZonedDateTime agoraSp = ZonedDateTime.now(Fusos.ZONA_BR);
         int horaLocal = agoraSp.getHour();
         if (horaLocal < JANELA_INICIO || horaLocal > JANELA_FIM) {
             return;
@@ -81,8 +80,8 @@ public class LembreteScheduler {
         Instant agora = agoraSp.toInstant();
         LocalDate hoje = agoraSp.toLocalDate();
         LocalDate amanha = hoje.plusDays(1);
-        Instant amanhaInicio = amanha.atStartOfDay(ZONA_BR).toInstant();
-        Instant amanhaFim = amanha.plusDays(1).atStartOfDay(ZONA_BR).toInstant();
+        Instant amanhaInicio = amanha.atStartOfDay(Fusos.ZONA_BR).toInstant();
+        Instant amanhaFim = amanha.plusDays(1).atStartOfDay(Fusos.ZONA_BR).toInstant();
 
         int totalDia = 0;
         int totalLate = 0;
@@ -165,7 +164,7 @@ public class LembreteScheduler {
                                         Instant agora) {
         Instant horarioEscolhidoHojeSp = agoraSp.toLocalDate()
                 .atTime(cfg.getHorarioEnvioLembrete())
-                .atZone(ZONA_BR)
+                .atZone(Fusos.ZONA_BR)
                 .toInstant();
 
         Instant inicioMin = agora.plusSeconds(2 * 3600);

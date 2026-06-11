@@ -5,7 +5,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.ZoneId;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +15,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.psiorganizer.common.Fusos;
 import com.psiorganizer.common.exception.ApiException;
 import com.psiorganizer.paciente.Paciente;
 import com.psiorganizer.paciente.PacienteRepository;
@@ -24,7 +24,6 @@ import com.psiorganizer.paciente.PacienteRepository;
 public class ConsultaService {
 
     private static final Duration JANELA_CONFLITO = Duration.ofHours(12);
-    private static final ZoneId ZONA = ZoneId.of("America/Sao_Paulo");
     private static final int MAX_OCORRENCIAS = 520; // ~10 anos semanais — guarda contra loop
 
     private final ConsultaRepository consultaRepository;
@@ -93,7 +92,7 @@ public class ConsultaService {
         List<Instant> inicios = new ArrayList<>();
         LocalDate cursor = primeira;
         while (!cursor.isAfter(fimEm)) {
-            inicios.add(cursor.atTime(horario).atZone(ZONA).toInstant());
+            inicios.add(cursor.atTime(horario).atZone(Fusos.ZONA_BR).toInstant());
             cursor = cursor.plusWeeks(intervaloSemanas);
             if (inicios.size() > MAX_OCORRENCIAS) {
                 throw ApiException.requisicaoInvalida(

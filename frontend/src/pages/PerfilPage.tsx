@@ -9,20 +9,7 @@ import { perfilApi, type AtualizarPerfilInput, type PerfilCompleto } from '../ap
 import EnderecoForm, { type EnderecoFormValor } from '../components/EnderecoForm'
 import { useAuth } from '../auth/authContext'
 import { useDirty } from '../hooks/useDirty'
-
-function iniciais(nome: string): string {
-  return nome
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(s => s[0]?.toUpperCase() ?? '')
-    .join('')
-}
-
-function formatarCpf(cpf: string) {
-  if (cpf.length !== 11) return cpf
-  return `${cpf.slice(0, 3)}.${cpf.slice(3, 6)}.${cpf.slice(6, 9)}-${cpf.slice(9)}`
-}
+import { formatarCpf, iniciais } from '../utils/formatadores'
 
 function Secao({ titulo, descricao, children }: {
   titulo: string

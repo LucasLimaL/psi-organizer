@@ -12,20 +12,7 @@ import { pacientesApi, type Paciente, type PacienteInput } from '../api/paciente
 import PacienteForm from '../components/PacienteForm'
 import InativarPacienteDialog from '../components/InativarPacienteDialog'
 import ConsultasPacienteList from '../components/ConsultasPacienteList'
-
-function iniciais(nome: string): string {
-  return nome
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(s => s[0]?.toUpperCase() ?? '')
-    .join('')
-}
-
-function formatarCpf(cpf: string) {
-  if (cpf.length !== 11) return cpf
-  return `${cpf.slice(0, 3)}.${cpf.slice(3, 6)}.${cpf.slice(6, 9)}-${cpf.slice(9)}`
-}
+import { formatarCpf, iniciais } from '../utils/formatadores'
 
 type AbaId = 'dados' | 'proximas' | 'historico'
 

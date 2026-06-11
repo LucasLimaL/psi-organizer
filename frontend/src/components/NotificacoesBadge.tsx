@@ -7,13 +7,13 @@ import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone'
 import { useNavigate } from 'react-router-dom'
 import { parseCancelamento, type Notificacao } from '../api/notificacoes'
 import { useNotificacoesPolling } from '../hooks/useNotificacoesPolling'
+import { formatarDataHora } from '../utils/datas'
 
 function descricao(n: Notificacao): string {
   if (n.tipo === 'CANCELAMENTO_PELA_PACIENTE') {
     const p = parseCancelamento(n)
     if (!p) return 'Paciente cancelou consulta'
-    const dt = new Date(p.inicio)
-    return `${p.pacienteNome} cancelou consulta de ${dt.toLocaleString('pt-BR')}`
+    return `${p.pacienteNome} cancelou consulta de ${formatarDataHora(new Date(p.inicio))}`
   }
   return n.tipo
 }
@@ -73,7 +73,7 @@ export default function NotificacoesBadge() {
                 <ListItemButton onClick={() => void clicar(n)}>
                   <ListItemText
                     primary={descricao(n)}
-                    secondary={new Date(n.criadaEm).toLocaleString('pt-BR')}
+                    secondary={formatarDataHora(new Date(n.criadaEm))}
                   />
                 </ListItemButton>
               </ListItem>

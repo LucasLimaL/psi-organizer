@@ -7,7 +7,6 @@ import DashboardPage from './pages/DashboardPage'
 import AgendaPage from './pages/AgendaPage'
 import PacientesPage from './pages/PacientesPage'
 import PacienteDetalhePage from './pages/PacienteDetalhePage'
-import FinanceiroPage from './pages/FinanceiroPage'
 import PerfilPage from './pages/PerfilPage'
 import ConfiguracoesWhatsappPage from './pages/ConfiguracoesWhatsappPage'
 import HistoricoWhatsappPage from './pages/HistoricoWhatsappPage'
@@ -23,7 +22,6 @@ function App() {
           <Route path="/agenda" element={<AgendaPage />} />
           <Route path="/pacientes" element={<PacientesPage />} />
           <Route path="/pacientes/:id" element={<PacienteDetalhePage />} />
-          <Route path="/financeiro" element={<FinanceiroPage />} />
           <Route path="/perfil" element={<PerfilPage />} />
           <Route path="/configuracoes/whatsapp" element={<ConfiguracoesWhatsappPage />} />
           <Route path="/configuracoes/whatsapp/historico" element={<HistoricoWhatsappPage />} />

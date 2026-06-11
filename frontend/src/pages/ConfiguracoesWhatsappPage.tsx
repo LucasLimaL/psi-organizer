@@ -12,14 +12,8 @@ import {
 } from '../api/whatsapp'
 import { useAuth } from '../auth/authContext'
 import { useDirty } from '../hooks/useDirty'
+import { addDias } from '../utils/datas'
 import { formatarTelefoneBr, paraE164Br } from '../utils/telefones'
-
-const PLACEHOLDERS_EXEMPLO = {
-  paciente: 'Maria',
-  psicologa: 'Dra. Ana Silva',
-  data: '30/05/2026',
-  hora: '14:00',
-}
 
 export default function ConfiguracoesWhatsappPage() {
   const { psicologa } = useAuth()
@@ -82,9 +76,12 @@ export default function ConfiguracoesWhatsappPage() {
 
   const exemploRenderizado = useMemo(() => {
     if (!config) return ''
+    // Lembrete vai 1 dia antes da consulta → o exemplo usa amanhã como data.
     return renderizarTemplate(config.templateMensagem, {
-      ...PLACEHOLDERS_EXEMPLO,
-      psicologa: psicologa?.nomeCompleto ?? PLACEHOLDERS_EXEMPLO.psicologa,
+      paciente: 'Maria',
+      psicologa: psicologa?.nomeCompleto ?? 'Dra. Ana Silva',
+      data: addDias(new Date(), 1).toLocaleDateString('pt-BR'),
+      hora: '16:00',
     })
   }, [config, psicologa])
 
@@ -209,11 +206,22 @@ export default function ConfiguracoesWhatsappPage() {
             </Typography>
             {/* Fac-símile do cliente WhatsApp — cores do app da Meta, de propósito fora
                 do design system pra prévia ser fiel ao que a paciente vê. */}
-            <Box sx={{ bgcolor: '#efeae2', borderRadius: 3, p: 2, minHeight: 200 }}>
+            <Box
+              sx={{
+                bgcolor: '#efeae2',
+                borderRadius: 3,
+                p: 2,
+                minHeight: 200,
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
               <Box
                 sx={{
                   bgcolor: '#ffffff',
                   borderRadius: '8px',
+                  width: '100%',
                   maxWidth: 380,
                   overflow: 'hidden',
                   boxShadow: '0 1px 0.5px rgba(11, 20, 26, 0.13)',

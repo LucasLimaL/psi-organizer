@@ -85,6 +85,12 @@ public class ConsultaService {
         c.setDuracaoMinutos(duracaoMinutos);
         c.setValor(valor);
         c.setStatus(status);
+        // pago_em registra a transição não-pago → pago; desmarcar limpa a data
+        if (pago && !c.isPago()) {
+            c.setPagoEm(Instant.now());
+        } else if (!pago) {
+            c.setPagoEm(null);
+        }
         c.setPago(pago);
         c.setObservacoes(observacoes);
         return consultaRepository.save(c);

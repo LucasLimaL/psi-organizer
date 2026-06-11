@@ -136,6 +136,10 @@ public class SeedDataRunner implements ApplicationRunner {
                                 inicio.atZone(Fusos.ZONA_BR).toInstant(), duracao, valor, obs);
                 c.setStatus(status);
                 c.setPago(pago);
+                if (pago) {
+                        // Aproxima um pagamento no dia seguinte à consulta
+                        c.setPagoEm(c.getInicio().plus(java.time.Duration.ofDays(1)));
+                }
                 consultaRepo.save(c);
         }
 }

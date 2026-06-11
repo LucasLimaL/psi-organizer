@@ -80,6 +80,16 @@ Toda resposta de erro segue o mesmo envelope:
 |---|---|---|---|
 | `GET` | `/dashboard` | Retorna métricas de hoje, mês corrente, comparativo, próximos 7 dias, pacientes, consultas futuras agendadas e próximas consultas. Calcula tudo numa janela única do mês anterior até daqui a 7 dias. | `200` · `401` |
 
+### Financeiro · `/financeiro/**`
+
+Visão financeira por **regime de competência** — o recorte é sempre pelo mês/ano da consulta (`inicio`), não pela data do pagamento. `periodo` aceita `YYYY-MM` (mês) ou `YYYY` (ano inteiro); formato inválido → `400`.
+
+| Método | Path | Sumário | Códigos |
+|---|---|---|---|
+| `GET` | `/financeiro/resumo?periodo=2026-06` | Totais (quantidade + soma) de pendentes, realizados, futuros e pendências **anteriores** ao período, mais `anosDisponiveis` pro filtro anual. | `200` · `400` período inválido · `401` |
+| `GET` | `/financeiro/pendentes?periodo=2026-06&anteriores=false&limit=10&offset=0` | Pagamentos pendentes **agrupados por paciente** (ordenados por total devido desc), paginado **por paciente**. `anteriores=true` lista o acumulado anterior ao início do período. Envelope: `{ grupos, totalGrupos, temMais }`. `limit` ∈ [1, 50]. | `200` · `400` · `401` |
+| `GET` | `/financeiro/consultas?periodo=2026-06&categoria=realizados&limit=20&offset=0` | Lista cronológica paginada. `categoria` ∈ `realizados` (pagos, mais recentes primeiro) \| `futuros` (agendadas/confirmadas, ascendente). Envelope: `{ consultas, total, temMais }`. `limit` ∈ [1, 50]. | `200` · `400` categoria/período inválido · `401` |
+
 ### WhatsApp · `/me/whatsapp/**`
 
 | Método | Path | Sumário | Códigos |

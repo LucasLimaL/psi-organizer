@@ -91,11 +91,10 @@ public class DashboardService {
         List<Consulta> mes = filtrarPorInicio(janela, ini, fim);
         ContagemPorStatus contagem = contarPorStatus(mes);
 
-        BigDecimal faturamentoRealizado = somarValores(mes, c -> c.getStatus() == StatusConsulta.REALIZADA);
-        BigDecimal faturamentoPago = somarValores(mes,
-                c -> c.getStatus() == StatusConsulta.REALIZADA && c.isPago());
-        BigDecimal faturamentoPendente = somarValores(mes,
-                c -> c.getStatus() == StatusConsulta.REALIZADA && !c.isPago());
+        // Cobrável = REALIZADA ou FALTA (no-show é cobrado) — mesma regra do financeiro
+        BigDecimal faturamentoRealizado = somarValores(mes, DashboardService::cobravel);
+        BigDecimal faturamentoPago = somarValores(mes, c -> cobravel(c) && c.isPago());
+        BigDecimal faturamentoPendente = somarValores(mes, c -> cobravel(c) && !c.isPago());
 
         int realizadas = contagem.realizadas();
         int faltas = contagem.faltas();
@@ -111,8 +110,12 @@ public class DashboardService {
     private DashboardResponse.ComparativoStats calcularComparativo(List<Consulta> janela,
                                                                    Instant ini, Instant fim) {
         List<Consulta> mes = filtrarPorInicio(janela, ini, fim);
-        BigDecimal faturamento = somarValores(mes, c -> c.getStatus() == StatusConsulta.REALIZADA);
+        BigDecimal faturamento = somarValores(mes, DashboardService::cobravel);
         return new DashboardResponse.ComparativoStats(mes.size(), faturamento);
+    }
+
+    private static boolean cobravel(Consulta c) {
+        return c.getStatus() == StatusConsulta.REALIZADA || c.getStatus() == StatusConsulta.FALTA;
     }
 
     /** Consultas cujo início cai em [ini, fim). */

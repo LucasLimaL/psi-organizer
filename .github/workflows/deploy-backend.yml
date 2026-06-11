@@ -1,0 +1,68 @@
+# Deploy do backend em produção (Cloud Run) a cada push na main que toque backend/**.
+# Auth keyless via Workload Identity Federation — sem chave de SA em secret.
+# Infra documentada em docs/runbooks/infra-gcp.md.
+name: deploy-backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+env:
+  IMAGEM: us-central1-docker.pkg.dev/psi-organizer-prod/psi-organizer/backend:${{ github.sha }}
+  API_URL: https://psi-organizer-api-283039307907.us-central1.run.app
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Verificação (compile + spotless)
+        working-directory: backend
+        run: mvn -B -q verify
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Build da imagem (Cloud Build)
+        working-directory: backend
+        run: gcloud builds submit --tag "$IMAGEM" .
+
+      - name: Deploy no Cloud Run
+        run: |
+          gcloud run deploy psi-organizer-api \
+            --region=us-central1 \
+            --image="$IMAGEM" \
+            --quiet
+
+      - name: Smoke test (health UP)
+        run: |
+          for i in $(seq 1 12); do
+            status=$(curl -s -o /dev/null -w '%{http_code}' "$API_URL/actuator/health")
+            if [ "$status" = "200" ]; then
+              echo "health UP"; exit 0
+            fi
+            echo "tentativa $i: HTTP $status — aguardando..."; sleep 5
+          done
+          echo "::error::health não respondeu 200 após o deploy"; exit 1

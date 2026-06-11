@@ -15,8 +15,6 @@ import com.psiorganizer.consulta.Consulta;
 import com.psiorganizer.consulta.ConsultaRepository;
 import com.psiorganizer.paciente.Paciente;
 import com.psiorganizer.paciente.PacienteRepository;
-import com.psiorganizer.whatsapp.dto.LembreteResponse;
-import com.psiorganizer.whatsapp.dto.LembretesEnvelope;
 
 /**
  * Consultas paginadas de lembretes pra auditoria. Spec §3.2 /me/whatsapp/lembretes.
@@ -36,15 +34,22 @@ public class HistoricoLembretesService {
         this.pacienteRepo = pacienteRepo;
     }
 
+    /** Item do histórico com o contexto necessário pra exibição. */
+    public record ItemHistorico(LembreteEnviado lembrete, String pacienteNome,
+                                Instant consultaInicio) {}
+
+    /** Página do histórico — o Controller mapeia pra DTO de response. */
+    public record HistoricoLembretes(List<ItemHistorico> itens, long total, boolean temMais) {}
+
     @Transactional(readOnly = true)
-    public LembretesEnvelope listar(UUID psicologaId,
-                                    UUID consultaId,
-                                    EtapaLembrete etapa,
-                                    StatusEntrega statusEntrega,
-                                    Instant enviadoApos,
-                                    Instant enviadoAntes,
-                                    int limit,
-                                    int offset) {
+    public HistoricoLembretes listar(UUID psicologaId,
+                                     UUID consultaId,
+                                     EtapaLembrete etapa,
+                                     StatusEntrega statusEntrega,
+                                     Instant enviadoApos,
+                                     Instant enviadoAntes,
+                                     int limit,
+                                     int offset) {
         int limitSeguro = Math.max(1, Math.min(200, limit));
         int offsetSeguro = Math.max(0, offset);
 
@@ -67,14 +72,14 @@ public class HistoricoLembretesService {
             nomes.put(p.getId(), p.getNome());
         }
 
-        List<LembreteResponse> dtos = page.stream().map(le -> {
+        List<ItemHistorico> itens = page.stream().map(le -> {
             Consulta c = consultas.get(le.getConsultaId());
             String nome = c == null ? "?" : nomes.getOrDefault(c.getPacienteId(), "?");
             Instant inicio = c == null ? null : c.getInicio();
-            return LembreteResponse.from(le, nome, inicio);
+            return new ItemHistorico(le, nome, inicio);
         }).toList();
 
-        boolean temMais = offsetSeguro + dtos.size() < total;
-        return new LembretesEnvelope(dtos, total, temMais);
+        boolean temMais = offsetSeguro + itens.size() < total;
+        return new HistoricoLembretes(itens, total, temMais);
     }
 }

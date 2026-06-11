@@ -50,9 +50,11 @@ export default function FinanceiroPage() {
     setMesRef({ year, month: total - year * 12 })
   }
 
-  function registrarPagamento() {
+  function registrarPagamento(inicioConsulta: Date) {
     setVersao(v => v + 1)
-    setMensagemSucesso('Pagamento registrado')
+    // Competência pode diferir do período em tela (ex.: pendência antiga paga
+    // via banner) — informa onde o valor foi parar
+    setMensagemSucesso(`Pagamento registrado — competência de ${formatarMes(inicioConsulta)}`)
   }
 
   const anos = resumo?.anosDisponiveis ?? [hoje.getFullYear()]

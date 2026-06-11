@@ -17,8 +17,11 @@ type Props = {
   periodo: string
   /** Lista o acumulado ANTERIOR ao início do período (banner). */
   anteriores?: boolean
-  /** Notifica o pai após registrar um pagamento (recarrega resumo e listas). */
-  onPagamento: () => void
+  /**
+   * Notifica o pai após registrar um pagamento (recarrega resumo e listas).
+   * Recebe o início da consulta paga — competência pode ser de outro mês.
+   */
+  onPagamento: (inicioConsulta: Date) => void
 }
 
 /** Pagamentos pendentes agrupados por paciente, com "Marcar pago" por consulta. */
@@ -66,7 +69,7 @@ export default function FinanceiroPendentesList({ periodo, anteriores = false, o
       pago: true,
       observacoes: c.observacoes ?? '',
     })
-    onPagamento()
+    onPagamento(new Date(c.inicio))
   }
 
   if (carregando) {

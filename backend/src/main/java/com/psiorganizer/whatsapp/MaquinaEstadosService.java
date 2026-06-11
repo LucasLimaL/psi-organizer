@@ -3,11 +3,11 @@ package com.psiorganizer.whatsapp;
 import java.time.Instant;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.psiorganizer.common.observability.LogFields;
 import com.psiorganizer.consulta.Consulta;
 import com.psiorganizer.consulta.ConsultaRepository;
 import com.psiorganizer.consulta.StatusConfirmacao;
@@ -31,11 +31,13 @@ import com.psiorganizer.whatsapp.client.WhatsappException;
  *       ciclos==3 (4ª vez) → envia Msg 3 despedida → CONGELADO_POR_LOOP
  *
  *   FINALIZADO | EXPIRADO | CONGELADO_POR_LOOP → terminal, ignora qualquer resposta
+ *
+ * Política de log: não emite log direto. Adiciona campos ao MDC (lembreteId,
+ * etapaLembrete) — o completion log do flow caller (webhook ou scheduler retry)
+ * captura tudo numa entrada só. Detalhes em docs/OBSERVABILITY.md.
  */
 @Service
 public class MaquinaEstadosService {
-
-    private static final Logger log = LoggerFactory.getLogger(MaquinaEstadosService.class);
 
     private final LembreteEnviadoRepository lembreteRepo;
     private final LembreteEnvioService envioService;
@@ -61,24 +63,23 @@ public class MaquinaEstadosService {
      */
     @Transactional
     public void processarResposta(UUID lembreteId, String botaoId, String textoLivre) {
+        MDC.put(LogFields.LEMBRETE_ID, lembreteId.toString());
+
         LembreteEnviado le = lembreteRepo.findById(lembreteId).orElse(null);
         if (le == null) {
-            log.warn("[maquina] lembrete sumiu lembreteId={}", lembreteId);
             return;
         }
 
         EtapaLembrete etapaAtual = le.getEtapa();
-        log.info(
-                "[maquina] processando lembrete={} etapa={} botao={} texto={}",
-                le.getId(), etapaAtual, botaoId, abreviar(textoLivre));
+        MDC.put(LogFields.ETAPA_LEMBRETE, etapaAtual.name());
         metricas.resposta(etapaAtual, botaoId);
 
         switch (etapaAtual) {
             case AGUARDANDO_ESCOLHA -> processarEscolhaInicial(le, botaoId);
             case AGUARDANDO_CONFIRMACAO_DUPLA -> processarConfirmacaoDupla(le, botaoId);
-            case FINALIZADO, EXPIRADO, CONGELADO_POR_LOOP -> log.info(
-                    "[maquina] resposta_em_estado_terminal lembrete={} etapa={} botao={}",
-                    le.getId(), etapaAtual, botaoId);
+            case FINALIZADO, EXPIRADO, CONGELADO_POR_LOOP -> {
+                // Idempotente — resposta em estado terminal é descartada silenciosamente.
+            }
         }
     }
 
@@ -89,14 +90,12 @@ public class MaquinaEstadosService {
             default -> null;
         };
         if (escolha == null) {
-            log.info("[maquina] botao_irrelevante etapa=AGUARDANDO_ESCOLHA botao={}", botaoId);
             return;
         }
 
         Consulta consulta = consultaRepo.findById(le.getConsultaId()).orElse(null);
         Paciente paciente = envioService.buscarPaciente(consulta == null ? null : consulta.getPacienteId());
         if (consulta == null || paciente == null) {
-            log.warn("[maquina] consulta/paciente sumiu lembrete={}", le.getId());
             return;
         }
 
@@ -107,13 +106,11 @@ public class MaquinaEstadosService {
             le.setConfirmacaoDuplaEnviadaEm(Instant.now());
             le.setConfirmacaoDuplaTentativas(1);
             le.setEtapa(EtapaLembrete.AGUARDANDO_CONFIRMACAO_DUPLA);
-            log.info(
-                    "[maquina] msg2_enviado lembrete={} escolha={} wamid={}",
-                    le.getId(), escolha, r.mensagemIdExterna());
         } catch (WhatsappException e) {
-            log.warn(
-                    "[maquina] msg2_falhou lembrete={} escolha={} codigo={}",
-                    le.getId(), escolha, e.getCodigo());
+            // Falha registrada no domain (status_entrega já existe pra Msg 1; Msg 2 ainda
+            // não tem persistência de status). Caller captura via completion log.
+            le.setErroCodigo(e.getCodigo());
+            le.setErroDescricao(truncar(e.getMessage(), 1000));
         }
         lembreteRepo.save(le);
     }
@@ -131,11 +128,7 @@ public class MaquinaEstadosService {
         }
         if (LembreteEnvioService.BTN_VOLTAR.equals(botaoId)) {
             voltar(le);
-            return;
         }
-        log.info(
-                "[maquina] botao_irrelevante etapa=AGUARDANDO_CONFIRMACAO_DUPLA botao={}",
-                botaoId);
     }
 
     private void finalizar(LembreteEnviado le, EscolhaLembrete escolhaFinal) {
@@ -144,9 +137,6 @@ public class MaquinaEstadosService {
         le.setFinalizadoEm(Instant.now());
         aplicarNaConsulta(le, escolhaFinal);
         lembreteRepo.save(le);
-        log.info(
-                "[maquina] finalizado lembrete={} escolha_final={}",
-                le.getId(), escolhaFinal);
     }
 
     private void aplicarNaConsulta(LembreteEnviado le, EscolhaLembrete escolhaFinal) {
@@ -181,7 +171,6 @@ public class MaquinaEstadosService {
     private void voltar(LembreteEnviado le) {
         int ciclos = le.getCiclosVoltar();
         if (ciclos < 3) {
-            // ciclos vira 1..3 — re-envia Msg 1 (como texto livre + botões)
             le.setCiclosVoltar(ciclos + 1);
             le.setEscolhaInicial(null);
             le.setConfirmacaoDuplaTentativas(0);
@@ -197,13 +186,11 @@ public class MaquinaEstadosService {
                 try {
                     envioService.reenviarMsg1ComoTextoLivre(le, paciente, psi, consulta);
                 } catch (WhatsappException e) {
-                    log.warn(
-                            "[maquina] reenvio_msg1_falhou lembrete={} codigo={}",
-                            le.getId(), e.getCodigo());
+                    le.setErroCodigo(e.getCodigo());
+                    le.setErroDescricao(truncar(e.getMessage(), 1000));
                 }
             }
             lembreteRepo.save(le);
-            log.info("[maquina] voltar lembrete={} ciclo={}/3", le.getId(), ciclos + 1);
             return;
         }
 
@@ -216,15 +203,13 @@ public class MaquinaEstadosService {
             try {
                 envioService.enviarMsg3Despedida(le, paciente, psi);
             } catch (WhatsappException e) {
-                log.warn(
-                        "[maquina] msg3_despedida_falhou lembrete={} codigo={}",
-                        le.getId(), e.getCodigo());
+                le.setErroCodigo(e.getCodigo());
+                le.setErroDescricao(truncar(e.getMessage(), 1000));
             }
         }
         le.setEtapa(EtapaLembrete.CONGELADO_POR_LOOP);
         le.setFinalizadoEm(Instant.now());
         lembreteRepo.save(le);
-        log.info("[maquina] congelado_por_loop lembrete={}", le.getId());
         metricas.congeladoPorLoop();
     }
 
@@ -241,14 +226,11 @@ public class MaquinaEstadosService {
         if (erroCodigo != null) le.setErroCodigo(erroCodigo);
         if (erroDescricao != null) le.setErroDescricao(erroDescricao);
         lembreteRepo.save(le);
-        log.debug(
-                "[maquina] status_entrega atualizado lembrete={} status={}",
-                le.getId(), novoStatus);
     }
 
-    private static String abreviar(String s) {
+    private static String truncar(String s, int max) {
         if (s == null) return null;
-        return s.length() <= 80 ? s : s.substring(0, 80) + "...";
+        return s.length() <= max ? s : s.substring(0, max);
     }
 
     private static String escaparJson(String s) {

@@ -8,8 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,8 +38,6 @@ import com.psiorganizer.whatsapp.client.WhatsappProperties;
  */
 @Service
 public class LembreteEnvioService {
-
-    private static final Logger log = LoggerFactory.getLogger(LembreteEnvioService.class);
 
     private static final ZoneId ZONA_BR = ZoneId.of("America/Sao_Paulo");
     private static final DateTimeFormatter DATA_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -156,28 +152,21 @@ public class LembreteEnvioService {
     public Optional<LembreteEnviado> enviar(Consulta consulta) {
         Paciente paciente = pacienteRepo.findById(consulta.getPacienteId()).orElse(null);
         if (paciente == null) {
-            log.warn("[lembrete] paciente sumiu consulta={} pacienteId={}",
-                    consulta.getId(), consulta.getPacienteId());
+            // Estado anômalo (consulta órfã). Contador permite alertar; completion log
+            // do scheduler captura o impacto agregado.
+            metricas.pulado("paciente_sumiu");
             return Optional.empty();
         }
         if (!paciente.isAtivo()) {
-            log.info("[lembrete-pulado] motivo=paciente_inativo consulta={} paciente={} psi={}",
-                    consulta.getId(), paciente.getId(), consulta.getPsicologaId());
             metricas.pulado("paciente_inativo");
             return Optional.empty();
         }
         if (!paciente.isOptInWhatsapp()) {
-            log.info("[lembrete-pulado] motivo=opt_in_ausente consulta={} paciente={} psi={}",
-                    consulta.getId(), paciente.getId(), consulta.getPsicologaId());
             metricas.pulado("opt_in_ausente");
             return Optional.empty();
         }
         String telefoneE164 = normalizarE164(paciente.getTelefone());
         if (telefoneE164 == null) {
-            log.info(
-                    "[lembrete-pulado] motivo=telefone_invalido consulta={} paciente={} psi={} telefone={}",
-                    consulta.getId(), paciente.getId(), consulta.getPsicologaId(),
-                    paciente.getTelefone());
             metricas.pulado("telefone_invalido");
             return Optional.empty();
         }
@@ -187,7 +176,6 @@ public class LembreteEnvioService {
         int inseridas = lembreteRepo.inserirSeNaoExiste(
                 lembreteId, consulta.getId(), consulta.getPsicologaId());
         if (inseridas == 0) {
-            log.debug("[lembrete] já existia pra consulta={}, pulando", consulta.getId());
             return Optional.empty();
         }
 
@@ -205,19 +193,11 @@ public class LembreteEnvioService {
             le.setMensagemIdExterna(r.mensagemIdExterna());
             le.setStatusEntrega(StatusEntrega.ENVIADO);
             le.setEnviadoEm(Instant.now());
-            log.info(
-                    "[lembrete-enviado] consulta={} paciente={} psi={} wamid={} template={}",
-                    consulta.getId(), paciente.getId(), psi.getId(),
-                    r.mensagemIdExterna(), props.templateLembreteNome());
             metricas.enviadoMsg1();
         } catch (WhatsappException e) {
             le.setStatusEntrega(StatusEntrega.FALHOU);
             le.setErroCodigo(e.getCodigo());
             le.setErroDescricao(truncar(e.getMessage(), 1000));
-            log.warn(
-                    "[lembrete-falhou] consulta={} paciente={} psi={} codigo={} transitorio={}",
-                    consulta.getId(), paciente.getId(), psi.getId(),
-                    e.getCodigo(), e.isTransitorio());
             metricas.falha(e.getCodigo());
         }
 

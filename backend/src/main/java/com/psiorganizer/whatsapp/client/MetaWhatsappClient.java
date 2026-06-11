@@ -5,8 +5,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
@@ -21,12 +19,14 @@ import org.springframework.web.client.RestClient;
  * Ativada quando psi.whatsapp.mock=false. Exige as env vars
  * WHATSAPP_PHONE_NUMBER_ID e WHATSAPP_ACCESS_TOKEN preenchidas — sem isso
  * o boot falha rápido na primeira chamada com mensagem clara.
+ *
+ * Política de log: NÃO emite log direto. Erros saem como {@link WhatsappException}
+ * (com body Meta embutido) e o caller decide se loga ou descarta. Detalhes em
+ * docs/OBSERVABILITY.md §Política de erro.
  */
 @Component
 @ConditionalOnProperty(name = "psi.whatsapp.mock", havingValue = "false")
 public class MetaWhatsappClient implements WhatsappClient {
-
-    private static final Logger log = LoggerFactory.getLogger(MetaWhatsappClient.class);
 
     private final WhatsappProperties props;
     private final RestClient client;
@@ -124,26 +124,23 @@ public class MetaWhatsappClient implements WhatsappClient {
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, (req, res) -> {
                     String corpo = new String(res.getBody().readAllBytes());
-                    log.warn(
-                            "[whatsapp-meta] erro {} body={}",
-                            res.getStatusCode().value(), corpo);
                     String codigo = "http_" + res.getStatusCode().value();
-                    String descricao = corpo;
                     boolean transitorio = res.getStatusCode().is5xxServerError()
                             || res.getStatusCode().value() == 429;
-                    throw new WhatsappException(codigo, descricao, transitorio);
+                    throw new WhatsappException(codigo, corpo, transitorio, corpo);
                 })
                 .body(Map.class);
 
         if (response == null || !response.containsKey("messages")) {
-            throw new WhatsappException("resposta_invalida", "Resposta da Meta sem campo messages", false);
+            throw new WhatsappException(
+                    "resposta_invalida", "Resposta da Meta sem campo messages", false);
         }
         List<Map<String, Object>> messages = (List<Map<String, Object>>) response.get("messages");
         if (messages.isEmpty()) {
-            throw new WhatsappException("resposta_vazia", "Resposta da Meta com lista de messages vazia", false);
+            throw new WhatsappException(
+                    "resposta_vazia", "Resposta da Meta com lista de messages vazia", false);
         }
         String id = (String) messages.get(0).get("id");
-        log.info("[whatsapp-meta] enviado id={}", id);
         return new EnvioResultado(id);
     }
 }

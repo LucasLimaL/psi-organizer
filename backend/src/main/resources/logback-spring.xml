@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Política completa em docs/OBSERVABILITY.md.
+
+  Profile-based encoder:
+    - default (dev) → texto colorido legível, MDC inline entre colchetes
+    - prod          → JSON estruturado pra stdout, ingerido por agente externo
+
+  NUNCA referenciar valor de MDC sensível direto (senha, accessToken).
+  Redação é feita upstream em BodyRedactor.
+-->
+<configuration>
+
+    <springProperty scope="context" name="appName" source="spring.application.name" defaultValue="psi-organizer"/>
+
+    <!-- Dev: texto colorido + MDC completo no fim (verbose pra debug local).
+         %mdc imprime todas as MDC entries como key=value separadas por vírgula.
+         Há overlap com requestId/psicologaId do prefixo — aceitamos pela visibilidade total. -->
+    <springProfile name="default | dev | !prod">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) [%X{requestId:-}] [%X{psicologaId:-}] [%X{flow:-http}] %cyan(%logger{0}) - %msg%n        %mdc%n</pattern>
+            </encoder>
+        </appender>
+    </springProfile>
+
+    <!-- Prod: JSON estruturado pra stdout. Agente externo (NR Infra, Fluent Bit, etc) ingere. -->
+    <springProfile name="prod">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <includeMdcKeyName>requestId</includeMdcKeyName>
+                <includeMdcKeyName>psicologaId</includeMdcKeyName>
+                <includeMdcKeyName>email</includeMdcKeyName>
+                <includeMdcKeyName>flow</includeMdcKeyName>
+                <includeMdcKeyName>method</includeMdcKeyName>
+                <includeMdcKeyName>path</includeMdcKeyName>
+                <includeMdcKeyName>status</includeMdcKeyName>
+                <includeMdcKeyName>durationMs</includeMdcKeyName>
+                <includeMdcKeyName>clientIp</includeMdcKeyName>
+                <includeMdcKeyName>userAgent</includeMdcKeyName>
+                <includeMdcKeyName>pacienteId</includeMdcKeyName>
+                <includeMdcKeyName>consultaId</includeMdcKeyName>
+                <includeMdcKeyName>lembreteId</includeMdcKeyName>
+                <includeMdcKeyName>wamid</includeMdcKeyName>
+                <includeMdcKeyName>templateName</includeMdcKeyName>
+                <includeMdcKeyName>etapaLembrete</includeMdcKeyName>
+                <includeMdcKeyName>cronRunId</includeMdcKeyName>
+                <includeMdcKeyName>cronEnviadosDia</includeMdcKeyName>
+                <includeMdcKeyName>cronEnviadosLate</includeMdcKeyName>
+                <includeMdcKeyName>requestBody</includeMdcKeyName>
+                <includeMdcKeyName>responseBody</includeMdcKeyName>
+                <includeMdcKeyName>responseFields</includeMdcKeyName>
+                <includeMdcKeyName>bodyTruncated</includeMdcKeyName>
+                <includeMdcKeyName>bodyOmitted</includeMdcKeyName>
+                <includeMdcKeyName>loginOutcome</includeMdcKeyName>
+                <includeMdcKeyName>errorClass</includeMdcKeyName>
+                <includeMdcKeyName>errorMessage</includeMdcKeyName>
+                <includeMdcKeyName>validacaoCampos</includeMdcKeyName>
+                <customFields>{"app":"${appName}"}</customFields>
+            </encoder>
+        </appender>
+    </springProfile>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+    <!-- Spring/Hibernate/Tomcat: WARN é o sweet spot — INFO inunda em startup,
+         ERROR perde info útil de tuning. -->
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="org.apache.catalina" level="WARN"/>
+    <logger name="org.apache.tomcat" level="WARN"/>
+    <logger name="com.zaxxer.hikari" level="WARN"/>
+
+    <!-- Nosso código emite INFO por padrão; DEBUG só em dev mexendo flag por logger. -->
+    <logger name="com.psiorganizer" level="INFO"/>
+
+</configuration>

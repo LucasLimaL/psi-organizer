@@ -4,8 +4,6 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,8 +14,6 @@ import com.psiorganizer.whatsapp.client.WhatsappException;
 
 @Service
 public class ConfiguracaoWhatsappService {
-
-    private static final Logger log = LoggerFactory.getLogger(ConfiguracaoWhatsappService.class);
 
     static final int HORA_MINIMA = 7;
     static final int HORA_MAXIMA = 20;
@@ -65,15 +61,13 @@ public class ConfiguracaoWhatsappService {
      * canal funciona antes de ativar lembretes pra paciente real.
      */
     public String enviarTeste(UUID psicologaId, String telefoneE164) {
-        log.info("Enviando hello_world de teste para={} psi={}", telefoneE164, psicologaId);
         try {
             EnvioResultado r = whatsappClient.enviarTemplate(
                     telefoneE164, TEMPLATE_HELLO_WORLD, LANG_EN_US, List.of());
             return r.mensagemIdExterna();
         } catch (WhatsappException e) {
-            log.warn(
-                    "Falha ao enviar teste para={} codigo={} descricao={}",
-                    telefoneE164, e.getCodigo(), e.getMessage());
+            // WhatsappException carrega body Meta — convertemos em ApiException
+            // pro GlobalExceptionHandler logar (WARN) com o contexto preservado.
             throw ApiException.requisicaoInvalida(
                     "Falha ao enviar pelo WhatsApp (" + e.getCodigo() + "): " + e.getMessage());
         }

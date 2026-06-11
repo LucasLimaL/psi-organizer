@@ -24,6 +24,7 @@
         <jjwt.version>0.12.6</jjwt.version>
         <libphonenumber.version>8.13.50</libphonenumber.version>
         <shedlock.version>5.16.0</shedlock.version>
+        <logstash-encoder.version>8.0</logstash-encoder.version>
     </properties>
 
     <dependencies>
@@ -112,6 +113,14 @@
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
+        <!-- Logs estruturados em JSON pra stdout (profile prod). Detalhes em
+             docs/OBSERVABILITY.md. -->
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>${logstash-encoder.version}</version>
         </dependency>
     </dependencies>
 

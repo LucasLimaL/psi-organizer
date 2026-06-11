@@ -118,10 +118,17 @@ public class LembreteScheduler {
                 continue;
             }
             Consulta consulta = consultaRepo.findById(le.getConsultaId()).orElse(null);
-            if (consulta == null || le.getEscolhaInicial() == null) continue;
+            if (consulta == null) {
+                metricas.estadoOrfao();
+                continue;
+            }
+            if (le.getEscolhaInicial() == null) continue;
             com.psiorganizer.paciente.Paciente paciente = pacienteRepo
                     .findById(consulta.getPacienteId()).orElse(null);
-            if (paciente == null) continue;
+            if (paciente == null) {
+                metricas.estadoOrfao();
+                continue;
+            }
             try {
                 com.psiorganizer.whatsapp.client.EnvioResultado r = envioService.enviarMsg2(
                         le, le.getEscolhaInicial(), paciente, consulta);

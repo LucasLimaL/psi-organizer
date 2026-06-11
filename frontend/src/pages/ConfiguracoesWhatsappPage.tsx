@@ -5,7 +5,7 @@ import {
   DialogTitle, FormControlLabel, MenuItem, Paper, Snackbar, Stack,
   Switch, TextField, Typography,
 } from '@mui/material'
-import WhatsAppIcon from '@mui/icons-material/WhatsApp'
+import ReplyIcon from '@mui/icons-material/Reply'
 import {
   whatsappApi, HORARIOS_VALIDOS, renderizarTemplate,
   type ConfiguracaoWhatsapp,
@@ -207,34 +207,60 @@ export default function ConfiguracoesWhatsappPage() {
             <Typography variant="overline" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
               Pré-visualização
             </Typography>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 2,
-                bgcolor: 'surfaceContainer.high',
-                borderRadius: 3,
-                whiteSpace: 'pre-wrap',
-                fontFamily: 'inherit',
-                minHeight: 200,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1.5,
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'success.main' }}>
-                <WhatsAppIcon fontSize="small" />
-                <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                  Psi Organizer
-                </Typography>
+            {/* Fac-símile do cliente WhatsApp — cores do app da Meta, de propósito fora
+                do design system pra prévia ser fiel ao que a paciente vê. */}
+            <Box sx={{ bgcolor: '#efeae2', borderRadius: 3, p: 2, minHeight: 200 }}>
+              <Box
+                sx={{
+                  bgcolor: '#ffffff',
+                  borderRadius: '8px',
+                  maxWidth: 380,
+                  overflow: 'hidden',
+                  boxShadow: '0 1px 0.5px rgba(11, 20, 26, 0.13)',
+                }}
+              >
+                <Box sx={{ px: 1.5, pt: 1.25, pb: 0.75 }}>
+                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', color: '#111b21' }}>
+                    {exemploRenderizado}
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-end',
+                      gap: 2,
+                      mt: 0.25,
+                    }}
+                  >
+                    <Typography variant="caption" sx={{ color: '#8696a0' }}>
+                      Mensagem automática.
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#8696a0' }}>
+                      {config.horarioEnvioLembrete}
+                    </Typography>
+                  </Box>
+                </Box>
+                {['Confirmar', 'Cancelar'].map(rotulo => (
+                  <Box
+                    key={rotulo}
+                    sx={{
+                      borderTop: '1px solid #e9edef',
+                      py: 1.25,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 0.75,
+                      color: '#008069',
+                    }}
+                  >
+                    <ReplyIcon fontSize="small" />
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {rotulo}
+                    </Typography>
+                  </Box>
+                ))}
               </Box>
-              <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                {exemploRenderizado || '(template vazio)'}
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 1, mt: 'auto' }}>
-                <Button size="small" variant="outlined" disabled>Confirmar</Button>
-                <Button size="small" variant="outlined" disabled>Cancelar</Button>
-              </Box>
-            </Paper>
+            </Box>
           </Box>
         </Box>
       </Paper>

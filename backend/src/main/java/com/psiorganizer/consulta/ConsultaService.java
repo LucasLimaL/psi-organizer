@@ -19,6 +19,8 @@ import com.psiorganizer.common.Fusos;
 import com.psiorganizer.common.exception.ApiException;
 import com.psiorganizer.paciente.Paciente;
 import com.psiorganizer.paciente.PacienteRepository;
+import com.psiorganizer.whatsapp.LembreteEnviado;
+import com.psiorganizer.whatsapp.LembreteEnviadoRepository;
 
 @Service
 public class ConsultaService {
@@ -28,11 +30,26 @@ public class ConsultaService {
 
     private final ConsultaRepository consultaRepository;
     private final PacienteRepository pacienteRepository;
+    private final LembreteEnviadoRepository lembreteRepository;
 
     public ConsultaService(ConsultaRepository consultaRepository,
-                           PacienteRepository pacienteRepository) {
+                           PacienteRepository pacienteRepository,
+                           LembreteEnviadoRepository lembreteRepository) {
         this.consultaRepository = consultaRepository;
         this.pacienteRepository = pacienteRepository;
+        this.lembreteRepository = lembreteRepository;
+    }
+
+    /**
+     * Lembretes WhatsApp indexados por consulta, pro Controller enriquecer a response.
+     * Seguro multi-tenant: as consultas já chegaram filtradas por psicologaId.
+     */
+    @Transactional(readOnly = true)
+    public Map<UUID, LembreteEnviado> lembretesPorConsulta(List<Consulta> consultas) {
+        if (consultas.isEmpty()) return Map.of();
+        List<UUID> ids = consultas.stream().map(Consulta::getId).toList();
+        return lembreteRepository.findByConsultaIdIn(ids).stream()
+                .collect(Collectors.toMap(LembreteEnviado::getConsultaId, l -> l));
     }
 
     @Transactional(readOnly = true)

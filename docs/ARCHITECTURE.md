@@ -52,6 +52,8 @@ PostgreSQL
 
 **Regra arquitetural crítica:** DTOs de request/response existem **apenas** na camada Controller. O Controller mapeia `RequestDTO → objeto de domínio` antes de chamar Service e `objeto de domínio → ResponseDTO` antes de retornar. Services nunca tocam em DTOs da camada web.
 
+> **Exceção registrada (2026-06-11):** projeção **read-only** pode nascer no Service quando o mapeamento pra DTO seria 1:1 sem domínio intermediário significativo — caso do `DashboardService`, que monta `DashboardResponse` direto (refazer no Controller seria espelhar campo a campo sem ganho). Vale só pra leitura; comandos seguem a regra. Ver discussão em docs/REFACTOR_PLAN.md A9.
+
 ### 2.2 Estrutura de pacotes
 
 ```

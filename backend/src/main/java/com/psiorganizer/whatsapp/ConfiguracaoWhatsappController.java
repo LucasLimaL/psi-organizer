@@ -2,7 +2,6 @@ package com.psiorganizer.whatsapp;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.UUID;
 
 import jakarta.validation.Valid;
@@ -18,11 +17,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.psiorganizer.common.Fusos;
 import com.psiorganizer.common.security.PsicologaPrincipal;
 import com.psiorganizer.whatsapp.dto.AtualizarConfiguracaoWhatsappRequest;
 import com.psiorganizer.whatsapp.dto.ConfiguracaoWhatsappResponse;
 import com.psiorganizer.whatsapp.dto.EnviarTesteRequest;
 import com.psiorganizer.whatsapp.dto.EnviarTesteResponse;
+import com.psiorganizer.whatsapp.dto.LembreteResponse;
 import com.psiorganizer.whatsapp.dto.LembretesEnvelope;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,8 +33,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/me/whatsapp")
 @Tag(name = "WhatsApp", description = "Configuração de lembretes automáticos via WhatsApp")
 public class ConfiguracaoWhatsappController {
-
-    private static final ZoneId ZONA_BR = ZoneId.of("America/Sao_Paulo");
 
     private final ConfiguracaoWhatsappService service;
     private final HistoricoLembretesService historicoService;
@@ -92,10 +91,18 @@ public class ConfiguracaoWhatsappController {
             @RequestParam(defaultValue = "0") int offset) {
         UUID psicologaId = PsicologaPrincipal.corrente().id();
         Instant enviadoApos = inicioEm == null ? null
-                : inicioEm.atStartOfDay(ZONA_BR).toInstant();
+                : inicioEm.atStartOfDay(Fusos.ZONA_BR).toInstant();
         Instant enviadoAntes = fimEm == null ? null
-                : fimEm.plusDays(1).atStartOfDay(ZONA_BR).toInstant();
-        return historicoService.listar(psicologaId, consultaId, etapa, statusEntrega,
+                : fimEm.plusDays(1).atStartOfDay(Fusos.ZONA_BR).toInstant();
+        HistoricoLembretesService.HistoricoLembretes historico = historicoService.listar(
+                psicologaId, consultaId, etapa, statusEntrega,
                 enviadoApos, enviadoAntes, limit, offset);
+        return new LembretesEnvelope(
+                historico.itens().stream()
+                        .map(i -> LembreteResponse.from(
+                                i.lembrete(), i.pacienteNome(), i.consultaInicio()))
+                        .toList(),
+                historico.total(),
+                historico.temMais());
     }
 }

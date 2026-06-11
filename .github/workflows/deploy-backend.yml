@@ -47,7 +47,23 @@ jobs:
 
       - name: Build da imagem (Cloud Build)
         working-directory: backend
-        run: gcloud builds submit --tag "$IMAGEM" .
+        # --async + poll do status: o streaming de logs do `builds submit` exige
+        # roles/viewer no projeto inteiro, que o SA de deploy não tem (menor
+        # privilégio, de propósito). O poll usa cloudbuild.builds.get, já incluso
+        # no roles/cloudbuild.builds.editor.
+        run: |
+          build_id=$(gcloud builds submit --tag "$IMAGEM" --async --format='value(id)' .)
+          echo "Cloud Build: $build_id"
+          for i in $(seq 1 60); do
+            status=$(gcloud builds describe "$build_id" --format='value(status)')
+            case "$status" in
+              SUCCESS) echo "build SUCCESS"; exit 0 ;;
+              FAILURE|INTERNAL_ERROR|TIMEOUT|CANCELLED|EXPIRED)
+                echo "::error::Cloud Build terminou em $status (build $build_id)"; exit 1 ;;
+              *) echo "status: $status — aguardando ($i/60)..."; sleep 10 ;;
+            esac
+          done
+          echo "::error::timeout aguardando o Cloud Build"; exit 1
 
       - name: Deploy no Cloud Run
         run: |

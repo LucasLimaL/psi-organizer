@@ -2,7 +2,6 @@ package com.psiorganizer.consulta;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -15,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.psiorganizer.common.Fusos;
 import com.psiorganizer.common.observability.LogFields;
 import com.psiorganizer.common.security.PsicologaPrincipal;
 import com.psiorganizer.consulta.dto.ConsultaRecorrenteRequest;
@@ -31,8 +31,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/consultas")
 @Tag(name = "Consultas", description = "Agenda de consultas")
 public class ConsultaController {
-
-    private static final ZoneId ZONA = ZoneId.of("America/Sao_Paulo");
 
     private final ConsultaService service;
     private final LembreteEnviadoRepository lembreteRepo;
@@ -64,8 +62,8 @@ public class ConsultaController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim) {
         UUID psicologaId = PsicologaPrincipal.corrente().id();
-        Instant ini = inicio.atStartOfDay(ZONA).toInstant();
-        Instant fimExcl = fim.plusDays(1).atStartOfDay(ZONA).toInstant();
+        Instant ini = inicio.atStartOfDay(Fusos.ZONA_BR).toInstant();
+        Instant fimExcl = fim.plusDays(1).atStartOfDay(Fusos.ZONA_BR).toInstant();
         List<Consulta> consultas = service.listar(psicologaId, ini, fimExcl);
         Map<UUID, String> nomes = service.nomesPacientes(
                 consultas.stream().map(Consulta::getPacienteId).distinct().toList());

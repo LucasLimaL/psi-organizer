@@ -31,6 +31,8 @@ psi:
     expiracao-horas: 24
   cors:
     allowed-origins: http://localhost:5173
+    # CSV de headers permitidos; default "*" (definido também como fallback no @Value)
+    allowed-headers: "*"
   whatsapp:
     # Padrão é true — usa MockWhatsappClient (loga, retorna id sintético).
     # Pra mandar mensagem real via Meta Cloud API, set false + as 3 envs abaixo.

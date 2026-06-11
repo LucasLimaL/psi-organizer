@@ -3,7 +3,6 @@ package com.psiorganizer.config;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -16,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.psiorganizer.common.Endereco;
+import com.psiorganizer.common.Fusos;
 import com.psiorganizer.consulta.Consulta;
 import com.psiorganizer.consulta.ConsultaRepository;
 import com.psiorganizer.consulta.StatusConsulta;
@@ -35,7 +35,6 @@ import com.psiorganizer.psicologa.PsicologaRepository;
 public class SeedDataRunner implements ApplicationRunner {
 
         private static final Logger log = LoggerFactory.getLogger(SeedDataRunner.class);
-        private static final ZoneId ZONA = ZoneId.of("America/Sao_Paulo");
 
         private final PsicologaRepository psicologaRepo;
         private final PacienteRepository pacienteRepo;
@@ -109,7 +108,7 @@ public class SeedDataRunner implements ApplicationRunner {
                                 null);
                 pacienteRepo.save(p3);
 
-                LocalDate hoje = LocalDate.now(ZONA);
+                LocalDate hoje = LocalDate.now(Fusos.ZONA_BR);
 
                 criarConsulta(psi.getId(), p1.getId(), hoje.minusDays(7).atTime(10, 0),
                                 50, new BigDecimal("180.00"), StatusConsulta.REALIZADA, true,
@@ -134,7 +133,7 @@ public class SeedDataRunner implements ApplicationRunner {
                         int duracao, BigDecimal valor,
                         StatusConsulta status, boolean pago, String obs) {
                 Consulta c = new Consulta(UUID.randomUUID(), psiId, pacId,
-                                inicio.atZone(ZONA).toInstant(), duracao, valor, obs);
+                                inicio.atZone(Fusos.ZONA_BR).toInstant(), duracao, valor, obs);
                 c.setStatus(status);
                 c.setPago(pago);
                 consultaRepo.save(c);

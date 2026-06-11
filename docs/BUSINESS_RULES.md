@@ -169,6 +169,12 @@ A UI reforça a regra com o `InativarPacienteDialog` (Alert outlined warning exp
 - Configurável **por consulta** (não por paciente).
 - Backend aceita 1..600 minutos. Frontend não impõe limite além desse.
 
+### Template do lembrete WhatsApp
+
+- O texto da Msg 1 é um **template HSM registrado e aprovado na plataforma da Meta** (nome em `psi.whatsapp.template-lembrete-nome`). **Não é editável pela psicóloga** — mudar o texto exige criar novo template e passar por nova aprovação da Meta.
+- O sistema expõe a prévia read-only em `GET /me/whatsapp` (`templateMensagem`), espelhada na constante `ConfiguracaoWhatsappResponse.TEMPLATE_LEMBRETE_META`. Parâmetros preenchidos a cada envio por `LembreteEnvioService.renderParametros`: `{{1}}` primeiro nome da paciente · `{{2}}` nome da psicóloga · `{{3}}` data `dd/MM/yyyy` · `{{4}}` hora `HH:mm` (fuso SP).
+- `PUT /me/whatsapp` aceita apenas `ativo` e `horarioEnvioLembrete`.
+
 ---
 
 ## 10. Convenções de validação no frontend

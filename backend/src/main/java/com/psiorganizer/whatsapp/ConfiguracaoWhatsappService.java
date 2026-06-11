@@ -38,11 +38,11 @@ public class ConfiguracaoWhatsappService {
     }
 
     @Transactional
-    public ConfiguracaoWhatsapp atualizar(UUID psicologaId, boolean ativo, String templateMensagem,
+    public ConfiguracaoWhatsapp atualizar(UUID psicologaId, boolean ativo,
                                           LocalTime horarioEnvioLembrete) {
         validarHorario(horarioEnvioLembrete);
         ConfiguracaoWhatsapp c = obterOuCriar(psicologaId);
-        c.atualizar(ativo, templateMensagem, horarioEnvioLembrete);
+        c.atualizar(ativo, horarioEnvioLembrete);
         return repository.save(c);
     }
 

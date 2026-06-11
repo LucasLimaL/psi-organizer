@@ -2,7 +2,6 @@ package com.psiorganizer.whatsapp;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
@@ -14,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.google.i18n.phonenumbers.NumberParseException;
 import com.google.i18n.phonenumbers.PhoneNumberUtil;
 import com.google.i18n.phonenumbers.Phonenumber.PhoneNumber;
+import com.psiorganizer.common.Fusos;
 import com.psiorganizer.consulta.Consulta;
 import com.psiorganizer.paciente.Paciente;
 import com.psiorganizer.paciente.PacienteRepository;
@@ -39,7 +39,6 @@ import com.psiorganizer.whatsapp.client.WhatsappProperties;
 @Service
 public class LembreteEnvioService {
 
-    private static final ZoneId ZONA_BR = ZoneId.of("America/Sao_Paulo");
     private static final DateTimeFormatter DATA_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter HORA_FMT = DateTimeFormatter.ofPattern("HH:mm");
 
@@ -91,7 +90,7 @@ public class LembreteEnvioService {
                                      Paciente paciente, Consulta consulta) {
         String acaoVerbo = escolha == EscolhaLembrete.CONFIRMAR ? "confirmar" : "cancelar";
         java.time.LocalDateTime inicioSp = java.time.LocalDateTime.ofInstant(
-                consulta.getInicio(), ZONA_BR);
+                consulta.getInicio(), Fusos.ZONA_BR);
         String texto = String.format(
                 "Você escolheu %s a consulta de %s às %s. Tem certeza?",
                 acaoVerbo, inicioSp.format(DATA_FMT), inicioSp.format(HORA_FMT));
@@ -113,7 +112,7 @@ public class LembreteEnvioService {
     public EnvioResultado reenviarMsg1ComoTextoLivre(
             LembreteEnviado le, Paciente paciente, Psicologa psi, Consulta consulta) {
         java.time.LocalDateTime inicioSp = java.time.LocalDateTime.ofInstant(
-                consulta.getInicio(), ZONA_BR);
+                consulta.getInicio(), Fusos.ZONA_BR);
         String texto = String.format(
                 "Olá, %s! Sobre a sua consulta com %s em %s às %s — pode confirmar abaixo?",
                 primeiroNome(paciente.getNome()),
@@ -212,7 +211,7 @@ public class LembreteEnvioService {
      *   {{4}} = hora HH:mm em SP
      */
     private List<String> renderParametros(Paciente paciente, Psicologa psi, Consulta consulta) {
-        LocalDateTime inicioSp = LocalDateTime.ofInstant(consulta.getInicio(), ZONA_BR);
+        LocalDateTime inicioSp = LocalDateTime.ofInstant(consulta.getInicio(), Fusos.ZONA_BR);
         return List.of(
                 primeiroNome(paciente.getNome()),
                 psi.getNomeCompleto(),

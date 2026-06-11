@@ -13,11 +13,6 @@ import jakarta.persistence.Table;
 @Table(name = "configuracao_whatsapp")
 public class ConfiguracaoWhatsapp {
 
-    public static final String TEMPLATE_DEFAULT =
-            "Olá, {paciente}! Aqui é a {psicologa}.\n"
-            + "Lembrando da sua consulta amanhã, {data} às {hora}.\n"
-            + "Pode confirmar abaixo?";
-
     public static final LocalTime HORARIO_DEFAULT = LocalTime.of(18, 0);
 
     @Id
@@ -29,9 +24,6 @@ public class ConfiguracaoWhatsapp {
 
     @Column(name = "ativo", nullable = false)
     private boolean ativo;
-
-    @Column(name = "template_mensagem", nullable = false, columnDefinition = "text")
-    private String templateMensagem;
 
     @Column(name = "horario_envio_lembrete", nullable = false)
     private LocalTime horarioEnvioLembrete;
@@ -48,16 +40,14 @@ public class ConfiguracaoWhatsapp {
         this.id = id;
         this.psicologaId = psicologaId;
         this.ativo = false;
-        this.templateMensagem = TEMPLATE_DEFAULT;
         this.horarioEnvioLembrete = HORARIO_DEFAULT;
         Instant agora = Instant.now();
         this.criadoEm = agora;
         this.atualizadoEm = agora;
     }
 
-    public void atualizar(boolean ativo, String templateMensagem, LocalTime horarioEnvioLembrete) {
+    public void atualizar(boolean ativo, LocalTime horarioEnvioLembrete) {
         this.ativo = ativo;
-        this.templateMensagem = templateMensagem;
         this.horarioEnvioLembrete = horarioEnvioLembrete;
         this.atualizadoEm = Instant.now();
     }
@@ -65,7 +55,6 @@ public class ConfiguracaoWhatsapp {
     public UUID getId() { return id; }
     public UUID getPsicologaId() { return psicologaId; }
     public boolean isAtivo() { return ativo; }
-    public String getTemplateMensagem() { return templateMensagem; }
     public LocalTime getHorarioEnvioLembrete() { return horarioEnvioLembrete; }
     public Instant getCriadoEm() { return criadoEm; }
     public Instant getAtualizadoEm() { return atualizadoEm; }

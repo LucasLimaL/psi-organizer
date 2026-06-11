@@ -80,6 +80,15 @@ Toda resposta de erro segue o mesmo envelope:
 |---|---|---|---|
 | `GET` | `/dashboard` | Retorna métricas de hoje, mês corrente, comparativo, próximos 7 dias, pacientes, consultas futuras agendadas e próximas consultas. Calcula tudo numa janela única do mês anterior até daqui a 7 dias. | `200` · `401` |
 
+### WhatsApp · `/me/whatsapp/**`
+
+| Método | Path | Sumário | Códigos |
+|---|---|---|---|
+| `GET` | `/me/whatsapp` | Configuração de lembretes (cria com defaults na 1ª chamada). `templateMensagem` é **read-only**: prévia do template aprovado na Meta, placeholders `{{1}}`..`{{4}}`. | `200` · `401` |
+| `PUT` | `/me/whatsapp` | Atualiza `ativo` e `horarioEnvioLembrete` (hora cheia 07:00–20:00). O template **não é editável** — é registrado e aprovado na plataforma da Meta. | `200` · `400` · `401` |
+| `POST` | `/me/whatsapp/teste` | Dispara o template `hello_world` da Meta pro telefone informado (smoke test do canal) | `202` · `400` |
+| `GET` | `/me/whatsapp/lembretes` | Histórico paginado de lembretes pra auditoria. Filtros opcionais: `consultaId`, `etapa`, `statusEntrega`, `inicioEm`, `fimEm`; `limit` ∈ [1, 200]. | `200` · `401` |
+
 ---
 
 ## Códigos HTTP por convenção

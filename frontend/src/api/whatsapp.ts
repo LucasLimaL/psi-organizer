@@ -2,6 +2,7 @@ import { api } from './client'
 
 export type ConfiguracaoWhatsapp = {
   ativo: boolean
+  /** Prévia read-only do template aprovado na Meta — placeholders {{1}}..{{4}}. */
   templateMensagem: string
   /** Formato HH:00, hora cheia entre 07:00 e 20:00. */
   horarioEnvioLembrete: string
@@ -10,7 +11,6 @@ export type ConfiguracaoWhatsapp = {
 
 export type AtualizarConfiguracaoWhatsappInput = {
   ativo: boolean
-  templateMensagem: string
   horarioEnvioLembrete: string
 }
 
@@ -90,14 +90,14 @@ export const HORARIOS_VALIDOS = Array.from({ length: 14 }, (_, i) => {
   return `${h}:00`
 })
 
-/** Renderiza o template substituindo placeholders por valores. */
+/** Renderiza o template Meta substituindo {{1}}..{{4}} pelos valores de exemplo. */
 export function renderizarTemplate(
   template: string,
   valores: { paciente: string; psicologa: string; data: string; hora: string },
 ): string {
   return template
-    .replace(/\{paciente\}/g, valores.paciente)
-    .replace(/\{psicologa\}/g, valores.psicologa)
-    .replace(/\{data\}/g, valores.data)
-    .replace(/\{hora\}/g, valores.hora)
+    .replace(/\{\{1\}\}/g, valores.paciente)
+    .replace(/\{\{2\}\}/g, valores.psicologa)
+    .replace(/\{\{3\}\}/g, valores.data)
+    .replace(/\{\{4\}\}/g, valores.hora)
 }

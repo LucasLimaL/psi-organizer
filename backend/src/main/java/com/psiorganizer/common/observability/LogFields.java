@@ -24,9 +24,11 @@ public final class LogFields {
     public static final String PSICOLOGA_ID = "psicologaId";
     public static final String EMAIL = "email";
 
-    // Domínio (services / controllers via Mdc.with)
+    // Domínio (controllers/services via MDC.put — RequestLoggingFilter limpa no fim
+    // da request; flows async limpam via FlowLogger)
     public static final String PACIENTE_ID = "pacienteId";
     public static final String CONSULTA_ID = "consultaId";
+    public static final String NOTIFICACAO_ID = "notificacaoId";
     public static final String LEMBRETE_ID = "lembreteId";
     public static final String WAMID = "wamid";
     public static final String TEMPLATE_NAME = "templateName";

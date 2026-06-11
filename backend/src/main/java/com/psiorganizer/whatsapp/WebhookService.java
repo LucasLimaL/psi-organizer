@@ -4,7 +4,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
+
+import com.psiorganizer.common.observability.LogFields;
 
 /**
  * Parse + dispatch do payload Meta. Spec §5.
@@ -52,6 +55,12 @@ public class WebhookService {
     }
 
     private void processarMensagem(Map<String, Object> msg) {
+        // Payload pode trazer N eventos — a última chave fica no completion log da
+        // request (RequestLoggingFilter limpa o MDC no fim). Suficiente: N>1 é raro.
+        String wamid = (String) msg.get("id");
+        if (wamid != null) {
+            MDC.put(LogFields.WAMID, wamid);
+        }
         String from = (String) msg.get("from");
         String contextId = Optional.ofNullable(asMap(msg.get("context")))
                 .map(c -> (String) c.get("id"))
@@ -74,6 +83,7 @@ public class WebhookService {
         String externalId = (String) status.get("id");
         String estado = (String) status.get("status");
         if (externalId == null || estado == null) return;
+        MDC.put(LogFields.WAMID, externalId);
 
         Optional<LembreteEnviado> le = lembreteRepo.findByMensagemExterna(externalId);
         if (le.isEmpty()) return;

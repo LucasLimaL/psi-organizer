@@ -26,7 +26,7 @@ Rastreabilidade ponta-a-ponta com **1 entrada de log por ação completa** — s
 |---|---|---|---|
 | **HTTP request** | Um request HTTP completo | `RequestLoggingFilter.doFilterInternal` (final) | (omitido) |
 | **Scheduler cron tick** | 1 execução do cron `@Scheduled` | wrapper do método `LembreteScheduler.executar` | `scheduler-cron` |
-| **Webhook async** | 1 mensagem da Meta processada na máquina de estados | `WebhookService.processar` (final) | `webhook-whatsapp` |
+| **Webhook Meta (HTTP)** | 1 request da Meta (pode conter N eventos) | `RequestLoggingFilter` (é request HTTP normal; `psicologaId=meta-webhook`) — enriquecido com `wamid`/`lembreteId`/`etapaLembrete` via MDC durante o processamento | (omitido) |
 | **Envio Meta isolado** (futuro) | Disparo manual via dev tools | wrapper do uso case | `dev-tools` |
 
 Toda ação tem **entrada/saída clara**. O log final é INFO em sucesso, WARN em erro de negócio (4xx ou skip rule), ERROR em falha inesperada.
@@ -117,12 +117,13 @@ A regra é dura: **se você grepar `psicologaId=""` nos logs, é bug**. Reporte.
 
 Isso permite responder: *"quem (real ou tentando) fez essa request?"* mesmo em logs de falha de autenticação. Identifica força bruta, scan de emails, etc.
 
-### De domínio (set pelo service via `Mdc.with(...)` quando aplicável)
+### De domínio (set pelo controller/service via `MDC.put` quando aplicável)
 
 | Key | Flow | Exemplo |
 |---|---|---|
 | `pacienteId` | Qualquer ação que mexa com paciente | `b41f...` |
 | `consultaId` | Qualquer ação que mexa com consulta | `9a2c...` |
+| `notificacaoId` | Marcar notificação como lida | `4c8e...` |
 | `lembreteId` | WhatsApp scheduler/webhook | `7e1d...` |
 | `wamid` | WhatsApp client após resposta da Meta | `wamid.HBg...` |
 | `templateName` | WhatsApp envio | `lembrete_consulta_v1` |
@@ -139,7 +140,7 @@ Isso permite responder: *"quem (real ou tentando) fez essa request?"* mesmo em l
 
 ### Heurísticas
 
-- **Sempre `MDC.put` dentro de try / `MDC.remove` no finally.** Use `Mdc.with(...)` helper pra garantir.
+- **Quem limpa o MDC é o dono do flow, não quem enriquece.** Em request HTTP, controllers/services fazem `MDC.put` direto — o `RequestLoggingFilter` faz `MDC.clear()` no fim da request. Em flow async, o wrapper (`FlowLogger`) remove as chaves no fim. **Não** remova a chave manualmente antes do completion log (ela sumiria do log final, que é emitido depois do handler retornar). Use `Mdc.with(...)` (escopo com restore) apenas pra trechos internos cuja chave NÃO deve aparecer no completion log.
 - **Nunca `MDC.clear()` no meio de uma request** — apaga as chaves universais.
 - **Async (`@Async`, `CompletableFuture`):** propagar MDC via `MdcTaskDecorator`. Sem isso, MDC vaza do parent ou some.
 
@@ -273,16 +274,17 @@ Quando o service **decide engolir** o erro (ex: `LembreteEnvioService.enviar` ca
 
 ### HTTP endpoint novo
 
-Não precisa fazer nada. O `RequestLoggingFilter` já cobre. Se você quiser **enriquecer com IDs de domínio**:
+Não precisa fazer nada. O `RequestLoggingFilter` já cobre — e promove `pacienteId`/`consultaId`/`lembreteId`/`wamid` do **response body** pro MDC automaticamente (`putFields`). Enriquecimento manual só é necessário quando o ID está **apenas no path** (DELETE 204, erros 4xx/5xx em que o response não traz o ID):
 
 ```java
 @PostMapping("/consultas/{id}/confirmar")
 public ResponseEntity<...> confirmar(@PathVariable UUID id) {
-    try (var scope = Mdc.with("consultaId", id.toString())) {
-        return service.confirmar(id);
-    }
+    MDC.put(LogFields.CONSULTA_ID, id.toString());
+    return service.confirmar(id);
 }
 ```
+
+Sem remove manual — o filter limpa todo o MDC no fim da request. (Um `try (Mdc.with(...))` aqui removeria a chave **antes** do completion log, que é emitido depois do handler retornar.)
 
 ### Service que faz operação de domínio
 

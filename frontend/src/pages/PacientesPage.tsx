@@ -17,20 +17,7 @@ import PeopleOutlineIcon from '@mui/icons-material/PeopleOutlined'
 import { pacientesApi, type Paciente, type PacienteInput } from '../api/pacientes'
 import PacienteForm from '../components/PacienteForm'
 import InativarPacienteDialog from '../components/InativarPacienteDialog'
-
-function formatarCpf(cpf: string) {
-  if (cpf.length !== 11) return cpf
-  return `${cpf.slice(0, 3)}.${cpf.slice(3, 6)}.${cpf.slice(6, 9)}-${cpf.slice(9)}`
-}
-
-function iniciais(nome: string): string {
-  return nome
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(s => s[0]?.toUpperCase() ?? '')
-    .join('')
-}
+import { formatarCpf, iniciais } from '../utils/formatadores'
 
 export default function PacientesPage() {
   const theme = useTheme()

@@ -2,7 +2,8 @@ import { Box, Paper, Stack, Typography, Chip } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import type { ConsultaPaciente } from '../api/pacientes'
-import { formatarHora } from '../utils/datas'
+import { formatarDataLonga, formatarHora } from '../utils/datas'
+import { formatarMoeda as brl } from '../utils/formatadores'
 
 const MAPA_STATUS = {
   AGENDADA: 'agendada',
@@ -16,16 +17,6 @@ const ROTULO_STATUS: Record<ConsultaPaciente['status'], string> = {
   CONFIRMADA: 'Confirmada',
   REALIZADA: 'Realizada',
   FALTA: 'Falta',
-}
-
-function brl(v: number) {
-  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
-
-function formatarDataExtenso(d: Date) {
-  return d.toLocaleDateString('pt-BR', {
-    weekday: 'long', day: '2-digit', month: 'long',
-  })
 }
 
 export default function ConsultaCard({ consulta }: { consulta: ConsultaPaciente }) {
@@ -56,7 +47,7 @@ export default function ConsultaCard({ consulta }: { consulta: ConsultaPaciente 
             fontVariantNumeric: 'tabular-nums',
           }}
         >
-          {formatarDataExtenso(data)} · {formatarHora(data)}
+          {formatarDataLonga(data)} · {formatarHora(data)}
         </Typography>
         <Typography variant="caption" color="text.secondary"
                     sx={{ fontVariantNumeric: 'tabular-nums', display: 'block', mt: 0.25 }}>

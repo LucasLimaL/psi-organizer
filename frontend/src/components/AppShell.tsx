@@ -15,6 +15,7 @@ import SpaIcon from '@mui/icons-material/Spa'
 import { Outlet, Link as RouterLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/authContext'
 import { globalTokens } from '../theme/tokens'
+import { iniciais } from '../utils/formatadores'
 import PaletteSwitcher from './PaletteSwitcher'
 import NotificacoesBadge from './NotificacoesBadge'
 
@@ -34,15 +35,6 @@ function tituloDaRota(pathname: string): string {
   if (pathname.startsWith('/perfil')) return 'Perfil'
   if (pathname.startsWith('/configuracoes/whatsapp')) return 'WhatsApp'
   return 'Início'
-}
-
-function iniciais(nome: string): string {
-  return nome
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(s => s[0]?.toUpperCase() ?? '')
-    .join('')
 }
 
 export default function AppShell() {

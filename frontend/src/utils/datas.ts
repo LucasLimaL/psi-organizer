@@ -31,6 +31,10 @@ export function formatarDataLonga(d: Date): string {
   return d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
 }
 
+export function formatarDataHora(d: Date): string {
+  return d.toLocaleString('pt-BR')
+}
+
 // Para input type="datetime-local" — formato local sem timezone
 export function toDatetimeLocal(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0')

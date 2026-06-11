@@ -17,13 +17,10 @@ import TrendingFlatIcon from '@mui/icons-material/TrendingFlat'
 import type { DashboardData } from '../api/dashboard'
 import type { WidgetDef } from './types'
 import { formatarHora } from '../utils/datas'
+import { formatarMoeda as brl, iniciais } from '../utils/formatadores'
 
 // ────────── Utils ──────────
-const brl = (v: number) =>
-  v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const pct = (v: number | null) => (v === null ? '—' : `${Math.round(v * 100)}%`)
-const iniciais = (nome: string) =>
-  nome.split(/\s+/).filter(Boolean).slice(0, 2).map(s => s[0]?.toUpperCase() ?? '').join('')
 
 const DIAS_CURTO = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
 

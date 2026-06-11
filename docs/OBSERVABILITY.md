@@ -104,6 +104,7 @@ preencheu psicologaId. Lista exaustiva:
 | `pre-auth` | Request a `/auth/**` (login, signup). Sucesso de login extrai o ID real do response antes desse sentinela ser aplicado, então só fica em logs de login que falhou. | "Anônimo no processo de autenticação" |
 | `cors-preflight` | Request OPTIONS — browser dispara preflight CORS sem auth | "Browser checando CORS" |
 | `meta-webhook` | Request a `/webhooks/**` — endpoint público chamado pela Meta | "Sistema externo (Meta)" |
+| `scheduler-interno` | Request a `/internal/**` — gatilho do Cloud Scheduler (tick do cron via HTTP) | "Sistema interno agendado" |
 | `unauthenticated` | Qualquer outra request sem JWT válido (ex: GET /pacientes sem Authorization) | "Tentativa de acesso sem credencial" |
 
 A regra é dura: **se você grepar `psicologaId=""` nos logs, é bug**. Reporte.

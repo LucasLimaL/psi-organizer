@@ -29,6 +29,10 @@ server:
   port: ${PORT:8080}
 
 psi:
+  scheduler:
+    # Token do gatilho HTTP POST /internal/whatsapp/tick (Cloud Scheduler).
+    # Vazio = endpoint desabilitado (401 sempre). Em prod, setar via Secret Manager.
+    tick-token: ${SCHEDULER_TICK_TOKEN:}
   jwt:
     secret: ${JWT_SECRET:dev-only-secret-nao-use-em-producao-precisa-min-32-chars-123}
     expiracao-horas: 24
@@ -50,6 +54,8 @@ psi:
     template-lembrete-idioma: ${WHATSAPP_TEMPLATE_LEMBRETE_IDIOMA:pt_BR}
     # Cron do scheduler em UTC. Default: hora cheia. Pra dev/teste, sobrescreva pra
     # algo tipo "0 */2 * * * *" (a cada 2 min) — exemplo em README.
+    # Em Cloud Run (scale-to-zero), use "-" (desliga o cron interno) e deixe o
+    # Cloud Scheduler chamar POST /internal/whatsapp/tick de hora em hora.
     scheduler-cron: ${WHATSAPP_SCHEDULER_CRON:0 0 * * * *}
     # Secret do app Meta — usado pra validar HMAC-SHA256 do webhook. Quando em branco,
     # webhook rejeita todo POST com 401 (modo seguro pra dev local sem Meta real).

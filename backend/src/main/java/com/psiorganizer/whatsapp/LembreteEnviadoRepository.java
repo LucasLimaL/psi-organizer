@@ -87,8 +87,8 @@ public interface LembreteEnviadoRepository extends JpaRepository<LembreteEnviado
               and (:consultaId is null or le.consultaId = :consultaId)
               and (:etapa is null or le.etapa = :etapa)
               and (:statusEntrega is null or le.statusEntrega = :statusEntrega)
-              and (:enviadoApos is null or le.enviadoEm >= :enviadoApos)
-              and (:enviadoAntes is null or le.enviadoEm < :enviadoAntes)
+              and (cast(:enviadoApos as java.time.Instant) is null or le.enviadoEm >= :enviadoApos)
+              and (cast(:enviadoAntes as java.time.Instant) is null or le.enviadoEm < :enviadoAntes)
             order by le.enviadoEm desc nulls last, le.id desc
             """)
     List<LembreteEnviado> historicoPaginado(
@@ -106,8 +106,8 @@ public interface LembreteEnviadoRepository extends JpaRepository<LembreteEnviado
               and (:consultaId is null or le.consultaId = :consultaId)
               and (:etapa is null or le.etapa = :etapa)
               and (:statusEntrega is null or le.statusEntrega = :statusEntrega)
-              and (:enviadoApos is null or le.enviadoEm >= :enviadoApos)
-              and (:enviadoAntes is null or le.enviadoEm < :enviadoAntes)
+              and (cast(:enviadoApos as java.time.Instant) is null or le.enviadoEm >= :enviadoApos)
+              and (cast(:enviadoAntes as java.time.Instant) is null or le.enviadoEm < :enviadoAntes)
             """)
     long historicoCount(
             @Param("psicologaId") UUID psicologaId,

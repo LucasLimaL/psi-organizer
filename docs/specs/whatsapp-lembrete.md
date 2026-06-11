@@ -544,18 +544,18 @@ Casos onde `context` pode faltar: resposta de texto livre que não está respond
 telefone = msg.from   # ex: "5511987654321" — Meta envia sem '+'
 telefoneE164 = "+" + telefone
 
-le = SELECT * FROM lembrete_enviado le
+candidatos = SELECT * FROM lembrete_enviado le
      JOIN consulta c ON c.id = le.consulta_id
      JOIN paciente p ON p.id = c.paciente_id
      WHERE regexp_replace(p.telefone, '\D', '', 'g') = telefone   # normaliza
        AND le.enviado_em > now() - interval '48 hours'
+       AND le.etapa IN ('AGUARDANDO_ESCOLHA', 'AGUARDANDO_CONFIRMACAO_DUPLA')
      ORDER BY le.enviado_em DESC
-     LIMIT 1
 ```
 
-Janela de 48h cobre: lembrete enviado dia D-1, paciente responde dia D. Janela mais larga aumentaria ambiguidade entre psicólogas atendendo a mesma paciente.
+Janela de 48h cobre: lembrete enviado dia D-1, paciente responde dia D. Janela mais larga aumentaria ambiguidade entre psicólogas atendendo a mesma paciente. Etapas terminais (FINALIZADO, EXPIRADO, CONGELADO_POR_LOOP) ficam fora — resposta a elas seria descartada pela state machine de qualquer forma, e incluí-las só roubaria o match de um lembrete ativo.
 
-**Ambiguidade no fallback:** se a mesma paciente é atendida por 2 psicólogas e ambas têm lembrete pendente, o fallback escolhe o **mais recente**. Aceitável porque (a) é raríssimo, (b) o caminho primário `context.id` resolve a quase totalidade dos casos. Loggado como warning pra investigação.
+**Ambiguidade no fallback:** o número Meta é único pra todos os tenants, então o telefone sozinho **não identifica a psicóloga**. Se os candidatos da janela pertencem a 2+ psicólogas (mesma paciente atendida por ambas, ambos lembretes ativos), a resposta é **descartada** e contada em `whatsapp.eventos.ambiguos.total` — atribuir ao mais recente poderia confirmar/cancelar a consulta do tenant errado. Se todos os candidatos são da mesma psicóloga, usa o mais recente. *(Decisão revista em 2026-06-11 — a versão original escolhia o mais recente mesmo entre tenants; ver docs/REFACTOR_PLAN.md B1.)*
 
 **Sem match em nenhuma camada:** loggado como evento estranho (`whatsapp.eventos.orfaos.total`), respondido 200 (não retornamos 4xx pra evitar retry Meta indefinido), descartado.
 

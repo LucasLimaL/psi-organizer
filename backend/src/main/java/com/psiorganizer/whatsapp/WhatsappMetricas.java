@@ -77,6 +77,10 @@ public class WhatsappMetricas {
         Counter.builder("whatsapp.eventos.orfaos.total").register(registry).increment();
     }
 
+    public void eventoAmbiguo() {
+        Counter.builder("whatsapp.eventos.ambiguos.total").register(registry).increment();
+    }
+
     public void webhookLatencia(Duration d) {
         Timer.builder("whatsapp.webhook.latencia").register(registry).record(d);
     }

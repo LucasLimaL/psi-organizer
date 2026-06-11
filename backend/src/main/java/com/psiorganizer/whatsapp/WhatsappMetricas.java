@@ -81,6 +81,11 @@ public class WhatsappMetricas {
         Counter.builder("whatsapp.eventos.ambiguos.total").register(registry).increment();
     }
 
+    /** Lembrete cuja consulta/paciente sumiu (deletados após o envio) — flow segue mudo. */
+    public void estadoOrfao() {
+        Counter.builder("whatsapp.estados.orfaos.total").register(registry).increment();
+    }
+
     public void webhookLatencia(Duration d) {
         Timer.builder("whatsapp.webhook.latencia").register(registry).record(d);
     }

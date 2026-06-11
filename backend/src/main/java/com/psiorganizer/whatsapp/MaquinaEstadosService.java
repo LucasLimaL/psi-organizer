@@ -96,6 +96,7 @@ public class MaquinaEstadosService {
         Consulta consulta = consultaRepo.findById(le.getConsultaId()).orElse(null);
         Paciente paciente = envioService.buscarPaciente(consulta == null ? null : consulta.getPacienteId());
         if (consulta == null || paciente == null) {
+            metricas.estadoOrfao();
             return;
         }
 
@@ -141,7 +142,10 @@ public class MaquinaEstadosService {
 
     private void aplicarNaConsulta(LembreteEnviado le, EscolhaLembrete escolhaFinal) {
         Consulta c = consultaRepo.findById(le.getConsultaId()).orElse(null);
-        if (c == null) return;
+        if (c == null) {
+            metricas.estadoOrfao();
+            return;
+        }
         Instant agora = Instant.now();
         if (escolhaFinal == EscolhaLembrete.CONFIRMAR) {
             c.setStatusConfirmacao(StatusConfirmacao.CONFIRMADA);
@@ -169,32 +173,41 @@ public class MaquinaEstadosService {
     }
 
     private void voltar(LembreteEnviado le) {
-        int ciclos = le.getCiclosVoltar();
-        if (ciclos < 3) {
-            le.setCiclosVoltar(ciclos + 1);
-            le.setEscolhaInicial(null);
-            le.setConfirmacaoDuplaTentativas(0);
-            le.setConfirmacaoDuplaEnviadaEm(null);
-            le.setMensagemConfirmacaoDuplaId(null);
-            le.setEtapa(EtapaLembrete.AGUARDANDO_ESCOLHA);
-
-            Consulta consulta = consultaRepo.findById(le.getConsultaId()).orElse(null);
-            Paciente paciente = envioService.buscarPaciente(
-                    consulta == null ? null : consulta.getPacienteId());
-            Psicologa psi = envioService.buscarPsicologa(le.getPsicologaId());
-            if (consulta != null && paciente != null && psi != null) {
-                try {
-                    envioService.reenviarMsg1ComoTextoLivre(le, paciente, psi, consulta);
-                } catch (WhatsappException e) {
-                    le.setErroCodigo(e.getCodigo());
-                    le.setErroDescricao(truncar(e.getMessage(), 1000));
-                }
-            }
-            lembreteRepo.save(le);
-            return;
+        if (le.getCiclosVoltar() < 3) {
+            voltarParaEscolha(le);
+        } else {
+            congelarPorLoop(le);
         }
+    }
 
-        // 4ª vez clicando Voltar → despedida + CONGELADO_POR_LOOP
+    /** Ciclos 1-3: reseta a confirmação dupla e reenvia a Msg 1 como texto livre. */
+    private void voltarParaEscolha(LembreteEnviado le) {
+        le.setCiclosVoltar(le.getCiclosVoltar() + 1);
+        le.setEscolhaInicial(null);
+        le.setConfirmacaoDuplaTentativas(0);
+        le.setConfirmacaoDuplaEnviadaEm(null);
+        le.setMensagemConfirmacaoDuplaId(null);
+        le.setEtapa(EtapaLembrete.AGUARDANDO_ESCOLHA);
+
+        Consulta consulta = consultaRepo.findById(le.getConsultaId()).orElse(null);
+        Paciente paciente = envioService.buscarPaciente(
+                consulta == null ? null : consulta.getPacienteId());
+        Psicologa psi = envioService.buscarPsicologa(le.getPsicologaId());
+        if (consulta != null && paciente != null && psi != null) {
+            try {
+                envioService.reenviarMsg1ComoTextoLivre(le, paciente, psi, consulta);
+            } catch (WhatsappException e) {
+                le.setErroCodigo(e.getCodigo());
+                le.setErroDescricao(truncar(e.getMessage(), 1000));
+            }
+        } else {
+            metricas.estadoOrfao();
+        }
+        lembreteRepo.save(le);
+    }
+
+    /** 4ª vez clicando Voltar → despedida (Msg 3) + estado terminal CONGELADO_POR_LOOP. */
+    private void congelarPorLoop(LembreteEnviado le) {
         Paciente paciente = envioService.buscarPaciente(
                 consultaRepo.findById(le.getConsultaId())
                         .map(Consulta::getPacienteId).orElse(null));

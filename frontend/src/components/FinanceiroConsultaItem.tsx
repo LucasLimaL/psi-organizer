@@ -1,5 +1,8 @@
 import { useState } from 'react'
-import { Box, Stack, Typography, Chip, Button, Tooltip } from '@mui/material'
+import {
+  Box, Stack, Typography, Chip, Button, Tooltip,
+  Dialog, DialogTitle, DialogContent, DialogActions,
+} from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import CheckIcon from '@mui/icons-material/Check'
 import type { FinanceiroConsulta } from '../api/financeiro'
@@ -34,13 +37,15 @@ type Props = {
 export default function FinanceiroConsultaItem({ consulta, mostrarPaciente, onMarcarPago }: Props) {
   const theme = useTheme()
   const [enviando, setEnviando] = useState(false)
+  const [confirmando, setConfirmando] = useState(false)
   const inicio = new Date(consulta.inicio)
   const cor = theme.palette.statusConsulta[TOKEN_STATUS[consulta.status]]
   const aRevisar = (consulta.status === 'AGENDADA' || consulta.status === 'CONFIRMADA')
     && inicio.getTime() < Date.now()
 
-  async function marcarPago() {
+  async function confirmarPagamento() {
     if (!onMarcarPago) return
+    setConfirmando(false)
     setEnviando(true)
     try {
       await onMarcarPago(consulta.id)
@@ -98,16 +103,36 @@ export default function FinanceiroConsultaItem({ consulta, mostrarPaciente, onMa
         {brl(consulta.valor)}
       </Typography>
       {onMarcarPago && !consulta.pago && (
-        <Button
-          size="small"
-          variant="outlined"
-          startIcon={<CheckIcon />}
-          disabled={enviando}
-          onClick={marcarPago}
-          sx={{ borderRadius: 999, flexShrink: 0 }}
-        >
-          {enviando ? 'Salvando…' : 'Marcar pago'}
-        </Button>
+        <>
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<CheckIcon />}
+            disabled={enviando}
+            onClick={() => setConfirmando(true)}
+            sx={{ borderRadius: 999, flexShrink: 0 }}
+          >
+            {enviando ? 'Salvando…' : 'Marcar pago'}
+          </Button>
+
+          <Dialog open={confirmando} onClose={() => setConfirmando(false)} maxWidth="xs" fullWidth>
+            <DialogTitle>Confirmar pagamento</DialogTitle>
+            <DialogContent>
+              <Typography variant="body2">
+                Marcar como paga a consulta de{' '}
+                <Box component="span" sx={{ fontWeight: 600 }}>{consulta.pacienteNome}</Box>
+                {' '}em {formatarData(inicio)} às {formatarHora(inicio)}, no valor de{' '}
+                <Box component="span" sx={{ fontWeight: 600 }}>{brl(consulta.valor)}</Box>?
+              </Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setConfirmando(false)}>Cancelar</Button>
+              <Button variant="contained" startIcon={<CheckIcon />} onClick={confirmarPagamento}>
+                Marcar pago
+              </Button>
+            </DialogActions>
+          </Dialog>
+        </>
       )}
     </Stack>
   )

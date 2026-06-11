@@ -36,6 +36,9 @@ public class Consulta {
     @Column(name = "pago", nullable = false)
     private boolean pago;
 
+    @Column(name = "pago_em")
+    private Instant pagoEm;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status_confirmacao", nullable = false, length = 32)
     private StatusConfirmacao statusConfirmacao;
@@ -83,6 +86,9 @@ public class Consulta {
     public void setStatus(StatusConsulta s) { this.status = s; }
     public boolean isPago() { return pago; }
     public void setPago(boolean pago) { this.pago = pago; }
+
+    public Instant getPagoEm() { return pagoEm; }
+    public void setPagoEm(Instant pagoEm) { this.pagoEm = pagoEm; }
 
     public StatusConfirmacao getStatusConfirmacao() { return statusConfirmacao; }
     public void setStatusConfirmacao(StatusConfirmacao s) { this.statusConfirmacao = s; }

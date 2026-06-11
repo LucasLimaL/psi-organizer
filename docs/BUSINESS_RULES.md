@@ -158,11 +158,24 @@ A UI reforça a regra com o `InativarPacienteDialog` (Alert outlined warning exp
 ### Pago vs faturamento
 
 - `consulta.pago` é boolean, independente do status.
-- Para fins de **faturamento no dashboard**: somente consultas com `status = REALIZADA` entram no cálculo.
-  - `faturamentoRealizado` = soma de `valor` onde `status = REALIZADA`
-  - `faturamentoPago` = soma onde `status = REALIZADA AND pago = true`
-  - `faturamentoPendente` = soma onde `status = REALIZADA AND pago = false`
-- Consultas FALTA não contam em nenhum dos três (paciente não compareceu).
+- `consulta.pago_em` registra o instante da transição não-pago → pago (`ConsultaService.atualizar`). Desmarcar como pago **limpa** a data. Consultas pagas antes da migração V5 têm `pago_em = NULL` (data real desconhecida).
+- **Cobrável** = `status REALIZADA ou FALTA` — no-show é cobrado. Regra única usada pelo dashboard e pelo financeiro (`DashboardService.cobravel`, `FinanceiroRepository`).
+  - `faturamentoRealizado` = soma de `valor` onde cobrável
+  - `faturamentoPago` = soma onde cobrável `AND pago = true`
+  - `faturamentoPendente` = soma onde cobrável `AND pago = false`
+- Consultas CANCELADA não contam em nenhuma métrica financeira.
+
+### Financeiro (aba por período)
+
+| Regra | Onde |
+|---|---|
+| **Regime de competência**: o recorte por período usa o `inicio` da consulta, nunca o `pago_em` | `FinanceiroController.intervaloDoPeriodo` + queries do `FinanceiroRepository` |
+| Categorias: **pendente** (cobrável, `pago=false`) · **realizado** (cobrável, `pago=true`) · **futuro** (`AGENDADA/CONFIRMADA`) | `FinanceiroRepository` |
+| `periodo` aceita `YYYY-MM` (mês) ou `YYYY` (ano) — fuso `America/Sao_Paulo`; inválido → `400` | `FinanceiroController` |
+| **Pendências anteriores** = cobrável não pago com `inicio` anterior ao início do período (banner fixo da tela) | `FinanceiroService.resumo` / `pendentes?anteriores=true` |
+| Pendentes são **agrupados por paciente**, ordenados por total devido desc; paginação é por paciente | `FinanceiroRepository.gruposPendentes` |
+| Consulta `AGENDADA/CONFIRMADA` com `inicio` no passado segue em "futuros" — a UI destaca como "a revisar" | decisão de produto; frontend calcula `inicio < agora` |
+| `anosDisponiveis` = do ano da primeira consulta da psicóloga até o ano atual (desc) | `FinanceiroService.anosDisponiveis` |
 
 ### Duração
 

@@ -9,11 +9,13 @@ import java.util.UUID;
 
 import jakarta.validation.Valid;
 
+import org.slf4j.MDC;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.psiorganizer.common.observability.LogFields;
 import com.psiorganizer.common.security.PsicologaPrincipal;
 import com.psiorganizer.consulta.dto.ConsultaRecorrenteRequest;
 import com.psiorganizer.consulta.dto.ConsultaRequest;
@@ -76,6 +78,7 @@ public class ConsultaController {
     @GetMapping("/{id}")
     @Operation(summary = "Busca uma consulta por id")
     public ConsultaResponse buscar(@PathVariable UUID id) {
+        MDC.put(LogFields.CONSULTA_ID, id.toString());
         UUID psicologaId = PsicologaPrincipal.corrente().id();
         Consulta c = service.buscar(psicologaId, id);
         Map<UUID, String> nomes = service.nomesPacientes(List.of(c.getPacienteId()));
@@ -112,6 +115,7 @@ public class ConsultaController {
     @Operation(summary = "Atualiza dados/status/pago de uma consulta")
     public ConsultaResponse atualizar(@PathVariable UUID id,
                                       @Valid @RequestBody ConsultaUpdateRequest req) {
+        MDC.put(LogFields.CONSULTA_ID, id.toString());
         UUID psicologaId = PsicologaPrincipal.corrente().id();
         Consulta c = service.atualizar(psicologaId, id, req.inicio(), req.duracaoMinutos(),
                 req.valor(), req.status(), req.pago(), req.observacoes());
@@ -122,6 +126,7 @@ public class ConsultaController {
     @DeleteMapping("/{id}")
     @Operation(summary = "Remove uma consulta")
     public ResponseEntity<Void> remover(@PathVariable UUID id) {
+        MDC.put(LogFields.CONSULTA_ID, id.toString());
         UUID psicologaId = PsicologaPrincipal.corrente().id();
         service.remover(psicologaId, id);
         return ResponseEntity.noContent().build();

@@ -3,6 +3,7 @@ package com.psiorganizer.notificacao;
 import java.util.List;
 import java.util.UUID;
 
+import org.slf4j.MDC;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.psiorganizer.common.observability.LogFields;
 import com.psiorganizer.common.security.PsicologaPrincipal;
 import com.psiorganizer.notificacao.dto.NotificacaoResponse;
 import com.psiorganizer.notificacao.dto.NotificacoesEnvelope;
@@ -44,6 +46,7 @@ public class NotificacaoController {
     @PostMapping("/{id}/lida")
     @Operation(summary = "Marca uma notificação como lida")
     public ResponseEntity<Void> marcarLida(@PathVariable UUID id) {
+        MDC.put(LogFields.NOTIFICACAO_ID, id.toString());
         UUID psicologaId = PsicologaPrincipal.corrente().id();
         service.marcarLida(psicologaId, id);
         return ResponseEntity.noContent().build();

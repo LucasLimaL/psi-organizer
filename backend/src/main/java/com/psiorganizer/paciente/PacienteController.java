@@ -5,10 +5,12 @@ import java.util.UUID;
 
 import jakarta.validation.Valid;
 
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.psiorganizer.common.observability.LogFields;
 import com.psiorganizer.common.security.PsicologaPrincipal;
 import com.psiorganizer.consulta.ConsultaService;
 import com.psiorganizer.consulta.dto.ConsultasPaginadoResponse;
@@ -43,6 +45,7 @@ public class PacienteController {
     @GetMapping("/{id}")
     @Operation(summary = "Busca um paciente por id")
     public PacienteResponse buscar(@PathVariable UUID id) {
+        MDC.put(LogFields.PACIENTE_ID, id.toString());
         UUID psicologaId = PsicologaPrincipal.corrente().id();
         return PacienteResponse.fromDomain(service.buscar(psicologaId, id));
     }
@@ -60,6 +63,7 @@ public class PacienteController {
     @PutMapping("/{id}")
     @Operation(summary = "Atualiza um paciente")
     public PacienteResponse atualizar(@PathVariable UUID id, @Valid @RequestBody PacienteRequest req) {
+        MDC.put(LogFields.PACIENTE_ID, id.toString());
         UUID psicologaId = PsicologaPrincipal.corrente().id();
         Paciente p = service.atualizar(psicologaId, id, req.nome(), req.cpf(), req.dataNascimento(),
                 req.telefone(), req.email(), req.endereco().toDomain(),
@@ -70,6 +74,7 @@ public class PacienteController {
     @DeleteMapping("/{id}")
     @Operation(summary = "Inativa um paciente (soft delete) e cancela consultas futuras")
     public ResponseEntity<Void> inativar(@PathVariable UUID id) {
+        MDC.put(LogFields.PACIENTE_ID, id.toString());
         UUID psicologaId = PsicologaPrincipal.corrente().id();
         service.inativar(psicologaId, id);
         return ResponseEntity.noContent().build();
@@ -78,6 +83,7 @@ public class PacienteController {
     @PostMapping("/{id}/reativar")
     @Operation(summary = "Reativa um paciente previamente inativado")
     public PacienteResponse reativar(@PathVariable UUID id) {
+        MDC.put(LogFields.PACIENTE_ID, id.toString());
         UUID psicologaId = PsicologaPrincipal.corrente().id();
         return PacienteResponse.fromDomain(service.reativar(psicologaId, id));
     }
@@ -90,6 +96,7 @@ public class PacienteController {
             @RequestParam(name = "tipo", defaultValue = "historico") String tipoStr,
             @RequestParam(name = "limit", defaultValue = "5") int limit,
             @RequestParam(name = "offset", defaultValue = "0") int offset) {
+        MDC.put(LogFields.PACIENTE_ID, id.toString());
         UUID psicologaId = PsicologaPrincipal.corrente().id();
         ConsultaService.TipoListagem tipo = "proximas".equalsIgnoreCase(tipoStr)
                 ? ConsultaService.TipoListagem.PROXIMAS

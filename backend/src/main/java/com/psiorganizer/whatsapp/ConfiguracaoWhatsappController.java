@@ -51,14 +51,15 @@ public class ConfiguracaoWhatsappController {
     }
 
     @PutMapping
-    @Operation(summary = "Atualiza ativo, template e horário de envio dos lembretes")
+    @Operation(summary = "Atualiza ativo e horário de envio dos lembretes",
+            description = "O template da mensagem não é editável — é registrado e aprovado "
+                    + "na plataforma da Meta; o GET expõe a prévia em templateMensagem.")
     public ConfiguracaoWhatsappResponse atualizar(
             @Valid @RequestBody AtualizarConfiguracaoWhatsappRequest req) {
         UUID psicologaId = PsicologaPrincipal.corrente().id();
         ConfiguracaoWhatsapp c = service.atualizar(
                 psicologaId,
                 req.ativo(),
-                req.templateMensagem(),
                 ConfiguracaoWhatsappResponse.parseHorario(req.horarioEnvioLembrete()));
         return ConfiguracaoWhatsappResponse.fromDomain(c);
     }

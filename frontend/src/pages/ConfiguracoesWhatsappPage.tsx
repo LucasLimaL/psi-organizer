@@ -14,14 +14,6 @@ import { useAuth } from '../auth/authContext'
 import { useDirty } from '../hooks/useDirty'
 import { formatarTelefoneBr, paraE164Br } from '../utils/telefones'
 
-const LIMITE_CARACTERES = 1024
-const ALERTA_CARACTERES = 900
-
-const TEMPLATE_DEFAULT =
-  'Olá, {paciente}! Aqui é a {psicologa}.\n'
-  + 'Lembrando da sua consulta amanhã, {data} às {hora}.\n'
-  + 'Pode confirmar abaixo?'
-
 const PLACEHOLDERS_EXEMPLO = {
   paciente: 'Maria',
   psicologa: 'Dra. Ana Silva',
@@ -107,7 +99,6 @@ export default function ConfiguracoesWhatsappPage() {
     try {
       const atualizada = await whatsappApi.atualizar({
         ativo: config.ativo,
-        templateMensagem: config.templateMensagem,
         horarioEnvioLembrete: config.horarioEnvioLembrete,
       })
       setConfig(atualizada)
@@ -124,12 +115,6 @@ export default function ConfiguracoesWhatsappPage() {
 
   if (carregando) return <Typography>Carregando…</Typography>
   if (!config) return <Alert severity="error">{erro ?? 'Configuração indisponível'}</Alert>
-
-  const numChars = config.templateMensagem.length
-  const corContador =
-    numChars >= LIMITE_CARACTERES ? 'error.main'
-      : numChars > ALERTA_CARACTERES ? 'warning.main'
-        : 'text.secondary'
 
   const desabilitado = !config.ativo
 
@@ -192,34 +177,30 @@ export default function ConfiguracoesWhatsappPage() {
           Template da mensagem
         </Typography>
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-          Placeholders aceitos: <code>{'{paciente}'}</code>, <code>{'{psicologa}'}</code>,
-          <code>{'{data}'}</code>, <code>{'{hora}'}</code>.
-          O texto editado aqui orienta o tom do lembrete — variações que mantenham os
-          placeholders respeitam o template aprovado pela Meta.
+          Este é o template registrado e <strong>aprovado pela Meta</strong> — não é
+          editável por aqui. Os campos <code>{'{{1}}'}</code> (paciente),{' '}
+          <code>{'{{2}}'}</code> (psicóloga), <code>{'{{3}}'}</code> (data) e{' '}
+          <code>{'{{4}}'}</code> (hora) são preenchidos automaticamente em cada envio.
+          Mudanças no texto exigem novo template e nova aprovação na plataforma da Meta.
         </Typography>
         <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' } }}>
           <Box>
-            <TextField
-              fullWidth
-              multiline
-              minRows={8}
-              value={config.templateMensagem}
-              onChange={e => setCampo('templateMensagem', e.target.value.slice(0, LIMITE_CARACTERES))}
-              disabled={desabilitado}
-              placeholder={TEMPLATE_DEFAULT}
-            />
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
-              <Typography variant="caption" color={corContador}>
-                {numChars} / {LIMITE_CARACTERES}
-              </Typography>
-              <Button
-                size="small"
-                onClick={() => setCampo('templateMensagem', TEMPLATE_DEFAULT)}
-                disabled={desabilitado}
-              >
-                Restaurar default
-              </Button>
-            </Box>
+            <Typography variant="overline" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+              Template oficial
+            </Typography>
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 2,
+                whiteSpace: 'pre-wrap',
+                fontFamily: 'monospace',
+                fontSize: '0.85rem',
+                color: 'text.secondary',
+                minHeight: 200,
+              }}
+            >
+              {config.templateMensagem}
+            </Paper>
           </Box>
 
           <Box>

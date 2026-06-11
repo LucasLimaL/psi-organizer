@@ -1,0 +1,11 @@
+# Overrides do profile prod (Cloud Run). Tudo que é segredo/ambiente vem por env:
+# DB_URL, DB_USER, DB_PASSWORD, JWT_SECRET, CORS_ALLOWED_ORIGINS, WHATSAPP_*.
+# Logs em JSON via logback-spring.xml (profile-based) — Cloud Logging ingere stdout.
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # Em prod o serviço é público — /actuator/prometheus NÃO pode ficar exposto
+        # (vaza paths, contagens e cardinalidade de métricas). Só health.
+        include: health

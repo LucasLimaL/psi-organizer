@@ -2,6 +2,7 @@ package com.psiorganizer.psicologa.dto;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Campos editáveis do perfil da psicóloga. Email e CPF são imutáveis
@@ -12,4 +13,5 @@ public record AtualizarPerfilRequest(
         @NotBlank String nomeCompleto,
         @NotBlank String crp,
         @NotBlank String telefone,
-        @Valid EnderecoDto endereco) {}
+        @Valid EnderecoDto endereco,
+        @NotNull Boolean cobrarFaltas) {}

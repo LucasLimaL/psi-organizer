@@ -17,6 +17,7 @@ export type Endereco = {
  */
 export type PerfilCompleto = Psicologa & {
   endereco: Endereco
+  cobrarFaltas: boolean
 }
 
 export type AtualizarPerfilInput = {
@@ -24,6 +25,7 @@ export type AtualizarPerfilInput = {
   crp: string
   telefone: string
   endereco: Endereco
+  cobrarFaltas: boolean
 }
 
 export type AlterarSenhaInput = {

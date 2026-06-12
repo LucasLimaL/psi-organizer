@@ -22,6 +22,7 @@ import com.psiorganizer.financeiro.dto.FinanceiroPendentesPaginadoResponse;
 import com.psiorganizer.financeiro.dto.FinanceiroResumoResponse;
 import com.psiorganizer.paciente.Paciente;
 import com.psiorganizer.paciente.PacienteRepository;
+import com.psiorganizer.psicologa.PsicologaService;
 
 /**
  * Visão financeira por competência: tudo é recortado pelo mês/ano da CONSULTA
@@ -39,19 +40,23 @@ public class FinanceiroService {
 
     private final FinanceiroRepository financeiroRepository;
     private final PacienteRepository pacienteRepository;
+    private final PsicologaService psicologaService;
 
     public FinanceiroService(FinanceiroRepository financeiroRepository,
-                             PacienteRepository pacienteRepository) {
+                             PacienteRepository pacienteRepository,
+                             PsicologaService psicologaService) {
         this.financeiroRepository = financeiroRepository;
         this.pacienteRepository = pacienteRepository;
+        this.psicologaService = psicologaService;
     }
 
     @Transactional(readOnly = true)
     public FinanceiroResumoResponse resumo(UUID psicologaId, Instant ini, Instant fim) {
-        TotalCategoria pendentes = financeiroRepository.totalPendentes(psicologaId, ini, fim);
+        boolean cobrarFaltas = psicologaService.buscarPorId(psicologaId).isCobrarFaltas();
+        TotalCategoria pendentes = financeiroRepository.totalPendentes(psicologaId, ini, fim, cobrarFaltas);
         TotalCategoria realizados = financeiroRepository.totalRealizados(psicologaId, ini, fim);
         TotalCategoria futuros = financeiroRepository.totalFuturos(psicologaId, ini, fim);
-        TotalCategoria anteriores = financeiroRepository.totalPendentes(psicologaId, Instant.EPOCH, ini);
+        TotalCategoria anteriores = financeiroRepository.totalPendentes(psicologaId, Instant.EPOCH, ini, cobrarFaltas);
         return new FinanceiroResumoResponse(
                 categoria(pendentes), categoria(realizados), categoria(futuros),
                 categoria(anteriores), anosDisponiveis(psicologaId));
@@ -60,17 +65,18 @@ public class FinanceiroService {
     @Transactional(readOnly = true)
     public FinanceiroPendentesPaginadoResponse pendentesAgrupados(
             UUID psicologaId, Instant ini, Instant fim, int limit, int offset) {
+        boolean cobrarFaltas = psicologaService.buscarPorId(psicologaId).isCobrarFaltas();
         Pageable page = PageRequest.of(offset / Math.max(limit, 1), limit);
         List<GrupoPendenteProjecao> grupos =
-                financeiroRepository.gruposPendentes(psicologaId, ini, fim, page);
-        long totalGrupos = financeiroRepository.contarGruposPendentes(psicologaId, ini, fim);
+                financeiroRepository.gruposPendentes(psicologaId, ini, fim, cobrarFaltas, page);
+        long totalGrupos = financeiroRepository.contarGruposPendentes(psicologaId, ini, fim, cobrarFaltas);
         if (grupos.isEmpty()) {
             return new FinanceiroPendentesPaginadoResponse(List.of(), totalGrupos, false);
         }
 
         List<UUID> pacienteIds = grupos.stream().map(GrupoPendenteProjecao::pacienteId).toList();
         Map<UUID, List<Consulta>> porPaciente = financeiroRepository
-                .pendentesDosPacientes(psicologaId, pacienteIds, ini, fim).stream()
+                .pendentesDosPacientes(psicologaId, pacienteIds, ini, fim, cobrarFaltas).stream()
                 .collect(Collectors.groupingBy(Consulta::getPacienteId,
                         LinkedHashMap::new, Collectors.toList()));
         Map<UUID, String> nomes = nomesDePacientes(pacienteIds);

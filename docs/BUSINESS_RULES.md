@@ -160,7 +160,7 @@ A UI reforça a regra com o `InativarPacienteDialog` (Alert outlined warning exp
 
 - `consulta.pago` é boolean, independente do status.
 - `consulta.pago_em` registra o instante da transição não-pago → pago (`ConsultaService.atualizar`). Desmarcar como pago **limpa** a data. Consultas pagas antes da migração V5 têm `pago_em = NULL` (data real desconhecida).
-- **Cobrável** = `status REALIZADA ou FALTA` — no-show é cobrado. Regra única usada pelo dashboard e pelo financeiro (`DashboardService.cobravel`, `FinanceiroRepository`).
+- **Cobrável** = `status REALIZADA`, ou `FALTA` quando a psicóloga cobra faltas (preferência `cobrarFaltas` do perfil, default ligada). Exceção: **FALTA já paga conta sempre** — desligar a preferência não remove das somas dinheiro já recebido. Regra única usada pelo dashboard e pelo financeiro (`DashboardService.cobravel`, `FinanceiroRepository`).
   - `faturamentoRealizado` = soma de `valor` onde cobrável
   - `faturamentoPago` = soma onde cobrável `AND pago = true`
   - `faturamentoPendente` = soma onde cobrável `AND pago = false`

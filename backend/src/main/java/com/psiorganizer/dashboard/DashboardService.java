@@ -20,17 +20,21 @@ import com.psiorganizer.consulta.ConsultaRepository;
 import com.psiorganizer.consulta.StatusConsulta;
 import com.psiorganizer.paciente.Paciente;
 import com.psiorganizer.paciente.PacienteRepository;
+import com.psiorganizer.psicologa.PsicologaService;
 
 @Service
 public class DashboardService {
 
     private final ConsultaRepository consultaRepository;
     private final PacienteRepository pacienteRepository;
+    private final PsicologaService psicologaService;
 
     public DashboardService(ConsultaRepository consultaRepository,
-                            PacienteRepository pacienteRepository) {
+                            PacienteRepository pacienteRepository,
+                            PsicologaService psicologaService) {
         this.consultaRepository = consultaRepository;
         this.pacienteRepository = pacienteRepository;
+        this.psicologaService = psicologaService;
     }
 
     @Transactional(readOnly = true)
@@ -58,9 +62,11 @@ public class DashboardService {
         Map<UUID, String> nomes = nomesDePacientes(
                 proximas.stream().map(Consulta::getPacienteId).distinct().toList());
 
+        boolean cobrarFaltas = psicologaService.buscarPorId(psicologaId).isCobrarFaltas();
+
         var hojeStats = calcularHoje(janela, hojeIni, hojeFim);
-        var mesStats = calcularMes(janela, mesAtualIni, mesAtualFim);
-        var comp = calcularComparativo(janela, mesAntIni, mesAntFim);
+        var mesStats = calcularMes(janela, mesAtualIni, mesAtualFim, cobrarFaltas);
+        var comp = calcularComparativo(janela, mesAntIni, mesAntFim, cobrarFaltas);
         var dias7 = calcularProximos7Dias(janela, hoje);
 
         int ativos = pacienteRepository.countByPsicologaIdAndAtivo(psicologaId, true);
@@ -89,14 +95,15 @@ public class DashboardService {
                 contagem.confirmadas(), contagem.realizadas(), contagem.faltas());
     }
 
-    private DashboardResponse.MesStats calcularMes(List<Consulta> janela, Instant ini, Instant fim) {
+    private DashboardResponse.MesStats calcularMes(List<Consulta> janela, Instant ini, Instant fim,
+                                                   boolean cobrarFaltas) {
         List<Consulta> mes = filtrarPorInicio(janela, ini, fim);
         ContagemPorStatus contagem = contarPorStatus(mes);
 
-        // Cobrável = REALIZADA ou FALTA (no-show é cobrado) — mesma regra do financeiro
-        BigDecimal faturamentoRealizado = somarValores(mes, DashboardService::cobravel);
-        BigDecimal faturamentoPago = somarValores(mes, c -> cobravel(c) && c.isPago());
-        BigDecimal faturamentoPendente = somarValores(mes, c -> cobravel(c) && !c.isPago());
+        // Cobrável = REALIZADA ou FALTA (conforme preferência) — mesma regra do financeiro
+        BigDecimal faturamentoRealizado = somarValores(mes, c -> cobravel(c, cobrarFaltas));
+        BigDecimal faturamentoPago = somarValores(mes, c -> cobravel(c, cobrarFaltas) && c.isPago());
+        BigDecimal faturamentoPendente = somarValores(mes, c -> cobravel(c, cobrarFaltas) && !c.isPago());
 
         int realizadas = contagem.realizadas();
         int faltas = contagem.faltas();
@@ -110,14 +117,17 @@ public class DashboardService {
     }
 
     private DashboardResponse.ComparativoStats calcularComparativo(List<Consulta> janela,
-                                                                   Instant ini, Instant fim) {
+                                                                   Instant ini, Instant fim,
+                                                                   boolean cobrarFaltas) {
         List<Consulta> mes = filtrarPorInicio(janela, ini, fim);
-        BigDecimal faturamento = somarValores(mes, DashboardService::cobravel);
+        BigDecimal faturamento = somarValores(mes, c -> cobravel(c, cobrarFaltas));
         return new DashboardResponse.ComparativoStats(mes.size(), faturamento);
     }
 
-    private static boolean cobravel(Consulta c) {
-        return c.getStatus() == StatusConsulta.REALIZADA || c.getStatus() == StatusConsulta.FALTA;
+    /** FALTA já paga conta sempre — desligar a preferência não apaga dinheiro recebido. */
+    private static boolean cobravel(Consulta c, boolean cobrarFaltas) {
+        return c.getStatus() == StatusConsulta.REALIZADA
+                || (c.getStatus() == StatusConsulta.FALTA && (cobrarFaltas || c.isPago()));
     }
 
     /** Consultas cujo início cai em [ini, fim). */

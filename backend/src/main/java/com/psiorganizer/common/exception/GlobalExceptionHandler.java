@@ -8,8 +8,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -65,6 +67,22 @@ public class GlobalExceptionHandler {
                 .body(new ErrorBody("Parâmetro inválido: " + ex.getName(), null));
     }
 
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorBody> handleBodyIlegivel(HttpMessageNotReadableException ex) {
+        MDC.put(LogFields.ERROR_CLASS, ex.getClass().getSimpleName());
+        MDC.put(LogFields.ERROR_MESSAGE, "body ilegível/malformado");
+        return ResponseEntity.badRequest()
+                .body(new ErrorBody("Corpo da requisição inválido ou malformado", null));
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorBody> handleMediaType(HttpMediaTypeNotSupportedException ex) {
+        MDC.put(LogFields.ERROR_CLASS, ex.getClass().getSimpleName());
+        MDC.put(LogFields.ERROR_MESSAGE, "content-type não suportado");
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .body(new ErrorBody("Content-Type não suportado — use application/json", null));
+    }
+
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ErrorBody> handleAuth(AuthenticationException ex) {
         MDC.put(LogFields.ERROR_CLASS, ex.getClass().getSimpleName());
@@ -81,13 +99,25 @@ public class GlobalExceptionHandler {
                 .body(new ErrorBody("Acesso negado", null));
     }
 
+    /**
+     * Catch-all de exceção não mapeada. O detalhe fica TODO no log (ERROR +
+     * stack via RequestLoggingFilter) — o cliente recebe mensagem genérica
+     * com o requestId pra correlação com os logs. Nunca devolver
+     * ex.getMessage(): vaza detalhe interno (classe, SQL, mensagem do Spring).
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorBody> handleGeneric(Exception ex, HttpServletRequest request) {
         MDC.put(LogFields.ERROR_CLASS, ex.getClass().getSimpleName());
         MDC.put(LogFields.ERROR_MESSAGE, String.valueOf(ex.getMessage()));
         // Atribui pro RequestLog logar com stack — política em docs/OBSERVABILITY.md
         request.setAttribute(LogFields.UNHANDLED_EXCEPTION_ATTR, ex);
+        String requestId = MDC.get(LogFields.REQUEST_ID);
+        String mensagem = requestId == null
+                ? "Erro interno inesperado. Tente novamente em instantes."
+                : "Erro interno inesperado. Tente novamente em instantes; se persistir, "
+                        + "informe o código " + requestId + " ao suporte.";
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorBody("Erro interno: " + ex.getMessage(), null));
+                .body(new ErrorBody(mensagem,
+                        requestId == null ? null : Map.of("requestId", requestId)));
     }
 }

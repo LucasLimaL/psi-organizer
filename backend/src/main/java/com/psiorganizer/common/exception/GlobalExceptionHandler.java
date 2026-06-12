@@ -33,7 +33,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorBody> handleApi(ApiException ex) {
         MDC.put(LogFields.ERROR_CLASS, ex.getClass().getSimpleName());
         MDC.put(LogFields.ERROR_MESSAGE, String.valueOf(ex.getMessage()));
-        return ResponseEntity.status(ex.getStatus()).body(new ErrorBody(ex.getMessage(), null));
+        return ResponseEntity.status(ex.getStatus())
+                .body(new ErrorBody(ex.getMessage(), ex.getDetalhes()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

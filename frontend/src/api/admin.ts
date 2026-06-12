@@ -9,9 +9,9 @@ import { api } from './client'
 export type Contrato = {
   id: string
   dataInicio: string
+  /** null = prazo indeterminado. */
   dataFim: string | null
   valorMensal: number
-  ativo: boolean
 }
 
 export type ContratoInput = {
@@ -20,13 +20,40 @@ export type ContratoInput = {
   valorMensal: number
 }
 
-export type Mensalidade = {
-  id: string
+export type FaturaItem = {
   contratoId: string
-  competencia: string
+  periodoInicio: string
+  periodoFim: string
+  dias: number
+  valor: number
+}
+
+export type StatusFatura = 'PAGA' | 'VENCIDA' | 'A_VENCER'
+
+export type Fatura = {
+  id: string
+  periodoInicio: string
+  periodoFim: string
+  vencimento: string
   valor: number
   paga: boolean
   pagaEm: string | null
+  status: StatusFatura
+  itens: FaturaItem[]
+}
+
+/** Ciclo ainda não fechado (corrente/próximo) — projeção, não existe no banco. */
+export type PreviaFatura = {
+  periodoInicio: string
+  periodoFim: string
+  vencimento: string
+  valor: number
+  itens: FaturaItem[]
+}
+
+export type FaturasResposta = {
+  faturas: Fatura[]
+  previas: PreviaFatura[]
 }
 
 export type AdminPsicologo = {
@@ -39,9 +66,11 @@ export type AdminPsicologo = {
   admin: boolean
   bloqueada: boolean
   bloqueadaEm: string | null
-  contratoAtivo: Contrato | null
-  mensalidadesPendentes: number
-  totalPendente: number
+  bloqueadaMotivo: 'ADMIN' | 'INADIMPLENCIA' | null
+  diaFechamento: number
+  contratoVigente: Contrato | null
+  faturasVencidas: number
+  totalVencido: number
 }
 
 export type AdminPsicologosPaginado = {
@@ -68,10 +97,10 @@ export const adminApi = {
     }),
   encerrarContrato: (contratoId: string) =>
     api<Contrato>(`/admin/contratos/${contratoId}/encerrar`, { method: 'PUT' }),
-  mensalidades: (psicologoId: string) =>
-    api<Mensalidade[]>(`/admin/psicologos/${psicologoId}/mensalidades`),
-  darBaixa: (mensalidadeId: string, paga: boolean) =>
-    api<Mensalidade>(`/admin/mensalidades/${mensalidadeId}/baixa`, {
+  faturas: (psicologoId: string) =>
+    api<FaturasResposta>(`/admin/psicologos/${psicologoId}/faturas`),
+  darBaixa: (faturaId: string, paga: boolean) =>
+    api<Fatura>(`/admin/faturas/${faturaId}/baixa`, {
       method: 'PUT', body: JSON.stringify({ paga }),
     }),
 }

@@ -9,15 +9,13 @@ import { sxInputSemSpinner } from '../theme/sx'
 type Props = {
   aberto: boolean
   psicologoId: string
-  /** Há contrato ativo que será substituído? Muda o aviso do dialog. */
-  substituiAtivo: boolean
   onFechar: () => void
   onCriado: () => void
 }
 
-/** Form de novo contrato — o contrato ativo anterior (se houver) é desativado. */
+/** Form de novo contrato — vigência por datas; sobreposição é recusada pelo backend. */
 export default function AdminNovoContratoDialog({
-  aberto, psicologoId, substituiAtivo, onFechar, onCriado,
+  aberto, psicologoId, onFechar, onCriado,
 }: Props) {
   const [dataInicio, setDataInicio] = useState('')
   const [dataFim, setDataFim] = useState('')
@@ -58,11 +56,6 @@ export default function AdminNovoContratoDialog({
     <Dialog open={aberto} onClose={onFechar} maxWidth="xs" fullWidth>
       <DialogTitle>Novo contrato</DialogTitle>
       <DialogContent>
-        {substituiAtivo && (
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            O contrato ativo atual será encerrado e substituído por este.
-          </Alert>
-        )}
         {erro && <Alert severity="error" sx={{ mb: 2 }}>{erro}</Alert>}
         <form id="novo-contrato-form" onSubmit={criar}>
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
@@ -85,8 +78,9 @@ export default function AdminNovoContratoDialog({
           </Grid>
         </form>
         <Typography variant="caption" color="text.secondary" sx={{ mt: 1.5, display: 'block' }}>
-          Fim vazio = prazo indeterminado. As mensalidades vencidas são geradas
-          automaticamente a partir do início.
+          Fim vazio = prazo indeterminado. O período não pode sobrepor outro
+          contrato — encerre o vigente primeiro. Ciclos parciais são cobrados
+          pro-rata (dias usados ÷ dias do ciclo).
         </Typography>
       </DialogContent>
       <DialogActions>

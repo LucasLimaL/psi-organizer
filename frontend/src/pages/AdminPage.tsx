@@ -98,7 +98,7 @@ export default function AdminPage() {
               <TableRow>
                 <TableCell>Conta</TableCell>
                 <TableCell>Contrato</TableCell>
-                <TableCell align="right">Pendências</TableCell>
+                <TableCell align="right">Vencidas</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell sx={{ width: 40 }} />
               </TableRow>
@@ -131,20 +131,22 @@ export default function AdminPage() {
                     </Stack>
                   </TableCell>
                   <TableCell>
-                    {p.contratoAtivo ? (
+                    {p.contratoVigente ? (
                       <Typography variant="body2" sx={{ fontVariantNumeric: 'tabular-nums' }}>
-                        {brl(p.contratoAtivo.valorMensal)}/mês
+                        {p.contratoVigente.valorMensal === 0
+                          ? 'cortesia'
+                          : `${brl(p.contratoVigente.valorMensal)}/mês`}
                       </Typography>
                     ) : (
-                      <Typography variant="body2" color="text.disabled">sem contrato</Typography>
+                      <Typography variant="body2" color="error.main">sem contrato</Typography>
                     )}
                   </TableCell>
                   <TableCell align="right">
-                    {p.mensalidadesPendentes > 0 ? (
+                    {p.faturasVencidas > 0 ? (
                       <Chip
                         size="small"
-                        label={`${brl(p.totalPendente)} (${p.mensalidadesPendentes})`}
-                        color="warning"
+                        label={`${brl(p.totalVencido)} (${p.faturasVencidas})`}
+                        color="error"
                         sx={{ height: 22, fontSize: 11, fontWeight: 600 }}
                       />
                     ) : (

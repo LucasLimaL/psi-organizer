@@ -1,12 +1,17 @@
 package com.psiorganizer.psicologa;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.psiorganizer.admin.Contrato;
+import com.psiorganizer.admin.ContratoRepository;
 import com.psiorganizer.common.Endereco;
+import com.psiorganizer.common.Fusos;
 import com.psiorganizer.common.exception.ApiException;
 import com.psiorganizer.common.validation.CpfUtil;
 
@@ -15,15 +20,19 @@ public class PsicologaService {
 
     private final PsicologaRepository repository;
     private final PasswordEncoder passwordEncoder;
+    private final ContratoRepository contratoRepository;
 
-    public PsicologaService(PsicologaRepository repository, PasswordEncoder passwordEncoder) {
+    public PsicologaService(PsicologaRepository repository, PasswordEncoder passwordEncoder,
+                            ContratoRepository contratoRepository) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
+        this.contratoRepository = contratoRepository;
     }
 
     @Transactional
     public Psicologa criar(String nomeCompleto, String email, String senha,
-                           String cpf, String crp, String telefone, Endereco endereco) {
+                           String cpf, String crp, String telefone, int diaFechamento,
+                           Endereco endereco) {
         String cpfNumerico = CpfUtil.somenteDigitos(cpf);
         if (repository.existsByEmail(email)) {
             throw ApiException.conflito("E-mail já cadastrado");
@@ -39,8 +48,16 @@ public class PsicologaService {
                 cpfNumerico,
                 crp,
                 telefone,
-                endereco);
-        return repository.save(p);
+                endereco,
+                diaFechamento);
+        repository.save(p);
+        // Cortesia: 1 mês de contrato a R$ 0 a partir do cadastro. As faturas
+        // de valor zero nascem pagas; expirou sem contrato novo → situação
+        // irregular no próximo login (funil de conversão).
+        LocalDate hoje = LocalDate.now(Fusos.ZONA_BR);
+        contratoRepository.save(new Contrato(UUID.randomUUID(), p.getId(),
+                hoje, hoje.plusMonths(1).minusDays(1), BigDecimal.ZERO));
+        return p;
     }
 
     @Transactional(readOnly = true)

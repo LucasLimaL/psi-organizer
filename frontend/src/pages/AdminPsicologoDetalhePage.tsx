@@ -1,21 +1,21 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   Stack, Box, Paper, Typography, Button, Chip, Avatar, IconButton,
-  Skeleton, Tooltip, Snackbar, Alert, Grid, ButtonBase, Divider,
-  Dialog, DialogTitle, DialogContent, DialogActions,
+  Skeleton, Tooltip, Snackbar, Alert, Grid, Divider,
+  Dialog, DialogTitle, DialogContent, DialogActions, Collapse, ButtonBase,
 } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import BlockIcon from '@mui/icons-material/Block'
 import LockOpenIcon from '@mui/icons-material/LockOpen'
 import AddIcon from '@mui/icons-material/Add'
-import CheckIcon from '@mui/icons-material/Check'
-import { adminApi, type AdminPsicologo, type Contrato, type Mensalidade } from '../api/admin'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import {
+  adminApi, type AdminPsicologo, type Contrato, type Fatura, type PreviaFatura,
+} from '../api/admin'
 import { formatarMoeda as brl, iniciais } from '../utils/formatadores'
 import AdminNovoContratoDialog from '../components/AdminNovoContratoDialog'
-
-const MESES_CURTO = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
 
 function dataLocal(iso: string): string {
   return new Date(iso.length === 10 ? iso + 'T00:00:00' : iso).toLocaleDateString('pt-BR')
@@ -25,17 +25,32 @@ function vigencia(c: Contrato): string {
   return `${dataLocal(c.dataInicio)} → ${c.dataFim ? dataLocal(c.dataFim) : 'indeterminado'}`
 }
 
+function situacaoContrato(c: Contrato): 'Vigente' | 'Agendado' | 'Encerrado' {
+  const hoje = new Date().toISOString().slice(0, 10)
+  if (c.dataInicio > hoje) return 'Agendado'
+  if (c.dataFim !== null && c.dataFim < hoje) return 'Encerrado'
+  return 'Vigente'
+}
+
+const CHIP_STATUS: Record<Fatura['status'], { rotulo: string; cor: 'success' | 'error' | 'info' }> = {
+  PAGA: { rotulo: 'Paga', cor: 'success' },
+  VENCIDA: { rotulo: 'Vencida', cor: 'error' },
+  A_VENCER: { rotulo: 'A vencer', cor: 'info' },
+}
+
 export default function AdminPsicologoDetalhePage() {
   const theme = useTheme()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [psicologo, setPsicologo] = useState<AdminPsicologo | null>(null)
   const [contratos, setContratos] = useState<Contrato[]>([])
-  const [mensalidades, setMensalidades] = useState<Mensalidade[]>([])
+  const [faturas, setFaturas] = useState<Fatura[]>([])
+  const [previas, setPrevias] = useState<PreviaFatura[]>([])
   const [carregando, setCarregando] = useState(true)
+  const [itensAbertos, setItensAbertos] = useState<string | null>(null)
   const [dialogContrato, setDialogContrato] = useState(false)
   const [confirmandoBloqueio, setConfirmandoBloqueio] = useState(false)
-  const [mensalidadeAlvo, setMensalidadeAlvo] = useState<Mensalidade | null>(null)
+  const [faturaAlvo, setFaturaAlvo] = useState<Fatura | null>(null)
   const [salvando, setSalvando] = useState(false)
   const [mensagemSucesso, setMensagemSucesso] = useState<string | null>(null)
 
@@ -43,36 +58,21 @@ export default function AdminPsicologoDetalhePage() {
     if (!id) return
     setCarregando(true)
     try {
-      const [p, cs, ms] = await Promise.all([
+      const [p, cs, fs] = await Promise.all([
         adminApi.psicologo(id),
         adminApi.contratos(id),
-        adminApi.mensalidades(id),
+        adminApi.faturas(id),
       ])
       setPsicologo(p)
       setContratos(cs)
-      setMensalidades(ms)
+      setFaturas(fs.faturas)
+      setPrevias(fs.previas)
     } finally {
       setCarregando(false)
     }
   }, [id])
 
   useEffect(() => { carregar() }, [carregar])
-
-  // Mensalidades indexadas por ano/mês pra grade anual (anos desc)
-  const anos = useMemo(() => {
-    const porAno = new Map<number, Map<number, Mensalidade>>()
-    for (const m of mensalidades) {
-      const [ano, mes] = m.competencia.split('-').map(Number)
-      if (!porAno.has(ano)) porAno.set(ano, new Map())
-      porAno.get(ano)!.set(mes, m)
-    }
-    return [...porAno.entries()].sort((a, b) => b[0] - a[0])
-  }, [mensalidades])
-
-  const anoAtual = new Date().getFullYear()
-  const recebidoNoAno = mensalidades
-    .filter(m => m.paga && m.competencia.startsWith(String(anoAtual)))
-    .reduce((acc, m) => acc + m.valor, 0)
 
   async function confirmarBloqueio() {
     if (!psicologo) return
@@ -88,15 +88,13 @@ export default function AdminPsicologoDetalhePage() {
   }
 
   async function confirmarBaixa() {
-    const m = mensalidadeAlvo
-    if (!m) return
+    const f = faturaAlvo
+    if (!f) return
     setSalvando(true)
     try {
-      await adminApi.darBaixa(m.id, !m.paga)
-      setMensalidadeAlvo(null)
-      setMensagemSucesso(m.paga
-        ? `Baixa de ${m.competencia} estornada`
-        : `Mensalidade ${m.competencia} paga`)
+      await adminApi.darBaixa(f.id, !f.paga)
+      setFaturaAlvo(null)
+      setMensagemSucesso(f.paga ? 'Baixa estornada' : 'Fatura paga — situação reavaliada')
       await carregar()
     } finally {
       setSalvando(false)
@@ -107,7 +105,9 @@ export default function AdminPsicologoDetalhePage() {
     setSalvando(true)
     try {
       await adminApi.encerrarContrato(c.id)
-      setMensagemSucesso('Contrato encerrado')
+      setMensagemSucesso(situacaoContrato(c) === 'Agendado'
+        ? 'Contrato agendado removido'
+        : 'Contrato encerrado no fechamento do ciclo corrente')
       await carregar()
     } finally {
       setSalvando(false)
@@ -127,14 +127,11 @@ export default function AdminPsicologoDetalhePage() {
 
   if (!psicologo) return null
 
-  const cardsx = {
-    p: 2, boxShadow: 'none',
-    border: `1px solid ${theme.palette.divider}`,
-  }
+  const cardsx = { p: 2, boxShadow: 'none', border: `1px solid ${theme.palette.divider}` }
+  const previaAtual = previas[0] ?? null
 
   return (
     <Stack spacing={2}>
-      {/* Breadcrumb */}
       <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
         <Tooltip title="Voltar à lista">
           <IconButton size="small" onClick={() => navigate('/admin')} aria-label="Voltar">
@@ -167,11 +164,15 @@ export default function AdminPsicologoDetalhePage() {
                 {psicologo.nomeCompleto}
               </Typography>
               {psicologo.bloqueada
-                ? <Chip size="small" label="Bloqueado" color="error" sx={{ fontWeight: 600 }} />
+                ? <Chip size="small"
+                        label={psicologo.bloqueadaMotivo === 'INADIMPLENCIA'
+                          ? 'Bloqueado — inadimplência' : 'Bloqueado'}
+                        color="error" sx={{ fontWeight: 600 }} />
                 : <Chip size="small" label="Ativo" color="success" variant="outlined" sx={{ fontWeight: 600 }} />}
             </Stack>
             <Typography variant="body2" color="text.secondary">
-              {psicologo.email} · {psicologo.crp} · cliente desde {dataLocal(psicologo.criadoEm)}
+              {psicologo.email} · {psicologo.crp} · fechamento dia {psicologo.diaFechamento} ·
+              {' '}cliente desde {dataLocal(psicologo.criadoEm)}
             </Typography>
           </Box>
           <Button
@@ -194,128 +195,163 @@ export default function AdminPsicologoDetalhePage() {
               color: 'text.secondary', fontWeight: 600,
               textTransform: 'uppercase', letterSpacing: '0.06em',
             }}>
-              Contrato ativo
+              Contrato vigente
             </Typography>
-            {psicologo.contratoAtivo ? (
+            {psicologo.contratoVigente ? (
               <>
                 <Typography variant="h6" sx={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
-                  {brl(psicologo.contratoAtivo.valorMensal)}
+                  {brl(psicologo.contratoVigente.valorMensal)}
                   <Typography component="span" variant="body2" color="text.secondary">/mês</Typography>
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  {vigencia(psicologo.contratoAtivo)}
+                  {vigencia(psicologo.contratoVigente)}
                 </Typography>
               </>
             ) : (
-              <Typography variant="body1" color="text.disabled" sx={{ mt: 0.5 }}>
-                sem contrato
+              <Typography variant="body1" color="error.main" sx={{ mt: 0.5, fontWeight: 600 }}>
+                sem contrato vigente
               </Typography>
             )}
           </Paper>
         </Grid>
         <Grid size={{ xs: 12, sm: 4 }}>
-          <Paper variant="outlined" sx={{ ...cardsx, borderLeft: `3px solid ${theme.palette.warning.main}` }}>
+          <Paper variant="outlined" sx={{ ...cardsx, borderLeft: `3px solid ${theme.palette.error.main}` }}>
             <Typography variant="caption" sx={{
-              color: 'warning.main', fontWeight: 600,
+              color: 'error.main', fontWeight: 600,
               textTransform: 'uppercase', letterSpacing: '0.06em',
             }}>
-              Em aberto
+              Vencido
             </Typography>
             <Typography variant="h6" sx={{
               fontWeight: 700, fontVariantNumeric: 'tabular-nums',
-              color: psicologo.totalPendente > 0 ? 'warning.main' : 'text.primary',
+              color: psicologo.totalVencido > 0 ? 'error.main' : 'text.primary',
             }}>
-              {brl(psicologo.totalPendente)}
+              {brl(psicologo.totalVencido)}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {psicologo.mensalidadesPendentes} competência{psicologo.mensalidadesPendentes === 1 ? '' : 's'}
+              {psicologo.faturasVencidas} fatura{psicologo.faturasVencidas === 1 ? '' : 's'} vencida{psicologo.faturasVencidas === 1 ? '' : 's'}
             </Typography>
           </Paper>
         </Grid>
         <Grid size={{ xs: 12, sm: 4 }}>
-          <Paper variant="outlined" sx={{ ...cardsx, borderLeft: `3px solid ${theme.palette.success.main}` }}>
+          <Paper variant="outlined" sx={{ ...cardsx, borderLeft: `3px solid ${theme.palette.info.main}` }}>
             <Typography variant="caption" sx={{
-              color: 'success.main', fontWeight: 600,
+              color: 'info.main', fontWeight: 600,
               textTransform: 'uppercase', letterSpacing: '0.06em',
             }}>
-              Recebido em {anoAtual}
+              Ciclo atual (prévia)
             </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
-              {brl(recebidoNoAno)}
-            </Typography>
+            {previaAtual ? (
+              <>
+                <Typography variant="h6" sx={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+                  {brl(previaAtual.valor)}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  fecha em {dataLocal(previaAtual.periodoFim)} · vence {dataLocal(previaAtual.vencimento)}
+                </Typography>
+              </>
+            ) : (
+              <Typography variant="body1" color="text.disabled" sx={{ mt: 0.5 }}>
+                sem ciclo em curso
+              </Typography>
+            )}
           </Paper>
         </Grid>
       </Grid>
 
-      {/* Grade anual de mensalidades */}
+      {/* Faturas */}
       <Paper variant="outlined" sx={cardsx}>
-        <Stack direction="row" sx={{ alignItems: 'center', mb: 1.5 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, flexGrow: 1 }}>
-            Mensalidades
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            clique numa célula pra dar baixa ou estornar
-          </Typography>
-        </Stack>
-        {anos.length === 0 ? (
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+          Faturas
+        </Typography>
+        {faturas.length === 0 && previas.length === 0 ? (
           <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
-            Nenhuma mensalidade lançada — crie um contrato pra começar a cobrança.
+            Nenhuma fatura ainda — crie um contrato pra iniciar a cobrança.
           </Typography>
         ) : (
-          <Stack spacing={1.5}>
-            {anos.map(([ano, porMes]) => (
-              <Box key={ano}>
-                <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>
-                  {ano}
-                </Typography>
-                <Box sx={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(12, 1fr)',
-                  gap: 0.5, mt: 0.5,
-                }}>
-                  {MESES_CURTO.map((rotulo, i) => {
-                    const m = porMes.get(i + 1)
-                    return (
-                      <Box key={rotulo}>
-                        <Typography variant="caption" sx={{
-                          display: 'block', textAlign: 'center',
-                          fontSize: 10, color: 'text.disabled',
-                        }}>
-                          {rotulo}
-                        </Typography>
-                        {m ? (
-                          <Tooltip title={`${m.competencia} · ${brl(m.valor)} · ${m.paga ? 'paga — clique pra estornar' : 'em aberto — clique pra dar baixa'}`}>
-                            <ButtonBase
-                              onClick={() => setMensalidadeAlvo(m)}
-                              aria-label={`Mensalidade ${m.competencia}, ${m.paga ? 'paga' : 'em aberto'}`}
-                              sx={{
-                                width: '100%', height: 34, borderRadius: 1.5,
-                                bgcolor: m.paga
-                                  ? alpha(theme.palette.success.main, 0.12)
-                                  : alpha(theme.palette.warning.main, 0.15),
-                                border: `1px solid ${m.paga
-                                  ? alpha(theme.palette.success.main, 0.5)
-                                  : theme.palette.warning.main}`,
-                                color: m.paga ? 'success.main' : 'warning.main',
-                                fontSize: 10, fontWeight: 700,
-                                '&:hover': { filter: 'brightness(0.95)' },
-                              }}
-                            >
-                              {m.paga ? <CheckIcon sx={{ fontSize: 16 }} /> : 'aberta'}
-                            </ButtonBase>
-                          </Tooltip>
-                        ) : (
-                          <Box sx={{
-                            height: 34, borderRadius: 1.5,
-                            bgcolor: alpha(theme.palette.divider, 0.25),
-                          }} />
-                        )}
-                      </Box>
-                    )
-                  })}
+          <Stack divider={<Divider />}>
+            {previas.map((p, i) => (
+              <Stack key={`previa-${p.periodoFim}`} direction="row" spacing={1.5}
+                     sx={{ alignItems: 'center', py: 1, opacity: 0.75 }}>
+                <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                    {dataLocal(p.periodoInicio)} → {dataLocal(p.periodoFim)}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {i === 0 ? 'ciclo atual' : 'próximo ciclo'} · vence {dataLocal(p.vencimento)}
+                  </Typography>
                 </Box>
-              </Box>
+                <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                  {brl(p.valor)}
+                </Typography>
+                <Chip size="small" label="Prévia" variant="outlined"
+                      sx={{ height: 22, fontSize: 11, fontWeight: 600, borderStyle: 'dashed' }} />
+              </Stack>
             ))}
+            {faturas.map(f => {
+              const chip = CHIP_STATUS[f.status]
+              const aberta = itensAbertos === f.id
+              return (
+                <Box key={f.id}>
+                  <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', py: 1 }}>
+                    <ButtonBase
+                      onClick={() => setItensAbertos(aberta ? null : f.id)}
+                      aria-expanded={aberta}
+                      sx={{ flexGrow: 1, minWidth: 0, justifyContent: 'flex-start', gap: 1, borderRadius: 1 }}
+                    >
+                      <ExpandMoreIcon sx={{
+                        fontSize: 18, color: 'text.disabled',
+                        transform: aberta ? 'rotate(180deg)' : 'none',
+                        transition: theme.transitions.create('transform', {
+                          duration: theme.transitions.duration.short,
+                        }),
+                      }} />
+                      <Box sx={{ minWidth: 0, textAlign: 'left' }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                          {dataLocal(f.periodoInicio)} → {dataLocal(f.periodoFim)}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          vence {dataLocal(f.vencimento)}
+                          {f.paga && f.pagaEm && ` · paga em ${dataLocal(f.pagaEm)}`}
+                        </Typography>
+                      </Box>
+                    </ButtonBase>
+                    <Typography variant="body2" sx={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+                      {brl(f.valor)}
+                    </Typography>
+                    <Chip size="small" label={chip.rotulo} color={chip.cor}
+                          variant={f.status === 'VENCIDA' ? 'filled' : 'outlined'}
+                          sx={{ height: 22, fontSize: 11, fontWeight: 600 }} />
+                    {f.valor > 0 && (
+                      <Button
+                        size="small"
+                        variant={f.paga ? 'text' : 'outlined'}
+                        color={f.paga ? 'inherit' : 'success'}
+                        disabled={salvando}
+                        onClick={() => setFaturaAlvo(f)}
+                        sx={{ borderRadius: 999, minWidth: 92, fontSize: 12, flexShrink: 0 }}
+                      >
+                        {f.paga ? 'Estornar' : 'Dar baixa'}
+                      </Button>
+                    )}
+                  </Stack>
+                  <Collapse in={aberta}>
+                    <Box sx={{
+                      ml: 4, mb: 1, px: 1.5, py: 1, borderRadius: 1.5,
+                      bgcolor: alpha(theme.palette.divider, 0.15),
+                    }}>
+                      {f.itens.map((item, idx) => (
+                        <Typography key={idx} variant="caption" component="div"
+                                    sx={{ fontVariantNumeric: 'tabular-nums' }}>
+                          {dataLocal(item.periodoInicio)} → {dataLocal(item.periodoFim)} ·{' '}
+                          {item.dias} dia{item.dias === 1 ? '' : 's'} · {brl(item.valor)}
+                        </Typography>
+                      ))}
+                    </Box>
+                  </Collapse>
+                </Box>
+              )
+            })}
           </Stack>
         )}
       </Paper>
@@ -327,9 +363,7 @@ export default function AdminPsicologoDetalhePage() {
             Contratos
           </Typography>
           <Button
-            size="small"
-            variant="contained"
-            startIcon={<AddIcon />}
+            size="small" variant="contained" startIcon={<AddIcon />}
             onClick={() => setDialogContrato(true)}
             sx={{ borderRadius: 999 }}
           >
@@ -342,59 +376,72 @@ export default function AdminPsicologoDetalhePage() {
           </Typography>
         ) : (
           <Stack divider={<Divider />}>
-            {contratos.map(c => (
-              <Stack key={c.id} direction="row" spacing={1.5} sx={{ alignItems: 'center', py: 1 }}>
-                <Stack sx={{ flexGrow: 1, minWidth: 0 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                    {brl(c.valorMensal)}/mês
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {vigencia(c)}
-                  </Typography>
-                </Stack>
-                {c.ativo ? (
-                  <>
-                    <Chip size="small" label="Ativo" color="success" variant="outlined"
-                          sx={{ height: 22, fontSize: 11, fontWeight: 600 }} />
+            {contratos.map(c => {
+              const situacao = situacaoContrato(c)
+              return (
+                <Stack key={c.id} direction="row" spacing={1.5} sx={{ alignItems: 'center', py: 1 }}>
+                  <Stack sx={{ flexGrow: 1, minWidth: 0 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                      {brl(c.valorMensal)}/mês
+                      {c.valorMensal === 0 && (
+                        <Typography component="span" variant="caption" color="text.secondary">
+                          {' '}(cortesia)
+                        </Typography>
+                      )}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {vigencia(c)}
+                    </Typography>
+                  </Stack>
+                  <Chip size="small" label={situacao}
+                        color={situacao === 'Vigente' ? 'success' : situacao === 'Agendado' ? 'info' : 'default'}
+                        variant="outlined" sx={{ height: 22, fontSize: 11, fontWeight: 600 }} />
+                  {situacao !== 'Encerrado' && (
                     <Button size="small" color="error" disabled={salvando}
                             onClick={() => encerrarContrato(c)}
                             sx={{ borderRadius: 999, fontSize: 12 }}>
-                      Encerrar
+                      {situacao === 'Agendado' ? 'Remover' : 'Encerrar'}
                     </Button>
-                  </>
-                ) : (
-                  <Chip size="small" label="Encerrado" variant="outlined" sx={{ height: 22, fontSize: 11 }} />
-                )}
-              </Stack>
-            ))}
+                  )}
+                </Stack>
+              )
+            })}
           </Stack>
         )}
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+          Encerrar vale até o fechamento do ciclo corrente (fatura final cheia).
+        </Typography>
       </Paper>
 
       {/* Confirmação de baixa/estorno */}
-      <Dialog open={mensalidadeAlvo !== null} onClose={() => setMensalidadeAlvo(null)} maxWidth="xs" fullWidth>
+      <Dialog open={faturaAlvo !== null} onClose={() => setFaturaAlvo(null)} maxWidth="xs" fullWidth>
         <DialogTitle>
-          {mensalidadeAlvo?.paga ? 'Estornar baixa' : 'Confirmar pagamento'}
+          {faturaAlvo?.paga ? 'Estornar baixa' : 'Confirmar pagamento'}
         </DialogTitle>
         <DialogContent>
           <Typography variant="body2">
-            {mensalidadeAlvo?.paga ? 'Estornar a baixa da mensalidade de ' : 'Dar baixa na mensalidade de '}
-            <Box component="span" sx={{ fontWeight: 600 }}>{mensalidadeAlvo?.competencia}</Box>
+            {faturaAlvo?.paga ? 'Estornar a baixa da fatura de ' : 'Dar baixa na fatura de '}
+            <Box component="span" sx={{ fontWeight: 600 }}>
+              {faturaAlvo ? `${dataLocal(faturaAlvo.periodoInicio)} → ${dataLocal(faturaAlvo.periodoFim)}` : ''}
+            </Box>
             {' '}no valor de{' '}
             <Box component="span" sx={{ fontWeight: 600 }}>
-              {mensalidadeAlvo ? brl(mensalidadeAlvo.valor) : ''}
+              {faturaAlvo ? brl(faturaAlvo.valor) : ''}
             </Box>?
+            {!faturaAlvo?.paga && psicologo.bloqueadaMotivo === 'INADIMPLENCIA' && (
+              <> Se a situação regularizar, o bloqueio automático será desfeito.</>
+            )}
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setMensalidadeAlvo(null)}>Cancelar</Button>
+          <Button onClick={() => setFaturaAlvo(null)}>Cancelar</Button>
           <Button
             variant="contained"
-            color={mensalidadeAlvo?.paga ? 'inherit' : 'success'}
+            color={faturaAlvo?.paga ? 'inherit' : 'success'}
             disabled={salvando}
             onClick={confirmarBaixa}
           >
-            {salvando ? 'Salvando…' : mensalidadeAlvo?.paga ? 'Estornar' : 'Dar baixa'}
+            {salvando ? 'Salvando…' : faturaAlvo?.paga ? 'Estornar' : 'Dar baixa'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -405,7 +452,7 @@ export default function AdminPsicologoDetalhePage() {
         <DialogContent>
           <Typography variant="body2">
             {psicologo.bloqueada
-              ? `Desbloquear o acesso de ${psicologo.nomeCompleto}? O login volta a funcionar normalmente.`
+              ? `Desbloquear o acesso de ${psicologo.nomeCompleto}? Atenção: se a situação seguir irregular (fatura vencida ou sem contrato vigente), o próximo login bloqueia de novo automaticamente.`
               : `Bloquear o acesso de ${psicologo.nomeCompleto}? Vale a partir do próximo login — uma sessão aberta expira sozinha em até 24h. Os dados permanecem intactos.`}
           </Typography>
         </DialogContent>
@@ -425,7 +472,6 @@ export default function AdminPsicologoDetalhePage() {
       <AdminNovoContratoDialog
         aberto={dialogContrato}
         psicologoId={psicologo.id}
-        substituiAtivo={psicologo.contratoAtivo !== null}
         onFechar={() => setDialogContrato(false)}
         onCriado={() => { setMensagemSucesso('Contrato criado'); carregar() }}
       />

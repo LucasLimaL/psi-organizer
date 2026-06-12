@@ -211,7 +211,23 @@ A UI reforça a regra com o `InativarPacienteDialog` (Alert outlined warning exp
 
 ---
 
-## 11. Convenções gerais
+## 11. Admin, bloqueio e mensalidades do SaaS
+
+| Regra | Onde |
+|---|---|
+| `admin` é flag em `psicologa` — **nunca** setada via signup; nasce apenas via migração ou SQL manual | `V6__admin_contratos_mensalidades.sql` · `AuthController.signup` gera token com `admin=false` |
+| Usuário admin do dono do sistema (`lucas_221910@hotmail.com`) é **garantido em qualquer ambiente** pela V6 (idempotente via `WHERE NOT EXISTS`); CPF placeholder `00000000000` nunca colide com cadastro real (signup valida dígito verificador) | `V6__admin_contratos_mensalidades.sql` |
+| Endpoints `/admin/**` revalidam a flag `admin` **no banco** a cada chamada — não-admin → `403` | `AdminService.exigirAdmin` |
+| Admin enxerga **apenas dados cadastrais e contratuais** das psicólogas — dados clínicos (pacientes, consultas) ficam fora por princípio LGPD | escopo do `AdminService`/DTOs |
+| **Bloqueio** vale a partir do **próximo login** (`401` com mensagem específica); token vigente expira sozinho em até 24h. Decisão consciente: evita query por request no filtro JWT. | `AuthService.autenticar` |
+| Admin não pode bloquear a própria conta nem outra conta admin | `AdminService.bloquear` → `400` |
+| **Contrato**: vários por psicóloga ao longo do tempo, no máximo **um ativo** — criar novo desativa o anterior; encerrar seta `ativo=false` e preenche `data_fim` se vazia | `AdminService.criarContrato`/`encerrarContrato` |
+| **Mensalidades são materializadas por competência** (`YYYY-MM`) do contrato ativo: do mês de `data_inicio` até o mês atual (ou `data_fim`, se anterior). Idempotente (`uq_mensalidade_contrato_competencia`); contrato desativado para de gerar novas, as lançadas permanecem. `valor` é snapshot do contrato. | `AdminService.materializarMensalidades` |
+| **Troca de senha** exige a senha atual e valida a nova com `@SenhaValida` | `PsicologaService.alterarSenha` → `400 "Senha atual incorreta"` |
+
+---
+
+## 12. Convenções gerais
 
 | Item | Convenção |
 |---|---|

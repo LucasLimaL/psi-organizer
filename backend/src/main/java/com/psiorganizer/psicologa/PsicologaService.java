@@ -50,6 +50,16 @@ public class PsicologaService {
     }
 
     @Transactional
+    public void alterarSenha(UUID id, String senhaAtual, String novaSenha) {
+        Psicologa p = buscarPorId(id);
+        if (!passwordEncoder.matches(senhaAtual, p.getSenhaHash())) {
+            throw ApiException.requisicaoInvalida("Senha atual incorreta");
+        }
+        p.setSenhaHash(passwordEncoder.encode(novaSenha));
+        repository.save(p);
+    }
+
+    @Transactional
     public Psicologa atualizarPerfil(UUID id, String nomeCompleto, String crp,
                                      String telefone, Endereco endereco) {
         Psicologa p = buscarPorId(id);

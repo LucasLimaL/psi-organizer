@@ -42,14 +42,29 @@ Toda resposta de erro segue o mesmo envelope:
 | Método | Path | Sumário | Códigos relevantes |
 |---|---|---|---|
 | `POST` | `/auth/signup` | Cria conta de psicóloga e retorna JWT | `201` · `400` validação · `409` e-mail ou CPF já cadastrado |
-| `POST` | `/auth/login` | Autentica e retorna JWT | `200` · `401` credenciais inválidas |
+| `POST` | `/auth/login` | Autentica e retorna JWT. Conta **bloqueada** → `401` com mensagem específica. | `200` · `401` credenciais inválidas ou conta bloqueada |
 
 ### Perfil · `/me`
 
 | Método | Path | Sumário | Códigos |
 |---|---|---|---|
-| `GET` | `/me` | Retorna dados da psicóloga autenticada | `200` · `401` |
+| `GET` | `/me` | Retorna dados da psicóloga autenticada (inclui flag `admin`) | `200` · `401` |
 | `PUT` | `/me` | Atualiza nome, CRP, telefone, endereço. **E-mail e CPF não são editáveis.** | `200` · `400` validação · `401` |
+| `PUT` | `/me/senha` | Altera a senha (exige `senhaAtual` + `novaSenha` com `@SenhaValida`) | `204` · `400` senha atual incorreta ou nova inválida · `401` |
+
+### Admin · `/admin/**` (exclusivo de administradores)
+
+Gestão de contas do SaaS. Toda chamada revalida a flag `admin` **no banco** (não só no claim do token); não-admin → `403`. Expõe apenas dados cadastrais e contratuais — **nunca dados clínicos** (pacientes/consultas).
+
+| Método | Path | Sumário | Códigos |
+|---|---|---|---|
+| `GET` | `/admin/psicologas?busca=&limit=20&offset=0` | Lista paginada com contrato ativo e pendências (busca por nome/e-mail). Envelope: `{ psicologas, total, temMais }`. | `200` · `401` · `403` |
+| `PUT` | `/admin/psicologas/{id}/bloqueio` | Bloqueia/desbloqueia acesso (`{ bloqueada: bool }`). Vale a partir do **próximo login**. Não permite bloquear a si mesmo nem outra conta admin. | `204` · `400` · `403` · `404` |
+| `GET` | `/admin/psicologas/{id}/contratos` | Histórico de contratos (mais recentes primeiro) | `200` · `403` |
+| `POST` | `/admin/psicologas/{id}/contratos` | Cria contrato (`dataInicio`, `dataFim?`, `valorMensal`); o ativo anterior é desativado | `201` · `400` · `403` · `404` |
+| `PUT` | `/admin/contratos/{id}/encerrar` | Encerra contrato — para de gerar novas mensalidades | `200` · `403` · `404` |
+| `GET` | `/admin/psicologas/{id}/mensalidades` | Histórico de mensalidades. Competências vencidas são **materializadas automaticamente** a partir do contrato ativo. | `200` · `403` |
+| `PUT` | `/admin/mensalidades/{id}/baixa` | Dá baixa ou estorna (`{ paga: bool }`) | `200` · `403` · `404` |
 
 ### Pacientes · `/pacientes/**`
 

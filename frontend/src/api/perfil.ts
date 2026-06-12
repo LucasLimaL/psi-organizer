@@ -26,8 +26,15 @@ export type AtualizarPerfilInput = {
   endereco: Endereco
 }
 
+export type AlterarSenhaInput = {
+  senhaAtual: string
+  novaSenha: string
+}
+
 export const perfilApi = {
   buscar: () => api<PerfilCompleto>('/me'),
   atualizar: (p: AtualizarPerfilInput) =>
     api<PerfilCompleto>('/me', { method: 'PUT', body: JSON.stringify(p) }),
+  alterarSenha: (p: AlterarSenhaInput) =>
+    api<void>('/me/senha', { method: 'PUT', body: JSON.stringify(p) }),
 }

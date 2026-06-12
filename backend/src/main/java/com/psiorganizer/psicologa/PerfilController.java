@@ -2,6 +2,7 @@ package com.psiorganizer.psicologa;
 
 import jakarta.validation.Valid;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.psiorganizer.common.security.PsicologaPrincipal;
+import com.psiorganizer.psicologa.dto.AlterarSenhaRequest;
 import com.psiorganizer.psicologa.dto.AtualizarPerfilRequest;
 import com.psiorganizer.psicologa.dto.PsicologaResponse;
 
@@ -45,5 +47,13 @@ public class PerfilController {
                 req.telefone(),
                 req.endereco().toDomain());
         return PsicologaResponse.fromDomain(atualizada);
+    }
+
+    @PutMapping("/senha")
+    @Operation(summary = "Altera a senha da psicóloga autenticada (exige a senha atual)")
+    public ResponseEntity<Void> alterarSenha(@Valid @RequestBody AlterarSenhaRequest req) {
+        var principal = PsicologaPrincipal.corrente();
+        psicologaService.alterarSenha(principal.id(), req.senhaAtual(), req.novaSenha());
+        return ResponseEntity.noContent().build();
     }
 }

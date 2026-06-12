@@ -99,8 +99,9 @@ export const adminApi = {
     api<Contrato>(`/admin/contratos/${contratoId}/encerrar`, { method: 'PUT' }),
   faturas: (psicologoId: string) =>
     api<FaturasResposta>(`/admin/psicologos/${psicologoId}/faturas`),
-  darBaixa: (faturaId: string, paga: boolean) =>
+  /** `dataPagamento` (YYYY-MM-DD) opcional — ausente = hoje; ignorada no estorno. */
+  darBaixa: (faturaId: string, paga: boolean, dataPagamento?: string) =>
     api<Fatura>(`/admin/faturas/${faturaId}/baixa`, {
-      method: 'PUT', body: JSON.stringify({ paga }),
+      method: 'PUT', body: JSON.stringify({ paga, dataPagamento: dataPagamento ?? null }),
     }),
 }

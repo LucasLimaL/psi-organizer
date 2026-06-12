@@ -97,11 +97,12 @@ public class AdminController {
     }
 
     @PutMapping("/faturas/{id}/baixa")
-    @Operation(summary = "Dá baixa (ou estorna a baixa) de uma fatura. Baixa que regulariza "
-            + "a situação desfaz bloqueio automático por inadimplência.")
+    @Operation(summary = "Dá baixa (ou estorna a baixa) de uma fatura. `dataPagamento` "
+            + "opcional (default hoje). Baixa que regulariza a situação desfaz bloqueio "
+            + "automático por inadimplência.")
     public FaturaResponse darBaixa(@PathVariable UUID id,
                                    @RequestBody BaixaFaturaRequest req) {
         UUID solicitanteId = PsicologaPrincipal.corrente().id();
-        return service.darBaixa(solicitanteId, id, req.paga());
+        return service.darBaixa(solicitanteId, id, req.paga(), req.dataPagamento());
     }
 }

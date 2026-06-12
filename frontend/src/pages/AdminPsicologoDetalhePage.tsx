@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   Stack, Box, Paper, Typography, Button, Chip, Avatar, IconButton,
-  Skeleton, Tooltip, Snackbar, Alert, Grid, Divider,
+  Skeleton, Tooltip, Snackbar, Alert, Grid, Divider, TextField,
   Dialog, DialogTitle, DialogContent, DialogActions, Collapse, ButtonBase,
 } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
@@ -32,10 +32,14 @@ function vigencia(c: Contrato): string {
   return `${dataLocal(c.dataInicio)} → ${c.dataFim ? dataLocal(c.dataFim) : 'indeterminado'}`
 }
 
-function situacaoContrato(c: Contrato): 'Vigente' | 'Agendado' | 'Encerrado' {
-  // Data local (não UTC!) — toISOString viraria "amanhã" depois das 21h BRT
+/** Data local de hoje em YYYY-MM-DD (não UTC — toISOString vira "amanhã" após 21h BRT). */
+function hojeLocalISO(): string {
   const d = new Date()
-  const hoje = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function situacaoContrato(c: Contrato): 'Vigente' | 'Agendado' | 'Encerrado' {
+  const hoje = hojeLocalISO()
   if (c.dataInicio > hoje) return 'Agendado'
   if (c.dataFim !== null && c.dataFim < hoje) return 'Encerrado'
   return 'Vigente'
@@ -47,16 +51,18 @@ const CHIP_STATUS: Record<Fatura['status'], { rotulo: string; cor: 'success' | '
   A_VENCER: { rotulo: 'A vencer', cor: 'info' },
 }
 
-function CampoDetalhe({ rotulo, valor }: { rotulo: string; valor: string }) {
+function CampoDetalhe({ rotulo, valor, cor }: { rotulo: string; valor: string; cor?: string }) {
   return (
-    <Box>
+    <Box sx={{ minWidth: 0 }}>
       <Typography variant="caption" sx={{
-        display: 'block', color: 'text.secondary',
-        textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: 10,
+        display: 'block', color: 'text.secondary', mb: 0.5,
+        textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 10, fontWeight: 600,
       }}>
         {rotulo}
       </Typography>
-      <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+      <Typography variant="body2" sx={{
+        fontWeight: 600, fontVariantNumeric: 'tabular-nums', color: cor ?? 'text.primary',
+      }}>
         {valor}
       </Typography>
     </Box>
@@ -73,40 +79,71 @@ function DetalheFatura({ periodo, vencimento, pagamento, itens, valorMensalPorCo
 }) {
   const theme = useTheme()
   return (
-    <Box sx={{
-      ml: 4.5, mb: 1.5, p: 1.5, borderRadius: 2,
-      border: `1px solid ${theme.palette.divider}`,
-      bgcolor: alpha(theme.palette.primary.main, 0.025),
-    }}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 1, sm: 4 }}>
-        <CampoDetalhe rotulo="Período" valor={periodo} />
-        <CampoDetalhe rotulo="Vencimento" valor={vencimento} />
-        <CampoDetalhe rotulo="Pagamento" valor={pagamento ?? '—'} />
-      </Stack>
-      <Divider sx={{ my: 1.25 }} />
-      <Stack spacing={0.5}>
+    <Paper
+      variant="outlined"
+      sx={{
+        ml: 4.5, mb: 1.5, p: { xs: 2, sm: 2.5 }, borderRadius: 2,
+        boxShadow: 'none', border: `1px solid ${theme.palette.divider}`,
+        bgcolor: 'background.paper',
+      }}
+    >
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, sm: 4 }}>
+          <CampoDetalhe rotulo="Período" valor={periodo} />
+        </Grid>
+        <Grid size={{ xs: 6, sm: 4 }}>
+          <CampoDetalhe rotulo="Vencimento" valor={vencimento} />
+        </Grid>
+        <Grid size={{ xs: 6, sm: 4 }}>
+          <CampoDetalhe
+            rotulo="Pagamento"
+            valor={pagamento ?? 'não pago'}
+            cor={pagamento ? theme.palette.success.main : theme.palette.text.disabled}
+          />
+        </Grid>
+      </Grid>
+      <Divider sx={{ my: 2 }} />
+      <Typography variant="caption" sx={{
+        display: 'block', color: 'text.secondary', mb: 1,
+        textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 10, fontWeight: 600,
+      }}>
+        Rateio por contrato
+      </Typography>
+      <Stack spacing={1.25}>
         {itens.map((item, idx) => {
           const valorMensal = valorMensalPorContrato.get(item.contratoId)
+          const cortesia = valorMensal === 0
           return (
-            <Stack key={idx} direction="row" spacing={1} sx={{ alignItems: 'baseline' }}>
-              <Typography variant="caption" sx={{ fontVariantNumeric: 'tabular-nums', flexGrow: 1 }}>
-                {valorMensal !== undefined && (
-                  <Box component="span" sx={{ fontWeight: 600 }}>
-                    {valorMensal === 0 ? 'Cortesia' : `Plano ${brl(valorMensal)}/mês`}
-                  </Box>
-                )}
-                {' · '}
-                {dataLocal(item.periodoInicio)} → {dataLocal(item.periodoFim)} ·{' '}
-                {item.dias} dia{item.dias === 1 ? '' : 's'}
-              </Typography>
-              <Typography variant="caption" sx={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+            <Stack key={idx} direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+              <Box
+                aria-hidden
+                sx={{
+                  width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                  bgcolor: cortesia ? theme.palette.text.disabled : theme.palette.primary.main,
+                }}
+              />
+              <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  {valorMensal === undefined
+                    ? 'Contrato'
+                    : cortesia ? 'Cortesia' : `Plano ${brl(valorMensal)}/mês`}
+                </Typography>
+                <Typography variant="caption" color="text.secondary"
+                            sx={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {dataLocal(item.periodoInicio)} → {dataLocal(item.periodoFim)} ·{' '}
+                  {item.dias} dia{item.dias === 1 ? '' : 's'}
+                </Typography>
+              </Box>
+              <Typography variant="body2" sx={{
+                fontWeight: 700, fontVariantNumeric: 'tabular-nums', flexShrink: 0,
+              }}>
                 {brl(item.valor)}
               </Typography>
             </Stack>
           )
         })}
       </Stack>
-    </Box>
+    </Paper>
   )
 }
 
@@ -124,6 +161,12 @@ export default function AdminPsicologoDetalhePage() {
   const [dialogContrato, setDialogContrato] = useState(false)
   const [confirmandoBloqueio, setConfirmandoBloqueio] = useState(false)
   const [faturaAlvo, setFaturaAlvo] = useState<Fatura | null>(null)
+  const [dataPagamento, setDataPagamento] = useState('')
+
+  // Abrindo o dialog de baixa, a data de pagamento começa em hoje
+  useEffect(() => {
+    if (faturaAlvo && !faturaAlvo.paga) setDataPagamento(hojeLocalISO())
+  }, [faturaAlvo])
   const [salvando, setSalvando] = useState(false)
   const [mensagemSucesso, setMensagemSucesso] = useState<string | null>(null)
 
@@ -188,7 +231,7 @@ export default function AdminPsicologoDetalhePage() {
     if (!f) return
     setSalvando(true)
     try {
-      await adminApi.darBaixa(f.id, !f.paga)
+      await adminApi.darBaixa(f.id, !f.paga, !f.paga ? dataPagamento : undefined)
       setFaturaAlvo(null)
       setMensagemSucesso(f.paga ? 'Baixa estornada' : 'Fatura paga — situação reavaliada')
       await carregar()
@@ -557,13 +600,22 @@ export default function AdminPsicologoDetalhePage() {
               <> Se a situação regularizar, o bloqueio automático será desfeito.</>
             )}
           </Typography>
+          {!faturaAlvo?.paga && (
+            <TextField
+              fullWidth label="Data do pagamento" type="date" required
+              slotProps={{ inputLabel: { shrink: true } }}
+              value={dataPagamento}
+              onChange={e => setDataPagamento(e.target.value)}
+              sx={{ mt: 2.5 }}
+            />
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setFaturaAlvo(null)}>Cancelar</Button>
           <Button
             variant="contained"
             color={faturaAlvo?.paga ? 'inherit' : 'success'}
-            disabled={salvando}
+            disabled={salvando || (!faturaAlvo?.paga && !dataPagamento)}
             onClick={confirmarBaixa}
           >
             {salvando ? 'Salvando…' : faturaAlvo?.paga ? 'Estornar' : 'Dar baixa'}

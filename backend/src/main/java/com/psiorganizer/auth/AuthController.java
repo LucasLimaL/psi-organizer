@@ -46,6 +46,7 @@ public class AuthController {
                 req.cpf(),
                 req.crp(),
                 req.telefone(),
+                req.diaFechamento(),
                 req.endereco().toDomain());
         String token = jwtService.gerar(p.getId(), p.getEmail(), false);
         return ResponseEntity.status(HttpStatus.CREATED)

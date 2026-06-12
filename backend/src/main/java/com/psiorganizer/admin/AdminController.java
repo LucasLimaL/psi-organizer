@@ -11,11 +11,12 @@ import org.springframework.web.bind.annotation.*;
 
 import com.psiorganizer.admin.dto.AdminPsicologaResponse;
 import com.psiorganizer.admin.dto.AdminPsicologasPaginadoResponse;
-import com.psiorganizer.admin.dto.BaixaMensalidadeRequest;
+import com.psiorganizer.admin.dto.BaixaFaturaRequest;
 import com.psiorganizer.admin.dto.BloqueioRequest;
 import com.psiorganizer.admin.dto.ContratoRequest;
 import com.psiorganizer.admin.dto.ContratoResponse;
-import com.psiorganizer.admin.dto.MensalidadeResponse;
+import com.psiorganizer.admin.dto.FaturaResponse;
+import com.psiorganizer.admin.dto.FaturasResponse;
 import com.psiorganizer.common.security.PsicologaPrincipal;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -70,8 +71,7 @@ public class AdminController {
     }
 
     @PostMapping("/psicologos/{id}/contratos")
-    @Operation(summary = "Cria um contrato para o psicólogo — o contrato ativo anterior "
-            + "(se houver) é desativado")
+    @Operation(summary = "Cria um contrato (vigência por datas; sobreposição é recusada)")
     public ResponseEntity<ContratoResponse> criarContrato(@PathVariable UUID id,
                                                           @Valid @RequestBody ContratoRequest req) {
         UUID solicitanteId = PsicologaPrincipal.corrente().id();
@@ -81,24 +81,26 @@ public class AdminController {
     }
 
     @PutMapping("/contratos/{id}/encerrar")
-    @Operation(summary = "Encerra (desativa) um contrato — para de gerar novas mensalidades")
+    @Operation(summary = "Encerra um contrato — vale até o fechamento do ciclo corrente "
+            + "(fatura final cheia); contrato que ainda não começou é removido")
     public ContratoResponse encerrarContrato(@PathVariable UUID id) {
         UUID solicitanteId = PsicologaPrincipal.corrente().id();
         return service.encerrarContrato(solicitanteId, id);
     }
 
-    @GetMapping("/psicologos/{id}/mensalidades")
-    @Operation(summary = "Histórico de mensalidades do psicólogo (competências vencidas são "
-            + "materializadas automaticamente a partir do contrato ativo)")
-    public List<MensalidadeResponse> mensalidades(@PathVariable UUID id) {
+    @GetMapping("/psicologos/{id}/faturas")
+    @Operation(summary = "Faturas fechadas (com rateio por contrato) + prévias do ciclo "
+            + "corrente e do próximo. Ciclos fechados são materializados automaticamente.")
+    public FaturasResponse faturas(@PathVariable UUID id) {
         UUID solicitanteId = PsicologaPrincipal.corrente().id();
-        return service.listarMensalidades(solicitanteId, id);
+        return service.listarFaturas(solicitanteId, id);
     }
 
-    @PutMapping("/mensalidades/{id}/baixa")
-    @Operation(summary = "Dá baixa (ou estorna a baixa) de uma mensalidade")
-    public MensalidadeResponse darBaixa(@PathVariable UUID id,
-                                        @RequestBody BaixaMensalidadeRequest req) {
+    @PutMapping("/faturas/{id}/baixa")
+    @Operation(summary = "Dá baixa (ou estorna a baixa) de uma fatura. Baixa que regulariza "
+            + "a situação desfaz bloqueio automático por inadimplência.")
+    public FaturaResponse darBaixa(@PathVariable UUID id,
+                                   @RequestBody BaixaFaturaRequest req) {
         UUID solicitanteId = PsicologaPrincipal.corrente().id();
         return service.darBaixa(solicitanteId, id, req.paga());
     }

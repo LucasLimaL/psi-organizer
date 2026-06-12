@@ -14,6 +14,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.psiorganizer.admin.Contrato;
+import com.psiorganizer.admin.ContratoRepository;
 import com.psiorganizer.common.Endereco;
 import com.psiorganizer.common.Fusos;
 import com.psiorganizer.consulta.Consulta;
@@ -39,15 +41,18 @@ public class SeedDataRunner implements ApplicationRunner {
         private final PsicologaRepository psicologaRepo;
         private final PacienteRepository pacienteRepo;
         private final ConsultaRepository consultaRepo;
+        private final ContratoRepository contratoRepo;
         private final PasswordEncoder encoder;
 
         public SeedDataRunner(PsicologaRepository psicologaRepo,
                         PacienteRepository pacienteRepo,
                         ConsultaRepository consultaRepo,
+                        ContratoRepository contratoRepo,
                         PasswordEncoder encoder) {
                 this.psicologaRepo = psicologaRepo;
                 this.pacienteRepo = pacienteRepo;
                 this.consultaRepo = consultaRepo;
+                this.contratoRepo = contratoRepo;
                 this.encoder = encoder;
         }
 
@@ -69,8 +74,14 @@ public class SeedDataRunner implements ApplicationRunner {
                                 "CRP 06/12345",
                                 "(11) 99999-0000",
                                 new Endereco("01310100", "Av. Paulista", "1000", "10º andar",
-                                                "Bela Vista", "São Paulo", "SP"));
+                                                "Bela Vista", "São Paulo", "SP"),
+                                31);
                 psicologaRepo.save(psi);
+
+                // Cortesia de 1 mês — mesma regra do signup
+                LocalDate hojeSP = LocalDate.now(Fusos.ZONA_BR);
+                contratoRepo.save(new Contrato(UUID.randomUUID(), psi.getId(),
+                                hojeSP, hojeSP.plusMonths(1).minusDays(1), BigDecimal.ZERO));
 
                 Paciente p1 = new Paciente(
                                 UUID.randomUUID(), psi.getId(),

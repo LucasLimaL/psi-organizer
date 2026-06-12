@@ -8,9 +8,9 @@ import java.util.UUID;
 import jakarta.persistence.*;
 
 /**
- * Contrato de uso do sistema — a psicóloga é a CLIENTE do SaaS aqui.
- * Pode haver vários por psicóloga ao longo do tempo; o service garante
- * no máximo um ativo (criar novo desativa o anterior).
+ * Contrato de uso do sistema — o psicólogo é o CLIENTE do SaaS aqui.
+ * Sem flag de estado: a vigência é determinada pelas datas (sobreposição
+ * é proibida na criação). Vigente = dataInicio <= hoje <= dataFim (null = ∞).
  */
 @Entity
 @Table(name = "contrato")
@@ -33,9 +33,6 @@ public class Contrato {
     @Column(name = "valor_mensal", nullable = false, precision = 10, scale = 2)
     private BigDecimal valorMensal;
 
-    @Column(name = "ativo", nullable = false)
-    private boolean ativo;
-
     @Column(name = "criado_em", nullable = false)
     private Instant criadoEm;
 
@@ -48,8 +45,12 @@ public class Contrato {
         this.dataInicio = dataInicio;
         this.dataFim = dataFim;
         this.valorMensal = valorMensal;
-        this.ativo = true;
         this.criadoEm = Instant.now();
+    }
+
+    /** Cobre o dia d? (dataFim null = prazo indeterminado) */
+    public boolean cobre(LocalDate d) {
+        return !d.isBefore(dataInicio) && (dataFim == null || !d.isAfter(dataFim));
     }
 
     public UUID getId() { return id; }
@@ -60,7 +61,5 @@ public class Contrato {
     public void setDataFim(LocalDate d) { this.dataFim = d; }
     public BigDecimal getValorMensal() { return valorMensal; }
     public void setValorMensal(BigDecimal v) { this.valorMensal = v; }
-    public boolean isAtivo() { return ativo; }
-    public void setAtivo(boolean ativo) { this.ativo = ativo; }
     public Instant getCriadoEm() { return criadoEm; }
 }

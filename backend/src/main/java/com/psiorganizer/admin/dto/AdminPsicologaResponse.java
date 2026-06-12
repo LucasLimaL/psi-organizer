@@ -20,15 +20,17 @@ public record AdminPsicologaResponse(
         boolean admin,
         boolean bloqueada,
         Instant bloqueadaEm,
-        ContratoResponse contratoAtivo,
-        long mensalidadesPendentes,
-        BigDecimal totalPendente) {
+        String bloqueadaMotivo,
+        int diaFechamento,
+        ContratoResponse contratoVigente,
+        long faturasVencidas,
+        BigDecimal totalVencido) {
 
-    public static AdminPsicologaResponse from(Psicologa p, ContratoResponse contratoAtivo,
-                                              long mensalidadesPendentes, BigDecimal totalPendente) {
+    public static AdminPsicologaResponse from(Psicologa p, ContratoResponse contratoVigente,
+                                              long faturasVencidas, BigDecimal totalVencido) {
         return new AdminPsicologaResponse(p.getId(), p.getNomeCompleto(), p.getEmail(),
                 p.getTelefone(), p.getCrp(), p.getCriadoEm(), p.isAdmin(),
-                p.isBloqueada(), p.getBloqueadaEm(),
-                contratoAtivo, mensalidadesPendentes, totalPendente);
+                p.isBloqueada(), p.getBloqueadaEm(), p.getBloqueadaMotivo(),
+                p.getDiaFechamento(), contratoVigente, faturasVencidas, totalVencido);
     }
 }

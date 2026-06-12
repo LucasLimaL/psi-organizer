@@ -220,10 +220,24 @@ A UI reforça a regra com o `InativarPacienteDialog` (Alert outlined warning exp
 | Endpoints `/admin/**` revalidam a flag `admin` **no banco** a cada chamada — não-admin → `403` | `AdminService.exigirAdmin` |
 | Admin enxerga **apenas dados cadastrais e contratuais** das psicólogas — dados clínicos (pacientes, consultas) ficam fora por princípio LGPD | escopo do `AdminService`/DTOs |
 | **Bloqueio** vale a partir do **próximo login** (`401` com mensagem específica); token vigente expira sozinho em até 24h. Decisão consciente: evita query por request no filtro JWT. | `AuthService.autenticar` |
+| Bloqueio tem **motivo**: `ADMIN` (manual — só sai pela mão do admin) ou `INADIMPLENCIA` (automático — desfeito sozinho quando a situação regulariza) | `psicologa.bloqueada_motivo` · `FaturaService` |
 | Admin não pode bloquear a própria conta nem outra conta admin | `AdminService.bloquear` → `400` |
-| **Contrato**: vários por psicóloga ao longo do tempo, no máximo **um ativo** — criar novo desativa o anterior; encerrar seta `ativo=false` e preenche `data_fim` se vazia | `AdminService.criarContrato`/`encerrarContrato` |
-| **Mensalidades são materializadas por competência** (`YYYY-MM`) do contrato ativo: do mês de `data_inicio` até o mês atual (ou `data_fim`, se anterior). Idempotente (`uq_mensalidade_contrato_competencia`); contrato desativado para de gerar novas, as lançadas permanecem. `valor` é snapshot do contrato. | `AdminService.materializarMensalidades` |
 | **Troca de senha** exige a senha atual e valida a nova com `@SenhaValida` | `PsicologaService.alterarSenha` → `400 "Senha atual incorreta"` |
+
+### Faturamento por ciclo de fechamento (V7)
+
+| Regra | Onde |
+|---|---|
+| **Dia de fechamento** (1–31) é escolhido no signup e imutável por ora; mês mais curto fecha no último dia. Ciclo = dia seguinte ao fechamento anterior até o fechamento (fuso SP). | `psicologa.dia_fechamento` · `Ciclos` |
+| **Vencimento = fechamento + 7 dias corridos**; sem baixa após isso → vencida | `Fatura.vencida` |
+| Fatura é **materializada só quando o ciclo fecha**; ciclo corrente e próximo são **prévias calculadas**, nunca persistidas (nada de registro futuro pra envelhecer). Status é derivado: PAGA · VENCIDA · A_VENCER. | `FaturaService.materializar`/`previas` |
+| **Pro-rata = dias usados ÷ dias do ciclo** (ciclo inteiro = valor cheio); rateio entre contratos vira `fatura_item` detalhado | `FaturaService.ratear` |
+| **Contrato tem vigência por datas** (sem flag de estado); **sobreposição de período é recusada** (`409`) — no máximo 1 contrato por dia | `AdminService.criarContrato` |
+| **Encerrar contrato** vale até o fechamento do ciclo corrente (fatura final cheia); contrato ainda não iniciado é removido | `AdminService.encerrarContrato` |
+| **Cortesia**: toda conta nova nasce com contrato de **1 mês a R$ 0**; fatura de valor 0 **nasce paga**. Cortesia expirada sem contrato novo → situação irregular (funil de conversão). | `PsicologaService.criar` · construtor de `Fatura` |
+| **Situação irregular** = sem contrato vigente OU fatura vencida. Avaliada no **login**: bloqueia automaticamente (motivo `INADIMPLENCIA`) e devolve `401` com `detalhes.motivo = SITUACAO_IRREGULAR` + total vencido — frontend mostra a tela explicativa. | `AuthService.autenticar` · `LoginPage` |
+| **Baixa que regulariza** (ou contrato novo que cobre a lacuna) **desfaz o bloqueio automático** na hora; o próximo login volta a bloquear se surgir nova vencida | `FaturaService.regularizarSePossivel` |
+| Máximo **1 fatura por (psicólogo, fechamento)** — constraint no banco torna duplicidade impossível | `uq_fatura_psicologa_periodo` |
 
 ---
 

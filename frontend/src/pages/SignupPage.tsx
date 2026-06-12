@@ -19,13 +19,17 @@ type Form = {
   cpf: string
   crp: string
   telefone: string
+  diaFechamento: number
   endereco: EnderecoFormValor
 }
 
 const inicial: Form = {
   nomeCompleto: '', email: '', senha: '', cpf: '', crp: '', telefone: '',
+  diaFechamento: 31,
   endereco: { cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' },
 }
+
+const DIAS_FECHAMENTO = Array.from({ length: 31 }, (_, i) => i + 1)
 
 function Secao({ titulo, descricao, children }: {
   titulo: string
@@ -150,6 +154,22 @@ export default function SignupPage() {
           <TextField fullWidth label="CRP" required
                      helperText="Inclua a sigla regional, ex: CRP 06/12345"
                      value={form.crp} onChange={e => set('crp', e.target.value)} />
+        </Secao>
+
+        <Divider />
+
+        <Secao
+          titulo="Fechamento da mensalidade"
+          descricao="Dia do mês em que sua fatura de uso do sistema fecha (vencimento 7 dias depois). Meses mais curtos fecham no último dia."
+        >
+          <TextField
+            select fullWidth label="Dia de fechamento" required
+            value={form.diaFechamento}
+            onChange={e => set('diaFechamento', Number(e.target.value))}
+            slotProps={{ select: { native: true } }}
+          >
+            {DIAS_FECHAMENTO.map(d => <option key={d} value={d}>{d}</option>)}
+          </TextField>
         </Secao>
 
         <Divider />

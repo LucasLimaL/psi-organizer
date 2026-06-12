@@ -61,11 +61,11 @@ Gestão de contas do SaaS. Toda chamada revalida a flag `admin` **no banco** (n�
 | `GET` | `/admin/psicologos?busca=&limit=20&offset=0` | Lista paginada com contrato ativo e pendências (busca por nome/e-mail). Envelope: `{ psicologos, total, temMais }`. Contas admin ficam fora. | `200` · `401` · `403` |
 | `GET` | `/admin/psicologos/{id}` | Detalhe de um psicólogo: cadastro, contrato ativo e pendências (materializa competências vencidas) | `200` · `403` · `404` |
 | `PUT` | `/admin/psicologos/{id}/bloqueio` | Bloqueia/desbloqueia acesso (`{ bloqueada: bool }`). Vale a partir do **próximo login**. Não permite bloquear a si mesmo nem outra conta admin. | `204` · `400` · `403` · `404` |
-| `GET` | `/admin/psicologos/{id}/contratos` | Histórico de contratos (mais recentes primeiro) | `200` · `403` |
-| `POST` | `/admin/psicologos/{id}/contratos` | Cria contrato (`dataInicio`, `dataFim?`, `valorMensal`); o ativo anterior é desativado | `201` · `400` · `403` · `404` |
-| `PUT` | `/admin/contratos/{id}/encerrar` | Encerra contrato — para de gerar novas mensalidades | `200` · `403` · `404` |
-| `GET` | `/admin/psicologos/{id}/mensalidades` | Histórico de mensalidades. Competências vencidas são **materializadas automaticamente** a partir do contrato ativo. | `200` · `403` |
-| `PUT` | `/admin/mensalidades/{id}/baixa` | Dá baixa ou estorna (`{ paga: bool }`) | `200` · `403` · `404` |
+| `GET` | `/admin/psicologos/{id}/contratos` | Histórico de contratos (vigência por datas; mais recentes primeiro) | `200` · `403` |
+| `POST` | `/admin/psicologos/{id}/contratos` | Cria contrato (`dataInicio`, `dataFim?`, `valorMensal`). **Sobreposição de período é recusada.** | `201` · `400` · `403` · `404` · `409` sobreposição |
+| `PUT` | `/admin/contratos/{id}/encerrar` | Encerra contrato — vale até o **fechamento do ciclo corrente** (fatura final cheia); contrato que ainda não começou é removido | `200` · `403` · `404` |
+| `GET` | `/admin/psicologos/{id}/faturas` | Faturas fechadas (com rateio por contrato em `itens`) + **prévias** do ciclo corrente e do próximo. Ciclos fechados são materializados automaticamente. Envelope: `{ faturas, previas }`. | `200` · `403` |
+| `PUT` | `/admin/faturas/{id}/baixa` | Dá baixa ou estorna (`{ paga: bool }`). Baixa que regulariza a situação **desfaz bloqueio automático** por inadimplência. | `200` · `403` · `404` |
 
 ### Pacientes · `/pacientes/**`
 

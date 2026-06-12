@@ -47,13 +47,25 @@ public class Psicologa {
     @Column(name = "bloqueada_em")
     private Instant bloqueadaEm;
 
+    /** ADMIN (manual) ou INADIMPLENCIA (automático — desfeito na regularização). */
+    @Column(name = "bloqueada_motivo", length = 20)
+    private String bloqueadaMotivo;
+
+    /**
+     * Dia de fechamento da fatura (1-31, escolhido no signup). Mês mais curto
+     * fecha no último dia. Vencimento = fechamento + 7 dias corridos.
+     */
+    @Column(name = "dia_fechamento", nullable = false)
+    private int diaFechamento;
+
     @Column(name = "criado_em", nullable = false)
     private Instant criadoEm;
 
     protected Psicologa() {}
 
     public Psicologa(UUID id, String nomeCompleto, String email, String senhaHash,
-                     String cpf, String crp, String telefone, Endereco endereco) {
+                     String cpf, String crp, String telefone, Endereco endereco,
+                     int diaFechamento) {
         this.id = id;
         this.nomeCompleto = nomeCompleto;
         this.email = email;
@@ -62,6 +74,7 @@ public class Psicologa {
         this.crp = crp;
         this.telefone = telefone;
         this.endereco = endereco;
+        this.diaFechamento = diaFechamento;
         this.criadoEm = Instant.now();
     }
 
@@ -87,6 +100,11 @@ public class Psicologa {
 
     public Instant getBloqueadaEm() { return bloqueadaEm; }
     public void setBloqueadaEm(Instant b) { this.bloqueadaEm = b; }
+
+    public String getBloqueadaMotivo() { return bloqueadaMotivo; }
+    public void setBloqueadaMotivo(String m) { this.bloqueadaMotivo = m; }
+
+    public int getDiaFechamento() { return diaFechamento; }
 
     public Instant getCriadoEm() { return criadoEm; }
 }

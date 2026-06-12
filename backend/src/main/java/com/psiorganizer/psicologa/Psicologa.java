@@ -58,6 +58,13 @@ public class Psicologa {
     @Column(name = "dia_fechamento", nullable = false)
     private int diaFechamento;
 
+    /**
+     * Consultas com status FALTA entram na cobrança? Preferência da psicóloga
+     * (Perfil → Cobrança). FALTA já paga conta sempre, independente do valor.
+     */
+    @Column(name = "cobrar_faltas", nullable = false)
+    private boolean cobrarFaltas = true;
+
     @Column(name = "criado_em", nullable = false)
     private Instant criadoEm;
 
@@ -105,6 +112,9 @@ public class Psicologa {
     public void setBloqueadaMotivo(String m) { this.bloqueadaMotivo = m; }
 
     public int getDiaFechamento() { return diaFechamento; }
+
+    public boolean isCobrarFaltas() { return cobrarFaltas; }
+    public void setCobrarFaltas(boolean c) { this.cobrarFaltas = c; }
 
     public Instant getCriadoEm() { return criadoEm; }
 }

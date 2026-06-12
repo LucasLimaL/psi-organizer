@@ -13,7 +13,8 @@ public record PsicologaResponse(
         String telefone,
         EnderecoDto endereco,
         boolean admin,
-        int diaFechamento
+        int diaFechamento,
+        boolean cobrarFaltas
 ) {
     public static PsicologaResponse fromDomain(Psicologa p) {
         return new PsicologaResponse(
@@ -25,6 +26,7 @@ public record PsicologaResponse(
                 p.getTelefone(),
                 EnderecoDto.fromDomain(p.getEndereco()),
                 p.isAdmin(),
-                p.getDiaFechamento());
+                p.getDiaFechamento(),
+                p.isCobrarFaltas());
     }
 }

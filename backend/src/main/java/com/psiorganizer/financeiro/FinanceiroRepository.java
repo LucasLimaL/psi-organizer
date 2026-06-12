@@ -20,6 +20,10 @@ import com.psiorganizer.consulta.Consulta;
  * - realizado: status REALIZADA/FALTA e pago = true  (cobrável, recebido)
  * - futuro:    status AGENDADA/CONFIRMADA            (ainda não aconteceu)
  * CANCELADA não entra em nenhuma categoria.
+ *
+ * FALTA pendente só é cobrável se a psicóloga cobra faltas (:cobrarFaltas,
+ * preferência do perfil). FALTA já paga conta sempre — dinheiro recebido não
+ * some das somas quando a preferência é desligada.
  */
 public interface FinanceiroRepository extends Repository<Consulta, UUID> {
 
@@ -28,13 +32,15 @@ public interface FinanceiroRepository extends Repository<Consulta, UUID> {
             from Consulta c
             where c.psicologaId = :psicologaId
               and c.inicio >= :ini and c.inicio < :fim
-              and c.status in (com.psiorganizer.consulta.StatusConsulta.REALIZADA,
-                               com.psiorganizer.consulta.StatusConsulta.FALTA)
+              and (c.status = com.psiorganizer.consulta.StatusConsulta.REALIZADA
+                   or (c.status = com.psiorganizer.consulta.StatusConsulta.FALTA
+                       and :cobrarFaltas = true))
               and c.pago = false
             """)
     TotalCategoria totalPendentes(@Param("psicologaId") UUID psicologaId,
                                   @Param("ini") Instant ini,
-                                  @Param("fim") Instant fim);
+                                  @Param("fim") Instant fim,
+                                  @Param("cobrarFaltas") boolean cobrarFaltas);
 
     @Query("""
             select new com.psiorganizer.financeiro.TotalCategoria(sum(c.valor), count(c))
@@ -67,8 +73,9 @@ public interface FinanceiroRepository extends Repository<Consulta, UUID> {
             from Consulta c
             where c.psicologaId = :psicologaId
               and c.inicio >= :ini and c.inicio < :fim
-              and c.status in (com.psiorganizer.consulta.StatusConsulta.REALIZADA,
-                               com.psiorganizer.consulta.StatusConsulta.FALTA)
+              and (c.status = com.psiorganizer.consulta.StatusConsulta.REALIZADA
+                   or (c.status = com.psiorganizer.consulta.StatusConsulta.FALTA
+                       and :cobrarFaltas = true))
               and c.pago = false
             group by c.pacienteId
             order by sum(c.valor) desc, c.pacienteId asc
@@ -76,34 +83,39 @@ public interface FinanceiroRepository extends Repository<Consulta, UUID> {
     List<GrupoPendenteProjecao> gruposPendentes(@Param("psicologaId") UUID psicologaId,
                                                 @Param("ini") Instant ini,
                                                 @Param("fim") Instant fim,
+                                                @Param("cobrarFaltas") boolean cobrarFaltas,
                                                 Pageable pageable);
 
     @Query("""
             select count(distinct c.pacienteId) from Consulta c
             where c.psicologaId = :psicologaId
               and c.inicio >= :ini and c.inicio < :fim
-              and c.status in (com.psiorganizer.consulta.StatusConsulta.REALIZADA,
-                               com.psiorganizer.consulta.StatusConsulta.FALTA)
+              and (c.status = com.psiorganizer.consulta.StatusConsulta.REALIZADA
+                   or (c.status = com.psiorganizer.consulta.StatusConsulta.FALTA
+                       and :cobrarFaltas = true))
               and c.pago = false
             """)
     long contarGruposPendentes(@Param("psicologaId") UUID psicologaId,
                                @Param("ini") Instant ini,
-                               @Param("fim") Instant fim);
+                               @Param("fim") Instant fim,
+                               @Param("cobrarFaltas") boolean cobrarFaltas);
 
     @Query("""
             select c from Consulta c
             where c.psicologaId = :psicologaId
               and c.pacienteId in :pacienteIds
               and c.inicio >= :ini and c.inicio < :fim
-              and c.status in (com.psiorganizer.consulta.StatusConsulta.REALIZADA,
-                               com.psiorganizer.consulta.StatusConsulta.FALTA)
+              and (c.status = com.psiorganizer.consulta.StatusConsulta.REALIZADA
+                   or (c.status = com.psiorganizer.consulta.StatusConsulta.FALTA
+                       and :cobrarFaltas = true))
               and c.pago = false
             order by c.inicio asc
             """)
     List<Consulta> pendentesDosPacientes(@Param("psicologaId") UUID psicologaId,
                                          @Param("pacienteIds") List<UUID> pacienteIds,
                                          @Param("ini") Instant ini,
-                                         @Param("fim") Instant fim);
+                                         @Param("fim") Instant fim,
+                                         @Param("cobrarFaltas") boolean cobrarFaltas);
 
     @Query("""
             select c from Consulta c

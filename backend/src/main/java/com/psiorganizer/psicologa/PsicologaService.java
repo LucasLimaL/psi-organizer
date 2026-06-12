@@ -78,12 +78,14 @@ public class PsicologaService {
 
     @Transactional
     public Psicologa atualizarPerfil(UUID id, String nomeCompleto, String crp,
-                                     String telefone, Endereco endereco) {
+                                     String telefone, Endereco endereco,
+                                     boolean cobrarFaltas) {
         Psicologa p = buscarPorId(id);
         p.setNomeCompleto(nomeCompleto);
         p.setCrp(crp);
         p.setTelefone(telefone);
         p.setEndereco(endereco);
+        p.setCobrarFaltas(cobrarFaltas);
         return repository.save(p);
     }
 }

@@ -36,8 +36,8 @@ public class PerfilController {
     }
 
     @PutMapping
-    @Operation(summary = "Atualiza dados do perfil (nome, CRP, telefone, endereço). "
-            + "E-mail e CPF não são editáveis por aqui.")
+    @Operation(summary = "Atualiza dados do perfil (nome, CRP, telefone, endereço) e "
+            + "preferências de cobrança (cobrarFaltas). E-mail e CPF não são editáveis por aqui.")
     public PsicologaResponse atualizar(@Valid @RequestBody AtualizarPerfilRequest req) {
         var principal = PsicologaPrincipal.corrente();
         var atualizada = psicologaService.atualizarPerfil(
@@ -45,7 +45,8 @@ public class PerfilController {
                 req.nomeCompleto(),
                 req.crp(),
                 req.telefone(),
-                req.endereco().toDomain());
+                req.endereco().toDomain(),
+                req.cobrarFaltas());
         return PsicologaResponse.fromDomain(atualizada);
     }
 

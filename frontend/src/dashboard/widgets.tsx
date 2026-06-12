@@ -1,4 +1,4 @@
-import { Box, Stack, Typography, Chip, ButtonBase, Avatar, Tooltip } from '@mui/material'
+import { Box, Stack, Typography, Chip, ButtonBase, Avatar, Tooltip, Alert } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import { useNavigate } from 'react-router-dom'
 import EventAvailableIcon from '@mui/icons-material/EventAvailable'
@@ -389,15 +389,17 @@ function ARevisarWidget({ dados }: { dados: DashboardData }) {
   const theme = useTheme()
   const navigate = useNavigate()
   const total = dados.consultasARevisar
+  const temPendencia = total > 0
   return (
     <>
       <WidgetHeader
         icon={<PendingActionsIcon fontSize="small" />}
-        cor="warning.main"
-        fundoCor={alpha(theme.palette.warning.main, 0.12)}
+        cor={temPendencia ? 'error.main' : 'text.secondary'}
+        fundoCor={alpha(
+          temPendencia ? theme.palette.error.main : theme.palette.text.secondary, 0.12)}
         titulo="A revisar"
       />
-      {total === 0 ? (
+      {!temPendencia ? (
         <>
           <Numero valor={0} />
           <Typography variant="caption" color="text.secondary" sx={{ mt: 1.5, display: 'block' }}>
@@ -409,28 +411,29 @@ function ARevisarWidget({ dados }: { dados: DashboardData }) {
           <Stack direction="row" spacing={0.75} sx={{ alignItems: 'baseline' }}>
             <Typography variant="h4" sx={{
               fontWeight: 700, fontVariantNumeric: 'tabular-nums',
-              lineHeight: 1.1, color: 'warning.main',
+              lineHeight: 1.1, color: 'error.main',
             }}>
               {total}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              consulta{total === 1 ? '' : 's'}
+              consulta{total === 1 ? '' : 's'} sem desfecho
             </Typography>
           </Stack>
-          <ButtonBase
+          <Alert
+            severity="error"
             onClick={() => navigate('/agenda')}
+            action={<ArrowForwardIcon sx={{ fontSize: 16, mt: 0.25 }} />}
             sx={{
-              mt: 1.5, borderRadius: 999, px: 1, py: 0.25, ml: -1,
-              display: 'inline-flex', alignItems: 'center', gap: 0.5,
-              color: 'warning.main',
-              '&:hover': { bgcolor: alpha(theme.palette.warning.main, 0.08) },
+              mt: 1.5, py: 0.25, px: 1.25,
+              fontSize: 12, fontWeight: 600,
+              alignItems: 'center', cursor: 'pointer',
+              borderRadius: 2,
+              '& .MuiAlert-icon': { fontSize: 18, py: 0.5, mr: 0.75 },
+              '&:hover': { filter: 'brightness(0.97)' },
             }}
           >
-            <Typography variant="caption" sx={{ fontWeight: 600 }}>
-              Resolver na agenda
-            </Typography>
-            <ArrowForwardIcon sx={{ fontSize: 13 }} />
-          </ButtonBase>
+            Resolver na agenda
+          </Alert>
         </>
       )}
     </>

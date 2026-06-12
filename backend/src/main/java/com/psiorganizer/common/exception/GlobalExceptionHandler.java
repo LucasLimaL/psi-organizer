@@ -11,8 +11,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import com.psiorganizer.common.observability.LogFields;
 
@@ -44,6 +46,22 @@ public class GlobalExceptionHandler {
         MDC.put(LogFields.ERROR_CLASS, "ValidationException");
         MDC.put(LogFields.VALIDATION_FIELDS, detalhes.keySet().toString());
         return ResponseEntity.badRequest().body(new ErrorBody("Requisição inválida", detalhes));
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorBody> handleParametroAusente(MissingServletRequestParameterException ex) {
+        MDC.put(LogFields.ERROR_CLASS, ex.getClass().getSimpleName());
+        MDC.put(LogFields.ERROR_MESSAGE, "parâmetro ausente: " + ex.getParameterName());
+        return ResponseEntity.badRequest()
+                .body(new ErrorBody("Parâmetro obrigatório ausente: " + ex.getParameterName(), null));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorBody> handleParametroInvalido(MethodArgumentTypeMismatchException ex) {
+        MDC.put(LogFields.ERROR_CLASS, ex.getClass().getSimpleName());
+        MDC.put(LogFields.ERROR_MESSAGE, "parâmetro inválido: " + ex.getName());
+        return ResponseEntity.badRequest()
+                .body(new ErrorBody("Parâmetro inválido: " + ex.getName(), null));
     }
 
     @ExceptionHandler(AuthenticationException.class)

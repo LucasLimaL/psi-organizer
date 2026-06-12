@@ -9,6 +9,7 @@ Sistema web pt-BR para psicólogas organizarem **agenda de consultas**, **cadast
 | Backend | Spring Boot 3.3 · Java 21 · Maven · PostgreSQL 16 · Flyway · JWT (jjwt) · springdoc-openapi · Spotless |
 | Frontend | Vite 5 · React 18 · TypeScript · Material UI 9 · React Router 7 · @dnd-kit · ViaCEP · ESLint 9 |
 | Infra dev | Docker Compose (apenas Postgres) |
+| Deploy | Cloud Run + Cloud Build (backend) · Firebase Hosting (frontend) · GitHub Actions com WIF e path filter |
 
 ## Estrutura
 
@@ -22,8 +23,11 @@ psi-organizer/
 │       ├── auth/              ← signup, login, JWT
 │       ├── consulta/          ← agenda + recorrência + dashboard helpers
 │       ├── dashboard/         ← /dashboard
+│       ├── financeiro/        ← resumo, pendentes por paciente, listas paginadas
+│       ├── notificacao/       ← notificações in-app
 │       ├── paciente/          ← CRUD + soft delete + histórico
 │       ├── psicologa/         ← perfil + GET/PUT /me
+│       ├── whatsapp/          ← lembretes: scheduler + tick, webhook, configuração
 │       ├── common/            ← Endereco embeddable, validators, exceptions
 │       └── config/            ← Security, JWT filter, OpenAPI, Seed
 ├── frontend/                  ← React SPA
@@ -33,7 +37,7 @@ psi-organizer/
 │       ├── components/        ← shells, forms, dialogs reusáveis
 │       ├── dashboard/         ← widgets + grid + settings
 │       ├── hooks/             ← useAutofillCep
-│       ├── pages/             ← 7 telas
+│       ├── pages/             ← 10 telas
 │       ├── theme/             ← tokens, paletas, fábrica, augment MUI
 │       └── utils/             ← datas
 └── docs/                      ← documentação viva (ver índice abaixo)
@@ -92,6 +96,7 @@ Quando o banco está vazio e o profile **não** é `prod`, `SeedDataRunner` inse
 | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | Setup local + workflow de PR |
 | [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md) | Política de logs: 1 log por ação, MDC, redação LGPD, single error log |
 | [docs/design/](docs/design/) | Design system: audit, roadmap, componentes |
+| [docs/runbooks/](docs/runbooks/) | Runbooks operacionais: infra GCP (deploy, troubleshooting, migração de região) e WhatsApp |
 
 Antes de qualquer mudança não-trivial, **leia o doc relevante** — eles refletem decisões já fechadas que não devem ser revertidas sem discussão.
 

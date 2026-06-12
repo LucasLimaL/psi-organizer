@@ -181,7 +181,7 @@ A UI reforça a regra com o `InativarPacienteDialog` (Alert outlined warning exp
 ### Duração
 
 - Configurável **por consulta** (não por paciente).
-- Backend aceita 1..600 minutos. Frontend não impõe limite além desse.
+- Backend aceita 1..600 minutos. Frontend usa input numérico com `min 5` / `step 5` (validação nativa — múltiplos de 5; o padrão de 50 min era rejeitado quando `min` era 1).
 
 ### Template do lembrete WhatsApp
 

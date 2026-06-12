@@ -44,6 +44,9 @@ docs/design/
 | 2026-05-29 | Dashboard com sistema de widgets configuráveis + drag/drop (`@dnd-kit`) + 1s hover preview | #11 |
 | 2026-05-29 | PacienteDetalhe ganha tabs (Dados / Próximas / Histórico) com paginação estilo extrato | #12 |
 | 2026-05-29 | **Documentação consolidada** (CLAUDE.md, ARCHITECTURE, BUSINESS_RULES, API, DEVELOPMENT) | esta PR |
+| 2026-06-11 | Página Financeiro (filtro mês/ano, banner de pendências, cards de resumo clicáveis) + item no menu do AppShell | #39 |
+| 2026-06-11 | Banner âmbar "a revisar" na Agenda com desfecho inline + widget A revisar no dashboard | #43 |
+| 2026-06-11 | `theme/sx.ts` criado — `sxInputSemSpinner` remove spinners de inputs monetários (ConsultaDialog, PacienteForm) | #44 |
 
 ## Prioridades pendentes (do audit inicial)
 

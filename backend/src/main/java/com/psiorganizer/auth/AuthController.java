@@ -47,7 +47,7 @@ public class AuthController {
                 req.crp(),
                 req.telefone(),
                 req.endereco().toDomain());
-        String token = jwtService.gerar(p.getId(), p.getEmail());
+        String token = jwtService.gerar(p.getId(), p.getEmail(), false);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new LoginResponse(token, PsicologaResponse.fromDomain(p)));
     }

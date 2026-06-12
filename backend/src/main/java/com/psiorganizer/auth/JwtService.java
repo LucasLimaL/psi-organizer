@@ -29,11 +29,12 @@ public class JwtService {
         this.expiracaoHoras = expiracaoHoras;
     }
 
-    public String gerar(UUID psicologaId, String email) {
+    public String gerar(UUID psicologaId, String email, boolean admin) {
         Instant agora = Instant.now();
         return Jwts.builder()
                 .subject(psicologaId.toString())
                 .claim("email", email)
+                .claim("admin", admin)
                 .issuedAt(Date.from(agora))
                 .expiration(Date.from(agora.plus(expiracaoHoras, ChronoUnit.HOURS)))
                 .signWith(key)
@@ -46,6 +47,9 @@ public class JwtService {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-        return new PsicologaPrincipal(UUID.fromString(claims.getSubject()), claims.get("email", String.class));
+        // Tokens antigos não têm o claim — tratados como não-admin
+        boolean admin = Boolean.TRUE.equals(claims.get("admin", Boolean.class));
+        return new PsicologaPrincipal(UUID.fromString(claims.getSubject()),
+                claims.get("email", String.class), admin);
     }
 }

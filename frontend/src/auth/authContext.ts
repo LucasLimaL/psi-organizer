@@ -7,6 +7,8 @@ export type Psicologa = {
   cpf: string
   crp: string
   telefone: string
+  /** Conta de gestão do SaaS — habilita o painel /admin. */
+  admin: boolean
 }
 
 export type AuthCtx = {

@@ -2,7 +2,7 @@ package com.psiorganizer.common.security;
 
 import java.util.UUID;
 
-public record PsicologaPrincipal(UUID id, String email) {
+public record PsicologaPrincipal(UUID id, String email, boolean admin) {
 
     public static PsicologaPrincipal corrente() {
         var auth = org.springframework.security.core.context.SecurityContextHolder

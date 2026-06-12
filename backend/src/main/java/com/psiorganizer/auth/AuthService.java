@@ -30,7 +30,11 @@ public class AuthService {
         if (!passwordEncoder.matches(senha, p.getSenhaHash())) {
             throw ApiException.naoAutorizado("Credenciais inválidas");
         }
-        String token = jwtService.gerar(p.getId(), p.getEmail());
+        if (p.isBloqueada()) {
+            throw ApiException.naoAutorizado(
+                    "Acesso bloqueado. Entre em contato com o administrador do sistema.");
+        }
+        String token = jwtService.gerar(p.getId(), p.getEmail(), p.isAdmin());
         return new Resultado(token, p);
     }
 }

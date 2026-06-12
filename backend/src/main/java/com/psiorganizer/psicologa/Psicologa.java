@@ -36,6 +36,17 @@ public class Psicologa {
     @Embedded
     private Endereco endereco;
 
+    /** Conta de gestão do sistema — acessa o painel /admin. Nunca setado via signup. */
+    @Column(name = "admin", nullable = false)
+    private boolean admin;
+
+    /** Bloqueio vale a partir do PRÓXIMO login (token vigente expira sozinho em 24h). */
+    @Column(name = "bloqueada", nullable = false)
+    private boolean bloqueada;
+
+    @Column(name = "bloqueada_em")
+    private Instant bloqueadaEm;
+
     @Column(name = "criado_em", nullable = false)
     private Instant criadoEm;
 
@@ -68,5 +79,14 @@ public class Psicologa {
     public void setTelefone(String t) { this.telefone = t; }
     public Endereco getEndereco() { return endereco; }
     public void setEndereco(Endereco e) { this.endereco = e; }
+
+    public boolean isAdmin() { return admin; }
+
+    public boolean isBloqueada() { return bloqueada; }
+    public void setBloqueada(boolean bloqueada) { this.bloqueada = bloqueada; }
+
+    public Instant getBloqueadaEm() { return bloqueadaEm; }
+    public void setBloqueadaEm(Instant b) { this.bloqueadaEm = b; }
+
     public Instant getCriadoEm() { return criadoEm; }
 }

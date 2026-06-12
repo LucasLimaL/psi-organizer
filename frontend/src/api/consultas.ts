@@ -68,9 +68,17 @@ export type ConsultaRecorrenteInput = {
   observacoes?: string
 }
 
+export type ConsultasPaginado = {
+  consultas: Consulta[]
+  total: number
+  temMais: boolean
+}
+
 export const consultasApi = {
   listar: (inicio: Date, fim: Date) =>
     api<Consulta[]>(`/consultas?inicio=${isoDate(inicio)}&fim=${isoDate(fim)}`),
+  aRevisar: (limit = 20, offset = 0) =>
+    api<ConsultasPaginado>(`/consultas/a-revisar?limit=${limit}&offset=${offset}`),
   buscar: (id: string) => api<Consulta>(`/consultas/${id}`),
   criar: (c: ConsultaInput) =>
     api<Consulta>('/consultas', { method: 'POST', body: JSON.stringify(c) }),

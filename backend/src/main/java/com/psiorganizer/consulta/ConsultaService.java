@@ -172,6 +172,28 @@ public class ConsultaService {
         return new com.psiorganizer.consulta.dto.ConsultasPaginadoResponse(itens, total, temMais);
     }
 
+    /**
+     * Consultas passadas sem desfecho (AGENDADA/CONFIRMADA com início no passado),
+     * mais antigas primeiro — a psicóloga precisa definir o que aconteceu.
+     */
+    @Transactional(readOnly = true)
+    public com.psiorganizer.consulta.dto.ConsultasPaginadoResponse listarARevisar(
+            UUID psicologaId, int limit, int offset) {
+        Instant agora = Instant.now();
+        org.springframework.data.domain.Pageable page =
+                org.springframework.data.domain.PageRequest.of(offset / Math.max(limit, 1), limit);
+        List<Consulta> consultas = consultaRepository.aRevisar(psicologaId, agora, page);
+        long total = consultaRepository.contarARevisar(psicologaId, agora);
+        Map<UUID, String> nomes = nomesPacientes(
+                consultas.stream().map(Consulta::getPacienteId).distinct().toList());
+        boolean temMais = offset + consultas.size() < total;
+        List<com.psiorganizer.consulta.dto.ConsultaResponse> itens = consultas.stream()
+                .map(c -> com.psiorganizer.consulta.dto.ConsultaResponse.from(
+                        c, nomes.getOrDefault(c.getPacienteId(), "?")))
+                .toList();
+        return new com.psiorganizer.consulta.dto.ConsultasPaginadoResponse(itens, total, temMais);
+    }
+
     @Transactional
     public void remover(UUID psicologaId, UUID id) {
         Consulta c = buscar(psicologaId, id);

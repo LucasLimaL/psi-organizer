@@ -62,6 +62,17 @@ public class ConsultaController {
                 .toList();
     }
 
+    @GetMapping("/a-revisar")
+    @Operation(summary = "Lista paginada de consultas passadas sem desfecho "
+            + "(ainda AGENDADA/CONFIRMADA), mais antigas primeiro")
+    public com.psiorganizer.consulta.dto.ConsultasPaginadoResponse aRevisar(
+            @RequestParam(defaultValue = "20") int limit,
+            @RequestParam(defaultValue = "0") int offset) {
+        UUID psicologaId = PsicologaPrincipal.corrente().id();
+        return service.listarARevisar(psicologaId,
+                Math.max(1, Math.min(50, limit)), Math.max(0, offset));
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Busca uma consulta por id")
     public ConsultaResponse buscar(@PathVariable UUID id) {

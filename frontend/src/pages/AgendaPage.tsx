@@ -17,6 +17,7 @@ import {
   primeiroDiaUtilDoMes, formatarMes, formatarDataLonga,
 } from '../utils/datas'
 import ConsultaDialog, { type ConsultaSalvoResultado } from '../components/ConsultaDialog'
+import ConsultasARevisarBanner from '../components/ConsultasARevisarBanner'
 
 const HORA_INICIO = 7
 const HORA_FIM = 21
@@ -288,6 +289,9 @@ export default function AgendaPage() {
           Nova consulta
         </Button>
       </Stack>
+
+      {/* Consultas passadas sem desfecho — só aparece quando há pendência */}
+      <ConsultasARevisarBanner onResolvida={carregar} />
 
       {/* Mobile: tira-semana + banner do dia selecionado */}
       {!isDesktop && (

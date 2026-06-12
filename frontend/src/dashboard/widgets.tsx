@@ -11,6 +11,8 @@ import PeopleOutlineIcon from '@mui/icons-material/PeopleOutlined'
 import PersonAddIcon from '@mui/icons-material/PersonAddAlt1Outlined'
 import BarChartIcon from '@mui/icons-material/BarChart'
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted'
+import PendingActionsIcon from '@mui/icons-material/PendingActions'
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import TrendingDownIcon from '@mui/icons-material/TrendingDown'
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat'
@@ -383,6 +385,58 @@ function ProximasConsultasWidget({ dados }: { dados: DashboardData }) {
   )
 }
 
+function ARevisarWidget({ dados }: { dados: DashboardData }) {
+  const theme = useTheme()
+  const navigate = useNavigate()
+  const total = dados.consultasARevisar
+  return (
+    <>
+      <WidgetHeader
+        icon={<PendingActionsIcon fontSize="small" />}
+        cor="warning.main"
+        fundoCor={alpha(theme.palette.warning.main, 0.12)}
+        titulo="A revisar"
+      />
+      {total === 0 ? (
+        <>
+          <Numero valor={0} />
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1.5, display: 'block' }}>
+            Nenhuma consulta passada sem desfecho
+          </Typography>
+        </>
+      ) : (
+        <>
+          <Stack direction="row" spacing={0.75} sx={{ alignItems: 'baseline' }}>
+            <Typography variant="h4" sx={{
+              fontWeight: 700, fontVariantNumeric: 'tabular-nums',
+              lineHeight: 1.1, color: 'warning.main',
+            }}>
+              {total}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              consulta{total === 1 ? '' : 's'}
+            </Typography>
+          </Stack>
+          <ButtonBase
+            onClick={() => navigate('/agenda')}
+            sx={{
+              mt: 1.5, borderRadius: 999, px: 1, py: 0.25, ml: -1,
+              display: 'inline-flex', alignItems: 'center', gap: 0.5,
+              color: 'warning.main',
+              '&:hover': { bgcolor: alpha(theme.palette.warning.main, 0.08) },
+            }}
+          >
+            <Typography variant="caption" sx={{ fontWeight: 600 }}>
+              Resolver na agenda
+            </Typography>
+            <ArrowForwardIcon sx={{ fontSize: 13 }} />
+          </ButtonBase>
+        </>
+      )}
+    </>
+  )
+}
+
 // ────────── Catálogo ──────────
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -393,6 +447,7 @@ export const WIDGETS: WidgetDef[] = [
   { id: 'futuras', titulo: 'Consultas futuras', descricao: 'Total de consultas agendadas ou confirmadas a partir de agora', Render: FuturasWidget, defaultAtivo: true },
   { id: 'proximos7Dias', titulo: 'Próximos 7 dias', descricao: 'Distribuição de consultas pelos próximos dias', Render: Proximos7DiasWidget, defaultAtivo: true },
   { id: 'proximasConsultas', titulo: 'Próximas consultas', descricao: 'Lista das próximas 3 consultas', Render: ProximasConsultasWidget, defaultAtivo: true },
+  { id: 'aRevisar', titulo: 'A revisar', descricao: 'Consultas passadas que ficaram sem desfecho (agendada/confirmada)', Render: ARevisarWidget, defaultAtivo: true },
   { id: 'comparativo', titulo: 'Comparativo mensal', descricao: 'Consultas e faturamento vs mês anterior', Render: ComparativoWidget, defaultAtivo: false },
   { id: 'taxa', titulo: 'Taxa de comparecimento', descricao: 'Percentual de realizadas vs faltas no mês', Render: TaxaWidget, defaultAtivo: false },
   { id: 'pacientes', titulo: 'Pacientes ativos', descricao: 'Total atual de pacientes ativos', Render: PacientesWidget, defaultAtivo: false },

@@ -68,6 +68,7 @@ Toda resposta de erro segue o mesmo envelope:
 | Método | Path | Sumário | Códigos |
 |---|---|---|---|
 | `GET` | `/consultas?inicio=YYYY-MM-DD&fim=YYYY-MM-DD` | Lista consultas no intervalo (datas inclusivas, fuso `America/Sao_Paulo`) | `200` · `401` |
+| `GET` | `/consultas/a-revisar?limit=20&offset=0` | Lista paginada de consultas **passadas sem desfecho** (ainda `AGENDADA/CONFIRMADA`), mais antigas primeiro. Envelope: `{ consultas, total, temMais }`. `limit` ∈ [1, 50]. | `200` · `401` |
 | `GET` | `/consultas/{id}` | Busca uma consulta por id | `200` · `404` |
 | `POST` | `/consultas` | Cria uma consulta avulsa | `201` · `400` · `404` paciente · `409` conflito de horário |
 | `POST` | `/consultas/recorrente` | Cria N consultas semanalmente entre `inicioEm` e `fimEm` (**transacional** — se qualquer ocorrência conflita, **nenhuma** é criada). Aceita `intervaloSemanas`. | `201` · `400` validação · `404` paciente · `409` conflito |

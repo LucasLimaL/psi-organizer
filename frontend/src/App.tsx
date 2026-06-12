@@ -10,6 +10,7 @@ import PacienteDetalhePage from './pages/PacienteDetalhePage'
 import FinanceiroPage from './pages/FinanceiroPage'
 import AdminPage from './pages/AdminPage'
 import AdminPsicologoDetalhePage from './pages/AdminPsicologoDetalhePage'
+import AssinaturaPage from './pages/AssinaturaPage'
 import PerfilPage from './pages/PerfilPage'
 import ConfiguracoesWhatsappPage from './pages/ConfiguracoesWhatsappPage'
 import HistoricoWhatsappPage from './pages/HistoricoWhatsappPage'
@@ -28,6 +29,7 @@ function App() {
           <Route path="/financeiro" element={<FinanceiroPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/admin/psicologos/:id" element={<AdminPsicologoDetalhePage />} />
+          <Route path="/assinatura" element={<AssinaturaPage />} />
           <Route path="/perfil" element={<PerfilPage />} />
           <Route path="/configuracoes/whatsapp" element={<ConfiguracoesWhatsappPage />} />
           <Route path="/configuracoes/whatsapp/historico" element={<HistoricoWhatsappPage />} />

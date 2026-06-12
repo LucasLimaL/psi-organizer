@@ -10,6 +10,7 @@ import EventNoteIcon from '@mui/icons-material/EventNote'
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt'
 import PaidIcon from '@mui/icons-material/PaidOutlined'
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettingsOutlined'
+import CardMembershipIcon from '@mui/icons-material/CardMembershipOutlined'
 import PersonOutlineIcon from '@mui/icons-material/PersonOutlined'
 import SettingsIcon from '@mui/icons-material/SettingsOutlined'
 import LogoutIcon from '@mui/icons-material/Logout'
@@ -26,6 +27,7 @@ const NAV = [
   { to: '/agenda', label: 'Agenda', icon: <EventNoteIcon /> },
   { to: '/pacientes', label: 'Pacientes', icon: <PeopleAltIcon /> },
   { to: '/financeiro', label: 'Financeiro', icon: <PaidIcon /> },
+  { to: '/assinatura', label: 'Assinatura', icon: <CardMembershipIcon /> },
   { to: '/perfil', label: 'Perfil', icon: <PersonOutlineIcon /> },
   { to: '/configuracoes/whatsapp', label: 'WhatsApp', icon: <SettingsIcon /> },
 ]
@@ -43,6 +45,7 @@ function tituloDaRota(pathname: string): string {
   if (pathname.startsWith('/pacientes')) return 'Pacientes'
   if (pathname.startsWith('/financeiro')) return 'Financeiro'
   if (pathname.startsWith('/admin')) return 'Admin'
+  if (pathname.startsWith('/assinatura')) return 'Assinatura'
   if (pathname.startsWith('/perfil')) return 'Perfil'
   if (pathname.startsWith('/configuracoes/whatsapp')) return 'WhatsApp'
   return 'Início'

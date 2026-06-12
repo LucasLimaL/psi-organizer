@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.psiorganizer.admin.dto.AdminPsicologaResponse;
 import com.psiorganizer.admin.dto.AdminPsicologasPaginadoResponse;
 import com.psiorganizer.admin.dto.BaixaMensalidadeRequest;
 import com.psiorganizer.admin.dto.BloqueioRequest;
@@ -32,10 +33,10 @@ public class AdminController {
         this.service = service;
     }
 
-    @GetMapping("/psicologas")
-    @Operation(summary = "Lista paginada de psicólogas com contrato ativo e pendências "
+    @GetMapping("/psicologos")
+    @Operation(summary = "Lista paginada de psicólogos com contrato ativo e pendências "
             + "(busca por nome ou e-mail)")
-    public AdminPsicologasPaginadoResponse psicologas(
+    public AdminPsicologasPaginadoResponse psicologos(
             @RequestParam(defaultValue = "") String busca,
             @RequestParam(defaultValue = "20") int limit,
             @RequestParam(defaultValue = "0") int offset) {
@@ -44,8 +45,15 @@ public class AdminController {
                 Math.max(1, Math.min(50, limit)), Math.max(0, offset));
     }
 
-    @PutMapping("/psicologas/{id}/bloqueio")
-    @Operation(summary = "Bloqueia ou desbloqueia o acesso de uma psicóloga "
+    @GetMapping("/psicologos/{id}")
+    @Operation(summary = "Detalhe de um psicólogo: cadastro, contrato ativo e pendências")
+    public AdminPsicologaResponse psicologo(@PathVariable UUID id) {
+        UUID solicitanteId = PsicologaPrincipal.corrente().id();
+        return service.buscarPsicologa(solicitanteId, id);
+    }
+
+    @PutMapping("/psicologos/{id}/bloqueio")
+    @Operation(summary = "Bloqueia ou desbloqueia o acesso de um psicólogo "
             + "(vale a partir do próximo login)")
     public ResponseEntity<Void> bloquear(@PathVariable UUID id,
                                          @RequestBody BloqueioRequest req) {
@@ -54,15 +62,15 @@ public class AdminController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/psicologas/{id}/contratos")
-    @Operation(summary = "Histórico de contratos da psicóloga (mais recentes primeiro)")
+    @GetMapping("/psicologos/{id}/contratos")
+    @Operation(summary = "Histórico de contratos do psicólogo (mais recentes primeiro)")
     public List<ContratoResponse> contratos(@PathVariable UUID id) {
         UUID solicitanteId = PsicologaPrincipal.corrente().id();
         return service.listarContratos(solicitanteId, id);
     }
 
-    @PostMapping("/psicologas/{id}/contratos")
-    @Operation(summary = "Cria um contrato para a psicóloga — o contrato ativo anterior "
+    @PostMapping("/psicologos/{id}/contratos")
+    @Operation(summary = "Cria um contrato para o psicólogo — o contrato ativo anterior "
             + "(se houver) é desativado")
     public ResponseEntity<ContratoResponse> criarContrato(@PathVariable UUID id,
                                                           @Valid @RequestBody ContratoRequest req) {
@@ -79,8 +87,8 @@ public class AdminController {
         return service.encerrarContrato(solicitanteId, id);
     }
 
-    @GetMapping("/psicologas/{id}/mensalidades")
-    @Operation(summary = "Histórico de mensalidades da psicóloga (competências vencidas são "
+    @GetMapping("/psicologos/{id}/mensalidades")
+    @Operation(summary = "Histórico de mensalidades do psicólogo (competências vencidas são "
             + "materializadas automaticamente a partir do contrato ativo)")
     public List<MensalidadeResponse> mensalidades(@PathVariable UUID id) {
         UUID solicitanteId = PsicologaPrincipal.corrente().id();

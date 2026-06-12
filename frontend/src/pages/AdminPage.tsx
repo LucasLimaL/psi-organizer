@@ -1,38 +1,33 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Stack, Box, Paper, Typography, TextField, InputAdornment, Button, Chip,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Skeleton, Snackbar, Alert, Dialog, DialogTitle, DialogContent,
-  DialogActions, Tooltip, Avatar,
+  Skeleton, Avatar,
 } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import SearchIcon from '@mui/icons-material/Search'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
-import BlockIcon from '@mui/icons-material/Block'
-import LockOpenIcon from '@mui/icons-material/LockOpen'
-import ReceiptLongIcon from '@mui/icons-material/ReceiptLongOutlined'
-import DescriptionIcon from '@mui/icons-material/DescriptionOutlined'
-import { adminApi, type AdminPsicologa } from '../api/admin'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
+import { adminApi, type AdminPsicologo } from '../api/admin'
 import { formatarMoeda as brl, iniciais } from '../utils/formatadores'
-import AdminMensalidadesDialog from '../components/AdminMensalidadesDialog'
-import AdminContratoDialog from '../components/AdminContratoDialog'
 
 const PAGE_SIZE = 20
 
+/**
+ * Lista de psicólogos clientes do SaaS — navegação pro detalhe
+ * (/admin/psicologos/:id), onde ficam contrato, mensalidades e bloqueio.
+ */
 export default function AdminPage() {
   const theme = useTheme()
-  const [psicologas, setPsicologas] = useState<AdminPsicologa[]>([])
+  const navigate = useNavigate()
+  const [psicologos, setPsicologos] = useState<AdminPsicologo[]>([])
   const [total, setTotal] = useState(0)
   const [temMais, setTemMais] = useState(false)
   const [carregando, setCarregando] = useState(true)
   const [carregandoMais, setCarregandoMais] = useState(false)
   const [busca, setBusca] = useState('')
   const [buscaAplicada, setBuscaAplicada] = useState('')
-  const [dialogMensalidades, setDialogMensalidades] = useState<AdminPsicologa | null>(null)
-  const [dialogContrato, setDialogContrato] = useState<AdminPsicologa | null>(null)
-  const [confirmandoBloqueio, setConfirmandoBloqueio] = useState<AdminPsicologa | null>(null)
-  const [salvandoBloqueio, setSalvandoBloqueio] = useState(false)
-  const [mensagemSucesso, setMensagemSucesso] = useState<string | null>(null)
 
   // Debounce simples da busca
   useEffect(() => {
@@ -43,8 +38,8 @@ export default function AdminPage() {
   const carregar = useCallback(async () => {
     setCarregando(true)
     try {
-      const r = await adminApi.psicologas(buscaAplicada, PAGE_SIZE, 0)
-      setPsicologas(r.psicologas)
+      const r = await adminApi.psicologos(buscaAplicada, PAGE_SIZE, 0)
+      setPsicologos(r.psicologos)
       setTotal(r.total)
       setTemMais(r.temMais)
     } finally {
@@ -57,32 +52,12 @@ export default function AdminPage() {
   async function carregarMais() {
     setCarregandoMais(true)
     try {
-      const r = await adminApi.psicologas(buscaAplicada, PAGE_SIZE, psicologas.length)
-      setPsicologas(prev => [...prev, ...r.psicologas])
+      const r = await adminApi.psicologos(buscaAplicada, PAGE_SIZE, psicologos.length)
+      setPsicologos(prev => [...prev, ...r.psicologos])
       setTemMais(r.temMais)
     } finally {
       setCarregandoMais(false)
     }
-  }
-
-  async function confirmarBloqueio() {
-    const alvo = confirmandoBloqueio
-    if (!alvo) return
-    setSalvandoBloqueio(true)
-    try {
-      await adminApi.bloquear(alvo.id, !alvo.bloqueada)
-      setConfirmandoBloqueio(null)
-      setMensagemSucesso(alvo.bloqueada
-        ? `Acesso de ${alvo.nomeCompleto} desbloqueado`
-        : `Acesso de ${alvo.nomeCompleto} bloqueado`)
-      await carregar()
-    } finally {
-      setSalvandoBloqueio(false)
-    }
-  }
-
-  function aposMudanca() {
-    carregar()
   }
 
   return (
@@ -93,7 +68,7 @@ export default function AdminPage() {
             Gestão de contas e mensalidades do sistema
           </Typography>
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
-            Psicólogas {!carregando && `(${total})`}
+            Psicólogos {!carregando && `(${total})`}
           </Typography>
         </Stack>
         <TextField
@@ -125,12 +100,17 @@ export default function AdminPage() {
                 <TableCell>Contrato</TableCell>
                 <TableCell align="right">Pendências</TableCell>
                 <TableCell>Status</TableCell>
-                <TableCell align="right" sx={{ width: 220 }}>Ações</TableCell>
+                <TableCell sx={{ width: 40 }} />
               </TableRow>
             </TableHead>
             <TableBody>
-              {psicologas.map(p => (
-                <TableRow key={p.id} hover>
+              {psicologos.map(p => (
+                <TableRow
+                  key={p.id}
+                  hover
+                  onClick={() => navigate(`/admin/psicologos/${p.id}`)}
+                  sx={{ cursor: 'pointer' }}
+                >
                   <TableCell>
                     <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
                       <Avatar sx={{
@@ -172,42 +152,12 @@ export default function AdminPage() {
                     )}
                   </TableCell>
                   <TableCell>
-                    {p.admin
-                      ? <Chip size="small" label="Admin" color="info" variant="outlined" sx={{ height: 22, fontSize: 11, fontWeight: 600 }} />
-                      : p.bloqueada
-                        ? <Chip size="small" label="Bloqueada" color="error" sx={{ height: 22, fontSize: 11, fontWeight: 600 }} />
-                        : <Chip size="small" label="Ativa" color="success" variant="outlined" sx={{ height: 22, fontSize: 11, fontWeight: 600 }} />}
+                    {p.bloqueada
+                      ? <Chip size="small" label="Bloqueado" color="error" sx={{ height: 22, fontSize: 11, fontWeight: 600 }} />
+                      : <Chip size="small" label="Ativo" color="success" variant="outlined" sx={{ height: 22, fontSize: 11, fontWeight: 600 }} />}
                   </TableCell>
                   <TableCell align="right">
-                    <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'flex-end' }}>
-                      <Tooltip title="Mensalidades">
-                        <Button size="small" startIcon={<ReceiptLongIcon />}
-                                onClick={() => setDialogMensalidades(p)}
-                                sx={{ borderRadius: 999, minWidth: 0, fontSize: 12 }}>
-                          Mensalidades
-                        </Button>
-                      </Tooltip>
-                      <Tooltip title="Contrato">
-                        <Button size="small" startIcon={<DescriptionIcon />}
-                                onClick={() => setDialogContrato(p)}
-                                sx={{ borderRadius: 999, minWidth: 0, fontSize: 12 }}>
-                          Contrato
-                        </Button>
-                      </Tooltip>
-                      {!p.admin && (
-                        <Tooltip title={p.bloqueada ? 'Desbloquear acesso' : 'Bloquear acesso'}>
-                          <Button
-                            size="small"
-                            color={p.bloqueada ? 'success' : 'error'}
-                            startIcon={p.bloqueada ? <LockOpenIcon /> : <BlockIcon />}
-                            onClick={() => setConfirmandoBloqueio(p)}
-                            sx={{ borderRadius: 999, minWidth: 0, fontSize: 12 }}
-                          >
-                            {p.bloqueada ? 'Desbloquear' : 'Bloquear'}
-                          </Button>
-                        </Tooltip>
-                      )}
-                    </Stack>
+                    <ChevronRightIcon fontSize="small" sx={{ color: 'text.disabled' }} />
                   </TableCell>
                 </TableRow>
               ))}
@@ -224,73 +174,9 @@ export default function AdminPage() {
           disabled={carregandoMais}
           sx={{ alignSelf: 'center', borderRadius: 999 }}
         >
-          {carregandoMais ? 'Carregando…' : `Ver mais (${total - psicologas.length} restantes)`}
+          {carregandoMais ? 'Carregando…' : `Ver mais (${total - psicologos.length} restantes)`}
         </Button>
       )}
-
-      {/* Confirmação de bloqueio/desbloqueio */}
-      <Dialog
-        open={confirmandoBloqueio !== null}
-        onClose={() => setConfirmandoBloqueio(null)}
-        maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle>
-          {confirmandoBloqueio?.bloqueada ? 'Desbloquear acesso' : 'Bloquear acesso'}
-        </DialogTitle>
-        <DialogContent>
-          {confirmandoBloqueio?.bloqueada ? (
-            <Typography variant="body2">
-              Desbloquear o acesso de{' '}
-              <Box component="span" sx={{ fontWeight: 600 }}>{confirmandoBloqueio?.nomeCompleto}</Box>?
-              Ela poderá entrar no sistema normalmente.
-            </Typography>
-          ) : (
-            <Typography variant="body2">
-              Bloquear o acesso de{' '}
-              <Box component="span" sx={{ fontWeight: 600 }}>{confirmandoBloqueio?.nomeCompleto}</Box>?
-              O bloqueio vale a partir do próximo login — uma sessão já aberta
-              expira sozinha em até 24h. Os dados dela permanecem intactos.
-            </Typography>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmandoBloqueio(null)}>Cancelar</Button>
-          <Button
-            variant="contained"
-            color={confirmandoBloqueio?.bloqueada ? 'success' : 'error'}
-            disabled={salvandoBloqueio}
-            onClick={confirmarBloqueio}
-          >
-            {salvandoBloqueio
-              ? 'Salvando…'
-              : confirmandoBloqueio?.bloqueada ? 'Desbloquear' : 'Bloquear'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <AdminMensalidadesDialog
-        psicologa={dialogMensalidades}
-        onFechar={() => setDialogMensalidades(null)}
-        onMudanca={aposMudanca}
-      />
-
-      <AdminContratoDialog
-        psicologa={dialogContrato}
-        onFechar={() => setDialogContrato(null)}
-        onMudanca={aposMudanca}
-      />
-
-      <Snackbar
-        open={mensagemSucesso !== null}
-        autoHideDuration={3000}
-        onClose={() => setMensagemSucesso(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert severity="success" variant="filled" sx={{ width: '100%' }}>
-          {mensagemSucesso}
-        </Alert>
-      </Snackbar>
     </Stack>
   )
 }

@@ -46,7 +46,7 @@ public class PsicologaService {
     @Transactional(readOnly = true)
     public Psicologa buscarPorId(UUID id) {
         return repository.findById(id)
-                .orElseThrow(() -> ApiException.naoEncontrado("Psicóloga não encontrada"));
+                .orElseThrow(() -> ApiException.naoEncontrado("Psicólogo não encontrado"));
     }
 
     @Transactional

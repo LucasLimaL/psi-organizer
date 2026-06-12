@@ -125,7 +125,7 @@ export default function DashboardPage() {
             {dataLonga()}
           </Typography>
           <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: '-0.01em' }}>
-            {saudacao()}, {primeiroNome || 'Dra.'}
+            {saudacao()}, {primeiroNome || 'Dr(a).'}
           </Typography>
         </Box>
         <Stack direction="row" spacing={1}>

@@ -19,7 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/me")
-@Tag(name = "Perfil", description = "Dados da psicóloga autenticada")
+@Tag(name = "Perfil", description = "Dados do psicólogo autenticado")
 public class PerfilController {
 
     private final PsicologaService psicologaService;
@@ -29,7 +29,7 @@ public class PerfilController {
     }
 
     @GetMapping
-    @Operation(summary = "Retorna dados da psicóloga autenticada")
+    @Operation(summary = "Retorna dados do psicólogo autenticado")
     public PsicologaResponse me() {
         var principal = PsicologaPrincipal.corrente();
         return PsicologaResponse.fromDomain(psicologaService.buscarPorId(principal.id()));
@@ -50,7 +50,7 @@ public class PerfilController {
     }
 
     @PutMapping("/senha")
-    @Operation(summary = "Altera a senha da psicóloga autenticada (exige a senha atual)")
+    @Operation(summary = "Altera a senha do psicólogo autenticado (exige a senha atual)")
     public ResponseEntity<Void> alterarSenha(@Valid @RequestBody AlterarSenhaRequest req) {
         var principal = PsicologaPrincipal.corrente();
         psicologaService.alterarSenha(principal.id(), req.senhaAtual(), req.novaSenha());

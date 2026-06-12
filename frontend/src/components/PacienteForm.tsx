@@ -138,7 +138,7 @@ export default function PacienteForm({ inicial, textoBotao, onSubmit }: Props) {
               <Box>
                 <Typography variant="body2">
                   Autorizo receber lembretes de consulta da
-                  {' '}<strong>{psicologa?.nomeCompleto ?? '(psicóloga)'}</strong>
+                  {' '}<strong>{psicologa?.nomeCompleto ?? '(psicólogo)'}</strong>
                   {' '}via WhatsApp no número informado.
                 </Typography>
                 <Typography variant="caption" color="text.secondary">

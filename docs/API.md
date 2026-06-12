@@ -65,7 +65,7 @@ Gestão de contas do SaaS. Toda chamada revalida a flag `admin` **no banco** (n�
 | `POST` | `/admin/psicologos/{id}/contratos` | Cria contrato (`dataInicio`, `dataFim?`, `valorMensal`). **Sobreposição de período é recusada.** | `201` · `400` · `403` · `404` · `409` sobreposição |
 | `PUT` | `/admin/contratos/{id}/encerrar` | Encerra contrato — vale até o **fechamento do ciclo corrente** (fatura final cheia); contrato que ainda não começou é removido | `200` · `403` · `404` |
 | `GET` | `/admin/psicologos/{id}/faturas` | Faturas fechadas (com rateio por contrato em `itens`) + **prévias** do ciclo corrente e do próximo. Ciclos fechados são materializados automaticamente. Envelope: `{ faturas, previas }`. | `200` · `403` |
-| `PUT` | `/admin/faturas/{id}/baixa` | Dá baixa ou estorna (`{ paga: bool, dataPagamento?: YYYY-MM-DD }` — data default hoje, ignorada no estorno). Baixa que regulariza a situação **desfaz bloqueio automático** por inadimplência. | `200` · `403` · `404` |
+| `PUT` | `/admin/faturas/{id}/baixa` | Dá baixa ou estorna (`{ paga: bool, dataHoraPagamento?: YYYY-MM-DDTHH:mm }` em fuso SP — default agora, ignorada no estorno). Baixa que regulariza a situação **desfaz bloqueio automático** por inadimplência. Auditoria no completion log (`faturaId`, `faturaPaga`, `dataHoraPagamento`). | `200` · `403` · `404` |
 
 ### Pacientes · `/pacientes/**`
 

@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import jakarta.validation.Valid;
 
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,7 @@ import com.psiorganizer.admin.dto.ContratoRequest;
 import com.psiorganizer.admin.dto.ContratoResponse;
 import com.psiorganizer.admin.dto.FaturaResponse;
 import com.psiorganizer.admin.dto.FaturasResponse;
+import com.psiorganizer.common.observability.LogFields;
 import com.psiorganizer.common.security.PsicologaPrincipal;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -97,12 +99,19 @@ public class AdminController {
     }
 
     @PutMapping("/faturas/{id}/baixa")
-    @Operation(summary = "Dá baixa (ou estorna a baixa) de uma fatura. `dataPagamento` "
-            + "opcional (default hoje). Baixa que regulariza a situação desfaz bloqueio "
-            + "automático por inadimplência.")
+    @Operation(summary = "Dá baixa (ou estorna a baixa) de uma fatura. `dataHoraPagamento` "
+            + "opcional (fuso SP, default agora). Baixa que regulariza a situação desfaz "
+            + "bloqueio automático por inadimplência.")
     public FaturaResponse darBaixa(@PathVariable UUID id,
                                    @RequestBody BaixaFaturaRequest req) {
+        // Auditoria: completion log da request carrega quem (psicologaId/email do
+        // admin, já no MDC), qual fatura e o quê (baixa × estorno + data informada)
+        MDC.put(LogFields.FATURA_ID, id.toString());
+        MDC.put(LogFields.FATURA_PAGA, String.valueOf(req.paga()));
+        if (req.dataHoraPagamento() != null) {
+            MDC.put(LogFields.DATA_HORA_PAGAMENTO, req.dataHoraPagamento().toString());
+        }
         UUID solicitanteId = PsicologaPrincipal.corrente().id();
-        return service.darBaixa(solicitanteId, id, req.paga(), req.dataPagamento());
+        return service.darBaixa(solicitanteId, id, req.paga(), req.dataHoraPagamento());
     }
 }

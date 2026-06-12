@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   Stack, Box, Paper, Typography, Button, Chip, Avatar, IconButton,
@@ -21,12 +21,21 @@ function dataLocal(iso: string): string {
   return new Date(iso.length === 10 ? iso + 'T00:00:00' : iso).toLocaleDateString('pt-BR')
 }
 
+/** Competência da fatura = mês do fechamento. Ex.: fecha 25/03/2026 → "Março 2026". */
+function competencia(periodoFim: string): string {
+  const d = new Date(periodoFim + 'T00:00:00')
+  const mes = d.toLocaleDateString('pt-BR', { month: 'long' })
+  return `${mes.charAt(0).toUpperCase()}${mes.slice(1)} ${d.getFullYear()}`
+}
+
 function vigencia(c: Contrato): string {
   return `${dataLocal(c.dataInicio)} → ${c.dataFim ? dataLocal(c.dataFim) : 'indeterminado'}`
 }
 
 function situacaoContrato(c: Contrato): 'Vigente' | 'Agendado' | 'Encerrado' {
-  const hoje = new Date().toISOString().slice(0, 10)
+  // Data local (não UTC!) — toISOString viraria "amanhã" depois das 21h BRT
+  const d = new Date()
+  const hoje = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   if (c.dataInicio > hoje) return 'Agendado'
   if (c.dataFim !== null && c.dataFim < hoje) return 'Encerrado'
   return 'Vigente'
@@ -36,6 +45,69 @@ const CHIP_STATUS: Record<Fatura['status'], { rotulo: string; cor: 'success' | '
   PAGA: { rotulo: 'Paga', cor: 'success' },
   VENCIDA: { rotulo: 'Vencida', cor: 'error' },
   A_VENCER: { rotulo: 'A vencer', cor: 'info' },
+}
+
+function CampoDetalhe({ rotulo, valor }: { rotulo: string; valor: string }) {
+  return (
+    <Box>
+      <Typography variant="caption" sx={{
+        display: 'block', color: 'text.secondary',
+        textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: 10,
+      }}>
+        {rotulo}
+      </Typography>
+      <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+        {valor}
+      </Typography>
+    </Box>
+  )
+}
+
+/** Painel expandido da fatura: período, vencimento, pagamento e rateio por contrato. */
+function DetalheFatura({ periodo, vencimento, pagamento, itens, valorMensalPorContrato }: {
+  periodo: string
+  vencimento: string
+  pagamento: string | null
+  itens: { contratoId: string; periodoInicio: string; periodoFim: string; dias: number; valor: number }[]
+  valorMensalPorContrato: Map<string, number>
+}) {
+  const theme = useTheme()
+  return (
+    <Box sx={{
+      ml: 4.5, mb: 1.5, p: 1.5, borderRadius: 2,
+      border: `1px solid ${theme.palette.divider}`,
+      bgcolor: alpha(theme.palette.primary.main, 0.025),
+    }}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 1, sm: 4 }}>
+        <CampoDetalhe rotulo="Período" valor={periodo} />
+        <CampoDetalhe rotulo="Vencimento" valor={vencimento} />
+        <CampoDetalhe rotulo="Pagamento" valor={pagamento ?? '—'} />
+      </Stack>
+      <Divider sx={{ my: 1.25 }} />
+      <Stack spacing={0.5}>
+        {itens.map((item, idx) => {
+          const valorMensal = valorMensalPorContrato.get(item.contratoId)
+          return (
+            <Stack key={idx} direction="row" spacing={1} sx={{ alignItems: 'baseline' }}>
+              <Typography variant="caption" sx={{ fontVariantNumeric: 'tabular-nums', flexGrow: 1 }}>
+                {valorMensal !== undefined && (
+                  <Box component="span" sx={{ fontWeight: 600 }}>
+                    {valorMensal === 0 ? 'Cortesia' : `Plano ${brl(valorMensal)}/mês`}
+                  </Box>
+                )}
+                {' · '}
+                {dataLocal(item.periodoInicio)} → {dataLocal(item.periodoFim)} ·{' '}
+                {item.dias} dia{item.dias === 1 ? '' : 's'}
+              </Typography>
+              <Typography variant="caption" sx={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+                {brl(item.valor)}
+              </Typography>
+            </Stack>
+          )
+        })}
+      </Stack>
+    </Box>
+  )
 }
 
 export default function AdminPsicologoDetalhePage() {
@@ -48,6 +120,7 @@ export default function AdminPsicologoDetalhePage() {
   const [previas, setPrevias] = useState<PreviaFatura[]>([])
   const [carregando, setCarregando] = useState(true)
   const [itensAbertos, setItensAbertos] = useState<string | null>(null)
+  const [anoFiltro, setAnoFiltro] = useState<number | null>(null)
   const [dialogContrato, setDialogContrato] = useState(false)
   const [confirmandoBloqueio, setConfirmandoBloqueio] = useState(false)
   const [faturaAlvo, setFaturaAlvo] = useState<Fatura | null>(null)
@@ -73,6 +146,29 @@ export default function AdminPsicologoDetalhePage() {
   }, [id])
 
   useEffect(() => { carregar() }, [carregar])
+
+  // Anos com fatura fechada (desc) — alimenta o filtro; prévias ficam fora dele
+  const anos = useMemo(
+    () => [...new Set(faturas.map(f => Number(f.periodoFim.slice(0, 4))))].sort((a, b) => b - a),
+    [faturas],
+  )
+
+  useEffect(() => {
+    if (anos.length > 0 && (anoFiltro === null || !anos.includes(anoFiltro))) {
+      setAnoFiltro(anos[0])
+    }
+  }, [anos, anoFiltro])
+
+  const fechadasDoAno = useMemo(
+    () => faturas.filter(f => Number(f.periodoFim.slice(0, 4)) === anoFiltro),
+    [faturas, anoFiltro],
+  )
+
+  // Mapa contrato → valor mensal, pro rateio expandido mostrar o plano de origem
+  const valorMensalPorContrato = useMemo(
+    () => new Map(contratos.map(c => [c.id, c.valorMensal])),
+    [contratos],
+  )
 
   async function confirmarBloqueio() {
     if (!psicologo) return
@@ -239,7 +335,7 @@ export default function AdminPsicologoDetalhePage() {
               color: 'info.main', fontWeight: 600,
               textTransform: 'uppercase', letterSpacing: '0.06em',
             }}>
-              Ciclo atual (prévia)
+              Fatura atual
             </Typography>
             {previaAtual ? (
               <>
@@ -252,43 +348,83 @@ export default function AdminPsicologoDetalhePage() {
               </>
             ) : (
               <Typography variant="body1" color="text.disabled" sx={{ mt: 0.5 }}>
-                sem ciclo em curso
+                sem fatura em curso
               </Typography>
             )}
           </Paper>
         </Grid>
       </Grid>
 
-      {/* Faturas */}
+      {/* Faturas — competência por mês; detalhes só no expandir */}
       <Paper variant="outlined" sx={cardsx}>
-        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-          Faturas
-        </Typography>
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, flexGrow: 1 }}>
+            Faturas
+          </Typography>
+          {anos.map(ano => (
+            <Chip
+              key={ano}
+              size="small"
+              label={ano}
+              clickable
+              color={ano === anoFiltro ? 'primary' : 'default'}
+              variant={ano === anoFiltro ? 'filled' : 'outlined'}
+              onClick={() => setAnoFiltro(ano)}
+              sx={{ fontWeight: 600 }}
+            />
+          ))}
+        </Stack>
         {faturas.length === 0 && previas.length === 0 ? (
           <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
             Nenhuma fatura ainda — crie um contrato pra iniciar a cobrança.
           </Typography>
         ) : (
           <Stack divider={<Divider />}>
-            {previas.map((p, i) => (
-              <Stack key={`previa-${p.periodoFim}`} direction="row" spacing={1.5}
-                     sx={{ alignItems: 'center', py: 1, opacity: 0.75 }}>
-                <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                    {dataLocal(p.periodoInicio)} → {dataLocal(p.periodoFim)}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {i === 0 ? 'ciclo atual' : 'próximo ciclo'} · vence {dataLocal(p.vencimento)}
-                  </Typography>
+            {/* Ordem estritamente cronológica desc: próxima → atual → fechadas */}
+            {[...previas].reverse().map((p, i) => {
+              const chave = `previa-${p.periodoFim}`
+              const aberta = itensAbertos === chave
+              const rotulo = i === [...previas].length - 1 ? 'Fatura atual' : 'Próxima fatura'
+              return (
+                <Box key={chave}>
+                  <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', py: 1 }}>
+                    <ButtonBase
+                      onClick={() => setItensAbertos(aberta ? null : chave)}
+                      aria-expanded={aberta}
+                      sx={{ flexGrow: 1, minWidth: 0, justifyContent: 'flex-start', gap: 1, borderRadius: 1 }}
+                    >
+                      <ExpandMoreIcon sx={{
+                        fontSize: 18, color: 'text.disabled',
+                        transform: aberta ? 'rotate(180deg)' : 'none',
+                        transition: theme.transitions.create('transform', {
+                          duration: theme.transitions.duration.short,
+                        }),
+                      }} />
+                      <Typography variant="body2" sx={{ fontWeight: 600, opacity: 0.8 }}>
+                        {competencia(p.periodoFim)}
+                      </Typography>
+                    </ButtonBase>
+                    <Typography variant="body2" sx={{
+                      fontWeight: 600, fontVariantNumeric: 'tabular-nums', opacity: 0.8,
+                    }}>
+                      {brl(p.valor)}
+                    </Typography>
+                    <Chip size="small" label={rotulo} variant="outlined" color="info"
+                          sx={{ height: 22, fontSize: 11, fontWeight: 600, borderStyle: 'dashed' }} />
+                  </Stack>
+                  <Collapse in={aberta}>
+                    <DetalheFatura
+                      periodo={`${dataLocal(p.periodoInicio)} → ${dataLocal(p.periodoFim)}`}
+                      vencimento={`${dataLocal(p.vencimento)} (previsto)`}
+                      pagamento={null}
+                      itens={p.itens}
+                      valorMensalPorContrato={valorMensalPorContrato}
+                    />
+                  </Collapse>
                 </Box>
-                <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                  {brl(p.valor)}
-                </Typography>
-                <Chip size="small" label="Prévia" variant="outlined"
-                      sx={{ height: 22, fontSize: 11, fontWeight: 600, borderStyle: 'dashed' }} />
-              </Stack>
-            ))}
-            {faturas.map(f => {
+              )
+            })}
+            {fechadasDoAno.map(f => {
               const chip = CHIP_STATUS[f.status]
               const aberta = itensAbertos === f.id
               return (
@@ -306,15 +442,9 @@ export default function AdminPsicologoDetalhePage() {
                           duration: theme.transitions.duration.short,
                         }),
                       }} />
-                      <Box sx={{ minWidth: 0, textAlign: 'left' }}>
-                        <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                          {dataLocal(f.periodoInicio)} → {dataLocal(f.periodoFim)}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          vence {dataLocal(f.vencimento)}
-                          {f.paga && f.pagaEm && ` · paga em ${dataLocal(f.pagaEm)}`}
-                        </Typography>
-                      </Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {competencia(f.periodoFim)}
+                      </Typography>
                     </ButtonBase>
                     <Typography variant="body2" sx={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
                       {brl(f.valor)}
@@ -336,18 +466,13 @@ export default function AdminPsicologoDetalhePage() {
                     )}
                   </Stack>
                   <Collapse in={aberta}>
-                    <Box sx={{
-                      ml: 4, mb: 1, px: 1.5, py: 1, borderRadius: 1.5,
-                      bgcolor: alpha(theme.palette.divider, 0.15),
-                    }}>
-                      {f.itens.map((item, idx) => (
-                        <Typography key={idx} variant="caption" component="div"
-                                    sx={{ fontVariantNumeric: 'tabular-nums' }}>
-                          {dataLocal(item.periodoInicio)} → {dataLocal(item.periodoFim)} ·{' '}
-                          {item.dias} dia{item.dias === 1 ? '' : 's'} · {brl(item.valor)}
-                        </Typography>
-                      ))}
-                    </Box>
+                    <DetalheFatura
+                      periodo={`${dataLocal(f.periodoInicio)} → ${dataLocal(f.periodoFim)}`}
+                      vencimento={dataLocal(f.vencimento)}
+                      pagamento={f.paga && f.pagaEm ? dataLocal(f.pagaEm) : null}
+                      itens={f.itens}
+                      valorMensalPorContrato={valorMensalPorContrato}
+                    />
                   </Collapse>
                 </Box>
               )

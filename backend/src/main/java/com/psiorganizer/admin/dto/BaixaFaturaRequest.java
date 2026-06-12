@@ -1,6 +1,9 @@
 package com.psiorganizer.admin.dto;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
-/** `dataPagamento` opcional — ausente = hoje. Ignorada no estorno (paga=false). */
-public record BaixaFaturaRequest(boolean paga, LocalDate dataPagamento) {}
+/**
+ * `dataHoraPagamento` opcional (fuso SP) — ausente = agora.
+ * Ignorada no estorno (paga=false).
+ */
+public record BaixaFaturaRequest(boolean paga, LocalDateTime dataHoraPagamento) {}

@@ -29,6 +29,9 @@ public final class LogFields {
     public static final String PACIENTE_ID = "pacienteId";
     public static final String CONSULTA_ID = "consultaId";
     public static final String NOTIFICACAO_ID = "notificacaoId";
+    public static final String FATURA_ID = "faturaId";
+    public static final String FATURA_PAGA = "faturaPaga";
+    public static final String DATA_HORA_PAGAMENTO = "dataHoraPagamento";
     public static final String LEMBRETE_ID = "lembreteId";
     public static final String WAMID = "wamid";
     public static final String TEMPLATE_NAME = "templateName";

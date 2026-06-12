@@ -221,15 +221,15 @@ public class AdminService {
 
     @Transactional
     public FaturaResponse darBaixa(UUID solicitanteId, UUID faturaId, boolean paga,
-                                   LocalDate dataPagamento) {
+                                   java.time.LocalDateTime dataHoraPagamento) {
         exigirAdmin(solicitanteId);
         Fatura f = faturaRepository.findById(faturaId)
                 .orElseThrow(() -> ApiException.naoEncontrado("Fatura não encontrada"));
         f.setPaga(paga);
-        // Data informada pelo admin (recebida em SP, meio-dia evita borda de fuso); default hoje
+        // Data/hora informada pelo admin (interpretada em SP); default agora
         f.setPagaEm(!paga ? null
-                : dataPagamento == null ? Instant.now()
-                : dataPagamento.atTime(12, 0).atZone(Fusos.ZONA_BR).toInstant());
+                : dataHoraPagamento == null ? Instant.now()
+                : dataHoraPagamento.atZone(Fusos.ZONA_BR).toInstant());
         faturaRepository.save(f);
         Psicologa p = cliente(f.getPsicologaId());
         if (paga) {

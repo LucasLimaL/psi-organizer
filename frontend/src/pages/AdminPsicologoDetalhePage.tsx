@@ -15,10 +15,17 @@ import {
   adminApi, type AdminPsicologo, type Contrato, type Fatura, type PreviaFatura,
 } from '../api/admin'
 import { formatarMoeda as brl, iniciais } from '../utils/formatadores'
+import { toDatetimeLocal } from '../utils/datas'
 import AdminNovoContratoDialog from '../components/AdminNovoContratoDialog'
 
 function dataLocal(iso: string): string {
   return new Date(iso.length === 10 ? iso + 'T00:00:00' : iso).toLocaleDateString('pt-BR')
+}
+
+function dataHoraLocal(iso: string): string {
+  return new Date(iso).toLocaleString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+  })
 }
 
 /** Competência da fatura = mês do fechamento. Ex.: fecha 25/03/2026 → "Março 2026". */
@@ -161,11 +168,11 @@ export default function AdminPsicologoDetalhePage() {
   const [dialogContrato, setDialogContrato] = useState(false)
   const [confirmandoBloqueio, setConfirmandoBloqueio] = useState(false)
   const [faturaAlvo, setFaturaAlvo] = useState<Fatura | null>(null)
-  const [dataPagamento, setDataPagamento] = useState('')
+  const [dataHoraPagamento, setDataHoraPagamento] = useState('')
 
-  // Abrindo o dialog de baixa, a data de pagamento começa em hoje
+  // Abrindo o dialog de baixa, a data/hora de pagamento começa em agora
   useEffect(() => {
-    if (faturaAlvo && !faturaAlvo.paga) setDataPagamento(hojeLocalISO())
+    if (faturaAlvo && !faturaAlvo.paga) setDataHoraPagamento(toDatetimeLocal(new Date()))
   }, [faturaAlvo])
   const [salvando, setSalvando] = useState(false)
   const [mensagemSucesso, setMensagemSucesso] = useState<string | null>(null)
@@ -231,7 +238,7 @@ export default function AdminPsicologoDetalhePage() {
     if (!f) return
     setSalvando(true)
     try {
-      await adminApi.darBaixa(f.id, !f.paga, !f.paga ? dataPagamento : undefined)
+      await adminApi.darBaixa(f.id, !f.paga, !f.paga ? dataHoraPagamento : undefined)
       setFaturaAlvo(null)
       setMensagemSucesso(f.paga ? 'Baixa estornada' : 'Fatura paga — situação reavaliada')
       await carregar()
@@ -512,7 +519,7 @@ export default function AdminPsicologoDetalhePage() {
                     <DetalheFatura
                       periodo={`${dataLocal(f.periodoInicio)} → ${dataLocal(f.periodoFim)}`}
                       vencimento={dataLocal(f.vencimento)}
-                      pagamento={f.paga && f.pagaEm ? dataLocal(f.pagaEm) : null}
+                      pagamento={f.paga && f.pagaEm ? dataHoraLocal(f.pagaEm) : null}
                       itens={f.itens}
                       valorMensalPorContrato={valorMensalPorContrato}
                     />
@@ -602,10 +609,10 @@ export default function AdminPsicologoDetalhePage() {
           </Typography>
           {!faturaAlvo?.paga && (
             <TextField
-              fullWidth label="Data do pagamento" type="date" required
+              fullWidth label="Data e hora do pagamento" type="datetime-local" required
               slotProps={{ inputLabel: { shrink: true } }}
-              value={dataPagamento}
-              onChange={e => setDataPagamento(e.target.value)}
+              value={dataHoraPagamento}
+              onChange={e => setDataHoraPagamento(e.target.value)}
               sx={{ mt: 2.5 }}
             />
           )}
@@ -615,7 +622,7 @@ export default function AdminPsicologoDetalhePage() {
           <Button
             variant="contained"
             color={faturaAlvo?.paga ? 'inherit' : 'success'}
-            disabled={salvando || (!faturaAlvo?.paga && !dataPagamento)}
+            disabled={salvando || (!faturaAlvo?.paga && !dataHoraPagamento)}
             onClick={confirmarBaixa}
           >
             {salvando ? 'Salvando…' : faturaAlvo?.paga ? 'Estornar' : 'Dar baixa'}

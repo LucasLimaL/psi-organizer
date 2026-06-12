@@ -13,7 +13,7 @@ public class OpenApiConfig {
     public OpenAPI psiOrganizerOpenAPI() {
         return new OpenAPI().info(new Info()
                 .title("psi-organizer API")
-                .description("API do sistema de organização para psicólogas")
+                .description("API do sistema de organização para psicólogos")
                 .version("0.0.1"));
     }
 }

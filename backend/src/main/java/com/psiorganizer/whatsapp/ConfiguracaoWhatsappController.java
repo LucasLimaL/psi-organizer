@@ -44,7 +44,7 @@ public class ConfiguracaoWhatsappController {
     }
 
     @GetMapping
-    @Operation(summary = "Retorna a configuração de WhatsApp da psicóloga autenticada")
+    @Operation(summary = "Retorna a configuração de WhatsApp do psicólogo autenticado")
     public ConfiguracaoWhatsappResponse obter() {
         UUID psicologaId = PsicologaPrincipal.corrente().id();
         return ConfiguracaoWhatsappResponse.fromDomain(service.obterOuCriar(psicologaId));

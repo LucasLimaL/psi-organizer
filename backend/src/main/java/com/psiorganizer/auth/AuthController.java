@@ -21,7 +21,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/auth")
-@Tag(name = "Auth", description = "Cadastro e login de psicólogas")
+@Tag(name = "Auth", description = "Cadastro e login de psicólogos")
 public class AuthController {
 
     private final PsicologaService psicologaService;
@@ -37,7 +37,7 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    @Operation(summary = "Cria uma conta de psicóloga")
+    @Operation(summary = "Cria uma conta de psicólogo")
     public ResponseEntity<LoginResponse> signup(@Valid @RequestBody SignupRequest req) {
         Psicologa p = psicologaService.criar(
                 req.nomeCompleto(),
@@ -53,7 +53,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Autentica psicóloga e retorna JWT")
+    @Operation(summary = "Autentica psicólogo e retorna JWT")
     public LoginResponse login(@Valid @RequestBody LoginRequest req) {
         var r = authService.autenticar(req.email(), req.senha());
         return new LoginResponse(r.token(), PsicologaResponse.fromDomain(r.psicologa()));

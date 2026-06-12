@@ -91,6 +91,28 @@ public class AdminService {
         return new AdminPsicologasPaginadoResponse(itens, total, temMais);
     }
 
+    /** Detalhe pra página /admin/psicologos/:id — materializa pendências antes de montar. */
+    @Transactional
+    public AdminPsicologaResponse buscarPsicologa(UUID solicitanteId, UUID psicologaId) {
+        exigirAdmin(solicitanteId);
+        Psicologa p = psicologaRepository.findById(psicologaId)
+                .filter(x -> !x.isAdmin())
+                .orElseThrow(() -> ApiException.naoEncontrado("Psicólogo não encontrado"));
+        Contrato ativo = contratoRepository
+                .findFirstByPsicologaIdAndAtivoTrueOrderByCriadoEmDesc(p.getId())
+                .orElse(null);
+        if (ativo != null) {
+            materializarMensalidades(ativo);
+        }
+        PendenciaProjecao pend = mensalidadeRepository
+                .pendenciasPorPsicologa(List.of(p.getId())).stream()
+                .findFirst().orElse(null);
+        return AdminPsicologaResponse.from(p,
+                ativo == null ? null : ContratoResponse.from(ativo),
+                pend == null ? 0 : pend.quantidade(),
+                pend == null ? BigDecimal.ZERO : pend.total());
+    }
+
     @Transactional
     public void bloquear(UUID solicitanteId, UUID psicologaId, boolean bloqueada) {
         exigirAdmin(solicitanteId);
@@ -98,7 +120,7 @@ public class AdminService {
             throw ApiException.requisicaoInvalida("Você não pode bloquear a própria conta");
         }
         Psicologa p = psicologaRepository.findById(psicologaId)
-                .orElseThrow(() -> ApiException.naoEncontrado("Psicóloga não encontrada"));
+                .orElseThrow(() -> ApiException.naoEncontrado("Psicólogo não encontrado"));
         if (p.isAdmin()) {
             throw ApiException.requisicaoInvalida("Contas de administrador não podem ser bloqueadas");
         }
@@ -126,7 +148,7 @@ public class AdminService {
             throw ApiException.requisicaoInvalida("dataFim precisa ser >= dataInicio");
         }
         Psicologa p = psicologaRepository.findById(psicologaId)
-                .orElseThrow(() -> ApiException.naoEncontrado("Psicóloga não encontrada"));
+                .orElseThrow(() -> ApiException.naoEncontrado("Psicólogo não encontrado"));
         contratoRepository.findFirstByPsicologaIdAndAtivoTrueOrderByCriadoEmDesc(p.getId())
                 .ifPresent(anterior -> {
                     anterior.setAtivo(false);

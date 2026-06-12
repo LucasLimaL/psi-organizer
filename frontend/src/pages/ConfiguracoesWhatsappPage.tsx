@@ -176,7 +176,7 @@ export default function ConfiguracoesWhatsappPage() {
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
           Este é o template registrado e <strong>aprovado pela Meta</strong> — não é
           editável por aqui. Os campos <code>{'{{1}}'}</code> (paciente),{' '}
-          <code>{'{{2}}'}</code> (psicóloga), <code>{'{{3}}'}</code> (data) e{' '}
+          <code>{'{{2}}'}</code> (psicólogo), <code>{'{{3}}'}</code> (data) e{' '}
           <code>{'{{4}}'}</code> (hora) são preenchidos automaticamente em cada envio.
           Mudanças no texto exigem novo template e nova aprovação na plataforma da Meta.
         </Typography>

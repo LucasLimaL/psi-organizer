@@ -22,7 +22,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/me/notificacoes")
-@Tag(name = "Notificações", description = "Notificações in-app da psicóloga (sino na AppBar)")
+@Tag(name = "Notificações", description = "Notificações in-app do psicólogo (sino na AppBar)")
 public class NotificacaoController {
 
     private final NotificacaoService service;

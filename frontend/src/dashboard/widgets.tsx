@@ -1,4 +1,4 @@
-import { Box, Stack, Typography, Chip, ButtonBase, Avatar, Tooltip } from '@mui/material'
+import { Box, Stack, Typography, Chip, ButtonBase, Avatar, Tooltip, Alert } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import { useNavigate } from 'react-router-dom'
 import EventAvailableIcon from '@mui/icons-material/EventAvailable'
@@ -11,6 +11,8 @@ import PeopleOutlineIcon from '@mui/icons-material/PeopleOutlined'
 import PersonAddIcon from '@mui/icons-material/PersonAddAlt1Outlined'
 import BarChartIcon from '@mui/icons-material/BarChart'
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted'
+import PendingActionsIcon from '@mui/icons-material/PendingActions'
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import TrendingDownIcon from '@mui/icons-material/TrendingDown'
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat'
@@ -383,6 +385,61 @@ function ProximasConsultasWidget({ dados }: { dados: DashboardData }) {
   )
 }
 
+function ARevisarWidget({ dados }: { dados: DashboardData }) {
+  const theme = useTheme()
+  const navigate = useNavigate()
+  const total = dados.consultasARevisar
+  const temPendencia = total > 0
+  return (
+    <>
+      <WidgetHeader
+        icon={<PendingActionsIcon fontSize="small" />}
+        cor={temPendencia ? 'error.main' : 'text.secondary'}
+        fundoCor={alpha(
+          temPendencia ? theme.palette.error.main : theme.palette.text.secondary, 0.12)}
+        titulo="A revisar"
+      />
+      {!temPendencia ? (
+        <>
+          <Numero valor={0} />
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1.5, display: 'block' }}>
+            Nenhuma consulta passada sem desfecho
+          </Typography>
+        </>
+      ) : (
+        <>
+          <Stack direction="row" spacing={0.75} sx={{ alignItems: 'baseline' }}>
+            <Typography variant="h4" sx={{
+              fontWeight: 700, fontVariantNumeric: 'tabular-nums',
+              lineHeight: 1.1, color: 'error.main',
+            }}>
+              {total}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              consulta{total === 1 ? '' : 's'} sem desfecho
+            </Typography>
+          </Stack>
+          <Alert
+            severity="error"
+            onClick={() => navigate('/agenda')}
+            action={<ArrowForwardIcon sx={{ fontSize: 16, mt: 0.25 }} />}
+            sx={{
+              mt: 1.5, py: 0.25, px: 1.25,
+              fontSize: 12, fontWeight: 600,
+              alignItems: 'center', cursor: 'pointer',
+              borderRadius: 2,
+              '& .MuiAlert-icon': { fontSize: 18, py: 0.5, mr: 0.75 },
+              '&:hover': { filter: 'brightness(0.97)' },
+            }}
+          >
+            Resolver na agenda
+          </Alert>
+        </>
+      )}
+    </>
+  )
+}
+
 // ────────── Catálogo ──────────
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -393,6 +450,7 @@ export const WIDGETS: WidgetDef[] = [
   { id: 'futuras', titulo: 'Consultas futuras', descricao: 'Total de consultas agendadas ou confirmadas a partir de agora', Render: FuturasWidget, defaultAtivo: true },
   { id: 'proximos7Dias', titulo: 'Próximos 7 dias', descricao: 'Distribuição de consultas pelos próximos dias', Render: Proximos7DiasWidget, defaultAtivo: true },
   { id: 'proximasConsultas', titulo: 'Próximas consultas', descricao: 'Lista das próximas 3 consultas', Render: ProximasConsultasWidget, defaultAtivo: true },
+  { id: 'aRevisar', titulo: 'A revisar', descricao: 'Consultas passadas que ficaram sem desfecho (agendada/confirmada)', Render: ARevisarWidget, defaultAtivo: true },
   { id: 'comparativo', titulo: 'Comparativo mensal', descricao: 'Consultas e faturamento vs mês anterior', Render: ComparativoWidget, defaultAtivo: false },
   { id: 'taxa', titulo: 'Taxa de comparecimento', descricao: 'Percentual de realizadas vs faltas no mês', Render: TaxaWidget, defaultAtivo: false },
   { id: 'pacientes', titulo: 'Pacientes ativos', descricao: 'Total atual de pacientes ativos', Render: PacientesWidget, defaultAtivo: false },

@@ -67,11 +67,13 @@ public class DashboardService {
         int novosNoMes = pacienteRepository.countByPsicologaIdAndCriadoEmGreaterThanEqual(
                 psicologaId, mesAtualIni);
         long futuras = consultaRepository.contarFuturasAgendadas(psicologaId, agora);
+        long aRevisar = consultaRepository.contarARevisar(psicologaId, agora);
 
         return new DashboardResponse(
                 hojeStats, mesStats, comp, dias7,
                 new DashboardResponse.PacientesStats(ativos, novosNoMes),
                 futuras,
+                aRevisar,
                 proximas.stream()
                         .map(c -> new DashboardResponse.ProximaConsulta(
                                 c.getId(), c.getInicio(), c.getDuracaoMinutos(),

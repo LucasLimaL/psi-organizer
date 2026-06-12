@@ -41,6 +41,14 @@ function carregarPreferencias(): DashboardPreferencias {
     const idsValidos = new Set(WIDGETS.map(w => w.id))
     const ativos = parsed.ativos.filter(id => idsValidos.has(id))
     const ordem = parsed.ordem.filter(id => ativos.includes(id))
+    // Widget novo no catálogo (não estava nos "conhecidos") entra se for default.
+    // Prefs antigas não têm `conhecidos` — assume ativos ∪ ordem salvos.
+    const conhecidos = new Set(parsed.conhecidos ?? [...parsed.ativos, ...parsed.ordem])
+    for (const w of WIDGETS) {
+      if (w.defaultAtivo && !conhecidos.has(w.id) && !ativos.includes(w.id)) {
+        ativos.push(w.id)
+      }
+    }
     // Garante que ativos sem posição venham ao fim
     for (const id of ativos) {
       if (!ordem.includes(id)) ordem.push(id)
@@ -52,7 +60,9 @@ function carregarPreferencias(): DashboardPreferencias {
 }
 
 function salvarPreferencias(prefs: DashboardPreferencias) {
-  localStorage.setItem(PREF_STORAGE_KEY, JSON.stringify(prefs))
+  // Registra o catálogo inteiro como visto — widget futuro será detectado como novo
+  const conhecidos = WIDGETS.map(w => w.id)
+  localStorage.setItem(PREF_STORAGE_KEY, JSON.stringify({ ...prefs, conhecidos }))
 }
 
 export default function DashboardPage() {

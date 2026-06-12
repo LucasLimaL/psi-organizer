@@ -68,6 +68,32 @@ public interface ConsultaRepository extends JpaRepository<Consulta, UUID> {
     long contarFuturasAgendadas(@Param("psicologaId") UUID psicologaId,
                                 @Param("agora") Instant agora);
 
+    /**
+     * Consultas passadas que ficaram sem desfecho (ainda AGENDADA/CONFIRMADA).
+     * Alimenta o banner "a revisar" da agenda e o widget do dashboard.
+     */
+    @Query("""
+            select c from Consulta c
+            where c.psicologaId = :psicologaId
+              and c.inicio < :agora
+              and c.status in (com.psiorganizer.consulta.StatusConsulta.AGENDADA,
+                               com.psiorganizer.consulta.StatusConsulta.CONFIRMADA)
+            order by c.inicio asc
+            """)
+    List<Consulta> aRevisar(@Param("psicologaId") UUID psicologaId,
+                            @Param("agora") Instant agora,
+                            org.springframework.data.domain.Pageable pageable);
+
+    @Query("""
+            select count(c) from Consulta c
+            where c.psicologaId = :psicologaId
+              and c.inicio < :agora
+              and c.status in (com.psiorganizer.consulta.StatusConsulta.AGENDADA,
+                               com.psiorganizer.consulta.StatusConsulta.CONFIRMADA)
+            """)
+    long contarARevisar(@Param("psicologaId") UUID psicologaId,
+                        @Param("agora") Instant agora);
+
     @Query("""
             select c from Consulta c
             where c.pacienteId = :pacienteId

@@ -84,6 +84,7 @@ FALTA      ← paciente não compareceu (no-show)
 |---|---|
 | Default ao criar é **AGENDADA** | Construtor de `Consulta` |
 | Status pode mudar livremente via `PUT /consultas/{id}` | `ConsultaService.atualizar` — sem state machine que bloqueie transições "estranhas" (ex: REALIZADA → AGENDADA). Decisão consciente: psicóloga pode corrigir lançamentos. |
+| Consulta passada que segue `AGENDADA/CONFIRMADA` é **"a revisar"** — listada em `GET /consultas/a-revisar`, no banner da Agenda (desfecho rápido inline) e contada no widget do dashboard (`consultasARevisar`) | `ConsultaRepository.aRevisar/contarARevisar` · `ConsultasARevisarBanner` · `ARevisarWidget` |
 | `pago` é **boolean independente do status** | Coluna própria na tabela. Pode ser true para qualquer status; uso prático é com REALIZADA. |
 | `valor` é **snapshot** do `paciente.valorConsulta` no momento da criação, mas pode ser editado por consulta | `ConsultaController.criar` envia o valor do paciente como default; payload pode sobrescrever |
 

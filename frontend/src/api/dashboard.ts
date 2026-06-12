@@ -51,6 +51,8 @@ export type DashboardData = {
   proximos7Dias: DiaStats[]
   pacientes: PacientesStats
   consultasFuturasAgendadas: number
+  /** Passadas que seguem AGENDADA/CONFIRMADA — precisam de desfecho. */
+  consultasARevisar: number
   proximasConsultas: ProximaConsulta[]
 }
 

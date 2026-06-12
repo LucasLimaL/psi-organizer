@@ -20,6 +20,8 @@ public record DashboardResponse(
         List<DiaStats> proximos7Dias,
         PacientesStats pacientes,
         long consultasFuturasAgendadas,
+        /** Passadas que seguem AGENDADA/CONFIRMADA — psicóloga precisa definir o desfecho. */
+        long consultasARevisar,
         List<ProximaConsulta> proximasConsultas) {
 
     public record HojeStats(

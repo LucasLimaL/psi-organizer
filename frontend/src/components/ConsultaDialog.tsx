@@ -12,6 +12,7 @@ import type { Paciente } from '../api/pacientes'
 import { pacientesApi } from '../api/pacientes'
 import { toDatetimeLocal, fromDatetimeLocal } from '../utils/datas'
 import { useDirty } from '../hooks/useDirty'
+import { sxInputSemSpinner } from '../theme/sx'
 
 export type ConsultaSalvoResultado = 'criada' | 'criada_recorrente' | 'atualizada' | 'removida'
 
@@ -19,6 +20,8 @@ type Props = {
   aberto: boolean
   consulta: Consulta | null
   inicioPadrao?: Date
+  /** Pré-seleciona o paciente na criação (ex.: dialog aberto a partir da página do paciente). */
+  pacientePadraoId?: string
   onFechar: () => void
   onSalvo: (resultado: ConsultaSalvoResultado, qtd?: number) => void
 }
@@ -51,7 +54,9 @@ function horarioDaData(d: Date): string {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-export default function ConsultaDialog({ aberto, consulta, inicioPadrao, onFechar, onSalvo }: Props) {
+export default function ConsultaDialog({
+  aberto, consulta, inicioPadrao, pacientePadraoId, onFechar, onSalvo,
+}: Props) {
   const editando = consulta !== null
   const [pacientes, setPacientes] = useState<Paciente[]>([])
   const [pacienteId, setPacienteId] = useState('')
@@ -105,7 +110,7 @@ export default function ConsultaDialog({ aberto, consulta, inicioPadrao, onFecha
     } else {
       const base = inicioPadrao ?? new Date()
       proximo = {
-        pacienteId: '',
+        pacienteId: pacientePadraoId ?? '',
         inicio: toDatetimeLocal(base),
         duracaoMinutos: 50,
         valor: 0,
@@ -136,7 +141,7 @@ export default function ConsultaDialog({ aberto, consulta, inicioPadrao, onFecha
     setBaseline(proximo)
     // setBaseline é estável; queremos rodar apenas quando o dialog reabre / alvo muda
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aberto, consulta, inicioPadrao])
+  }, [aberto, consulta, inicioPadrao, pacientePadraoId])
 
   // Pré-preenche valor pelo paciente (criação)
   useEffect(() => {
@@ -212,7 +217,8 @@ export default function ConsultaDialog({ aberto, consulta, inicioPadrao, onFecha
           )}
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
             <Grid size={12}>
-              <TextField select fullWidth label="Paciente" required disabled={editando}
+              <TextField select fullWidth label="Paciente" required
+                         disabled={editando || pacientePadraoId !== undefined}
                          value={pacienteId} onChange={e => setPacienteId(e.target.value)}>
                 {pacientes.map(p => (
                   <MenuItem key={p.id} value={p.id}>{p.nome}</MenuItem>
@@ -272,13 +278,14 @@ export default function ConsultaDialog({ aberto, consulta, inicioPadrao, onFecha
 
             <Grid size={recorrente ? 6 : 5}>
               <TextField fullWidth label="Duração (min)" type="number" required
-                         slotProps={{ htmlInput: { min: 1, max: 600, step: 5 } }}
+                         slotProps={{ htmlInput: { min: 5, max: 600, step: 5 } }}
                          value={duracaoMinutos}
                          onChange={e => setDuracao(Number(e.target.value))} />
             </Grid>
             <Grid size={6}>
               <TextField fullWidth label="Valor (R$)" type="number" required
                          slotProps={{ htmlInput: { min: 0, step: '0.01' } }}
+                         sx={sxInputSemSpinner}
                          value={valor} onChange={e => setValor(Number(e.target.value))} />
             </Grid>
 

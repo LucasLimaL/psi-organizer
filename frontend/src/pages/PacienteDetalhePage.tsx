@@ -2,16 +2,18 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   Stack, Box, Paper, Typography, Button, Chip, Avatar, IconButton,
-  Skeleton, Tooltip, Tabs, Tab,
+  Skeleton, Tooltip, Tabs, Tab, Snackbar, Alert,
 } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined'
 import RestoreIcon from '@mui/icons-material/Restore'
+import AddIcon from '@mui/icons-material/Add'
 import { pacientesApi, type Paciente, type PacienteInput } from '../api/pacientes'
 import PacienteForm from '../components/PacienteForm'
 import InativarPacienteDialog from '../components/InativarPacienteDialog'
 import ConsultasPacienteList from '../components/ConsultasPacienteList'
+import ConsultaDialog, { type ConsultaSalvoResultado } from '../components/ConsultaDialog'
 import { formatarCpf, iniciais } from '../utils/formatadores'
 
 type AbaId = 'dados' | 'proximas' | 'historico'
@@ -22,9 +24,13 @@ export default function PacienteDetalhePage() {
   const navigate = useNavigate()
   const [paciente, setPaciente] = useState<Paciente | null>(null)
   const [inativando, setInativando] = useState(false)
+  const [novaConsulta, setNovaConsulta] = useState(false)
   const [aba, setAba] = useState<AbaId>('dados')
   const [totalProximas, setTotalProximas] = useState<number | null>(null)
   const [totalHistorico, setTotalHistorico] = useState<number | null>(null)
+  // Incrementa pra remontar as listas de consultas após criar uma nova
+  const [versaoConsultas, setVersaoConsultas] = useState(0)
+  const [mensagemSucesso, setMensagemSucesso] = useState<string | null>(null)
 
   const carregar = useCallback(async () => {
     if (!id) return
@@ -150,15 +156,25 @@ export default function PacienteDetalhePage() {
             </Typography>
           </Box>
           {paciente.ativo ? (
-            <Button
-              variant="outlined"
-              color="error"
-              startIcon={<DeleteOutlineIcon />}
-              onClick={() => setInativando(true)}
-              sx={{ borderRadius: 999, flexShrink: 0 }}
-            >
-              Inativar
-            </Button>
+            <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setNovaConsulta(true)}
+                sx={{ borderRadius: 999 }}
+              >
+                Nova consulta
+              </Button>
+              <Button
+                variant="outlined"
+                color="error"
+                startIcon={<DeleteOutlineIcon />}
+                onClick={() => setInativando(true)}
+                sx={{ borderRadius: 999 }}
+              >
+                Inativar
+              </Button>
+            </Stack>
           ) : (
             <Button
               variant="outlined"
@@ -201,6 +217,7 @@ export default function PacienteDetalhePage() {
 
       {aba === 'proximas' && id && (
         <ConsultasPacienteList
+          key={`proximas-${versaoConsultas}`}
           pacienteId={id}
           tipo="proximas"
           onTotalCarregado={setTotalProximas}
@@ -209,6 +226,7 @@ export default function PacienteDetalhePage() {
 
       {aba === 'historico' && id && (
         <ConsultasPacienteList
+          key={`historico-${versaoConsultas}`}
           pacienteId={id}
           tipo="historico"
           onTotalCarregado={setTotalHistorico}
@@ -221,6 +239,32 @@ export default function PacienteDetalhePage() {
         onFechar={() => setInativando(false)}
         onConfirmar={confirmarInativar}
       />
+
+      <ConsultaDialog
+        aberto={novaConsulta}
+        consulta={null}
+        pacientePadraoId={id}
+        onFechar={() => setNovaConsulta(false)}
+        onSalvo={(resultado: ConsultaSalvoResultado, qtd?: number) => {
+          // Contagens ficam desatualizadas — zera pra recarregar quando a aba abrir
+          setTotalProximas(null)
+          setVersaoConsultas(v => v + 1)
+          setMensagemSucesso(resultado === 'criada_recorrente'
+            ? `${qtd ?? 0} consultas criadas`
+            : 'Consulta criada')
+        }}
+      />
+
+      <Snackbar
+        open={mensagemSucesso !== null}
+        autoHideDuration={3000}
+        onClose={() => setMensagemSucesso(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="success" variant="filled" sx={{ width: '100%' }}>
+          {mensagemSucesso}
+        </Alert>
+      </Snackbar>
     </Stack>
   )
 }

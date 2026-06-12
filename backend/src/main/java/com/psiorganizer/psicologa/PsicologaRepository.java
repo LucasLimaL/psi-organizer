@@ -14,21 +14,26 @@ public interface PsicologaRepository extends JpaRepository<Psicologa, UUID> {
     boolean existsByEmail(String email);
     boolean existsByCpf(String cpf);
 
-    /** Lista do painel admin — busca por nome ou e-mail, mais recentes primeiro. */
+    /**
+     * Lista do painel admin — busca por nome ou e-mail, mais recentes primeiro.
+     * Contas admin ficam FORA: são gestão do sistema, não clientes do SaaS.
+     */
     @Query("""
             select p from Psicologa p
-            where :busca = ''
+            where p.admin = false
+              and (:busca = ''
                or lower(p.nomeCompleto) like lower(concat('%', :busca, '%'))
-               or lower(p.email) like lower(concat('%', :busca, '%'))
+               or lower(p.email) like lower(concat('%', :busca, '%')))
             order by p.criadoEm desc
             """)
     List<Psicologa> buscarTodas(@Param("busca") String busca, Pageable pageable);
 
     @Query("""
             select count(p) from Psicologa p
-            where :busca = ''
+            where p.admin = false
+              and (:busca = ''
                or lower(p.nomeCompleto) like lower(concat('%', :busca, '%'))
-               or lower(p.email) like lower(concat('%', :busca, '%'))
+               or lower(p.email) like lower(concat('%', :busca, '%')))
             """)
     long contarTodas(@Param("busca") String busca);
 }

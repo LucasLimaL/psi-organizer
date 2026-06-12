@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link as RouterLink, useNavigate } from 'react-router-dom'
+import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Stack, TextField, Button, Link, Alert, IconButton, InputAdornment, Typography,
 } from '@mui/material'
@@ -13,6 +13,8 @@ import AuthShell from '../components/AuthShell'
 export default function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const sessaoExpirada = params.get('sessao') === 'expirada'
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [mostrarSenha, setMostrarSenha] = useState(false)
@@ -37,6 +39,11 @@ export default function LoginPage() {
   return (
     <AuthShell titulo="Entrar" subtitulo="Acesse sua conta para gerenciar a agenda">
       <Stack component="form" onSubmit={onSubmit} spacing={2.5}>
+        {sessaoExpirada && !erro && (
+          <Alert severity="info">
+            Sua sessão expirou. Entre novamente para continuar.
+          </Alert>
+        )}
         {erro && <Alert severity="error">{erro}</Alert>}
 
         <TextField

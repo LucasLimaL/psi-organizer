@@ -2,6 +2,8 @@ package com.psiorganizer.config;
 
 import java.util.List;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -51,6 +53,14 @@ public class SecurityConfig {
                         // Endpoint dev pra simular resposta — só sobe quando profile dev.
                         .requestMatchers("/dev/**").permitAll()
                         .anyRequest().authenticated())
+                // Sem entry point o Spring devolve 403 cru pra request não autenticada.
+                // Contrato da API é 401 + envelope {erro} — frontend usa pra forçar re-login.
+                .exceptionHandling(e -> e.authenticationEntryPoint((request, response, ex) -> {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().write(
+                            "{\"erro\":\"Não autenticado — sessão expirada ou token inválido\"}");
+                }))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

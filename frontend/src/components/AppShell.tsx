@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   AppBar, Box, Drawer, IconButton, List, ListItemButton, ListItemIcon,
   ListItemText, Toolbar, Typography, useMediaQuery, useTheme, Divider, Avatar,
@@ -11,6 +11,7 @@ import PeopleAltIcon from '@mui/icons-material/PeopleAlt'
 import PaidIcon from '@mui/icons-material/PaidOutlined'
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettingsOutlined'
 import CardMembershipIcon from '@mui/icons-material/CardMembershipOutlined'
+import HelpOutlineIcon from '@mui/icons-material/HelpOutlined'
 import PersonOutlineIcon from '@mui/icons-material/PersonOutlined'
 import SettingsIcon from '@mui/icons-material/SettingsOutlined'
 import LogoutIcon from '@mui/icons-material/Logout'
@@ -21,6 +22,7 @@ import { globalTokens } from '../theme/tokens'
 import { iniciais } from '../utils/formatadores'
 import PaletteSwitcher from './PaletteSwitcher'
 import NotificacoesBadge from './NotificacoesBadge'
+import { iniciarTour, marcarTourVisto, tourJaVisto } from '../tour/tour'
 
 const NAV = [
   { to: '/', label: 'Início', icon: <DashboardIcon /> },
@@ -58,6 +60,19 @@ export default function AppShell() {
   const location = useLocation()
   const navigate = useNavigate()
   const { psicologa, logout } = useAuth()
+
+  // Primeiro acesso: inicia o tour uma única vez por usuário (psicólogos —
+  // o admin tem menu próprio, fora do roteiro). Pode ser revisto no #botao-tour.
+  // A flag é marcada já no início: refresh no meio do tour não o reapresenta.
+  useEffect(() => {
+    if (!psicologa || psicologa.admin || tourJaVisto(psicologa.id)) return
+    const id = psicologa.id
+    const t = setTimeout(() => {
+      marcarTourVisto(id)
+      iniciarTour()
+    }, 900)
+    return () => clearTimeout(t)
+  }, [psicologa])
 
   function onLogout() {
     logout()
@@ -163,6 +178,7 @@ export default function AppShell() {
       >
         <Toolbar sx={{ minHeight: `${appBarHeight}px !important` }}>
           <IconButton
+            id="botao-abrir-menu"
             color="inherit"
             edge="start"
             onClick={() => setMobileOpen(o => !o)}
@@ -174,7 +190,21 @@ export default function AppShell() {
           <Typography variant="h6" component="h1" sx={{ flexGrow: 1, fontWeight: 600 }}>
             {tituloDaRota(location.pathname)}
           </Typography>
-          <NotificacoesBadge />
+          {!psicologa?.admin && (
+            <Tooltip title="Tour do sistema">
+              <IconButton
+                id="botao-tour"
+                color="inherit"
+                aria-label="Rever o tour do sistema"
+                onClick={() => iniciarTour()}
+              >
+                <HelpOutlineIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+          <Box id="sino-notificacoes" sx={{ display: 'inline-flex' }}>
+            <NotificacoesBadge />
+          </Box>
           <PaletteSwitcher />
         </Toolbar>
       </AppBar>

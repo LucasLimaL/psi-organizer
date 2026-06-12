@@ -6,6 +6,7 @@ import type { PacienteInput } from '../api/pacientes'
 import { useAuth } from '../auth/authContext'
 import { useDirty } from '../hooks/useDirty'
 import { formatarTelefoneBr, paraE164Br } from '../utils/telefones'
+import { sxInputSemSpinner } from '../theme/sx'
 import EnderecoForm from './EnderecoForm'
 
 type Props = {
@@ -120,6 +121,7 @@ export default function PacienteForm({ inicial, textoBotao, onSubmit }: Props) {
           onChange={e => setCampo('email', e.target.value)} /></Grid>
         <Grid size={4}><TextField fullWidth label="Valor consulta (R$)" type="number" required
           slotProps={{ htmlInput: { step: '0.01', min: '0' } }}
+          sx={sxInputSemSpinner}
           value={form.valorConsulta} onChange={e => setCampo('valorConsulta', Number(e.target.value))} /></Grid>
         <Grid size={12}><TextField fullWidth label="Observações" multiline minRows={2}
           value={form.observacoes ?? ''} onChange={e => setCampo('observacoes', e.target.value)} /></Grid>

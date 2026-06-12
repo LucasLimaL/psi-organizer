@@ -9,6 +9,7 @@ import DashboardIcon from '@mui/icons-material/DashboardOutlined'
 import EventNoteIcon from '@mui/icons-material/EventNote'
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt'
 import PaidIcon from '@mui/icons-material/PaidOutlined'
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettingsOutlined'
 import PersonOutlineIcon from '@mui/icons-material/PersonOutlined'
 import SettingsIcon from '@mui/icons-material/SettingsOutlined'
 import LogoutIcon from '@mui/icons-material/Logout'
@@ -29,12 +30,19 @@ const NAV = [
   { to: '/configuracoes/whatsapp', label: 'WhatsApp', icon: <SettingsIcon /> },
 ]
 
+// Conta admin é exclusiva de gestão — telas clínicas ficam fora do menu
+const NAV_ADMIN = [
+  { to: '/admin', label: 'Admin', icon: <AdminPanelSettingsIcon /> },
+  { to: '/perfil', label: 'Perfil', icon: <PersonOutlineIcon /> },
+]
+
 const { drawerWidth, appBarHeight } = globalTokens.layout
 
 function tituloDaRota(pathname: string): string {
   if (pathname.startsWith('/agenda')) return 'Agenda'
   if (pathname.startsWith('/pacientes')) return 'Pacientes'
   if (pathname.startsWith('/financeiro')) return 'Financeiro'
+  if (pathname.startsWith('/admin')) return 'Admin'
   if (pathname.startsWith('/perfil')) return 'Perfil'
   if (pathname.startsWith('/configuracoes/whatsapp')) return 'WhatsApp'
   return 'Início'
@@ -83,7 +91,7 @@ export default function AppShell() {
       <Divider />
 
       <List sx={{ flexGrow: 1, px: 1.5, py: 2 }} component="nav" aria-label="Navegação principal">
-        {NAV.map(item => {
+        {(psicologa?.admin ? NAV_ADMIN : NAV).map(item => {
           const ativo = item.to === '/'
             ? location.pathname === '/'
             : location.pathname.startsWith(item.to)

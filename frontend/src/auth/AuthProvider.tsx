@@ -30,6 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ email, senha }),
     })
     aplicar(resp)
+    return resp.psicologa
   }
 
   async function signup(payload: unknown) {

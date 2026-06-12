@@ -14,7 +14,8 @@ export type Psicologa = {
 export type AuthCtx = {
   psicologa: Psicologa | null
   carregando: boolean
-  login: (email: string, senha: string) => Promise<void>
+  /** Retorna a psicóloga logada — permite redirect condicional (ex.: admin → /admin). */
+  login: (email: string, senha: string) => Promise<Psicologa>
   signup: (payload: unknown) => Promise<void>
   logout: () => void
   /** Atualiza a psicóloga no contexto e em localStorage. */

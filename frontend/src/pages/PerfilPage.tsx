@@ -7,6 +7,7 @@ import { alpha, useTheme } from '@mui/material/styles'
 import LockIcon from '@mui/icons-material/LockOutlined'
 import { perfilApi, type AtualizarPerfilInput, type PerfilCompleto } from '../api/perfil'
 import EnderecoForm, { type EnderecoFormValor } from '../components/EnderecoForm'
+import AlterarSenhaCard from '../components/AlterarSenhaCard'
 import { useAuth } from '../auth/authContext'
 import { useDirty } from '../hooks/useDirty'
 import { formatarCpf, iniciais } from '../utils/formatadores'
@@ -249,6 +250,8 @@ export default function PerfilPage() {
           </Box>
         </Stack>
       </Paper>
+
+      <AlterarSenhaCard />
 
       <Snackbar
         open={salvoEm !== null}

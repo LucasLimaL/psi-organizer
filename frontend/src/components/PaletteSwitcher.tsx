@@ -14,6 +14,7 @@ export default function PaletteSwitcher() {
     <>
       <Tooltip title="Trocar paleta de cores">
         <IconButton
+          id="seletor-paleta"
           aria-label="Trocar paleta de cores"
           onClick={e => setAnchorEl(e.currentTarget)}
           size="small"

@@ -26,8 +26,8 @@ export default function LoginPage() {
     setErro(null)
     setEnviando(true)
     try {
-      await login(email, senha)
-      navigate('/', { replace: true })
+      const p = await login(email, senha)
+      navigate(p.admin ? '/admin' : '/', { replace: true })
     } catch (err) {
       const msg = (err as { erro?: string })?.erro ?? 'Falha ao entrar'
       setErro(msg)

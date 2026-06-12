@@ -63,10 +63,17 @@ com.psiorganizer/
 ├── consulta/         ← Consulta + StatusConsulta + DiaSemana
 │   └── dto/          ← Request, UpdateRequest, RecorrenteRequest, Response, PaginadoResponse
 ├── dashboard/        ← DashboardController + Service + Response
+├── financeiro/       ← FinanceiroController + Service + Repository (regime de competência)
+│   └── dto/          ← FinanceiroResumoResponse, FinanceiroPendentesPaginadoResponse, FinanceiroConsultasPaginadoResponse
+├── notificacao/      ← Notificacao + Repository + Service + Controller (notificações in-app)
+│   └── dto/          ← NotificacaoResponse, NotificacoesEnvelope
 ├── paciente/         ← Paciente + Repository + Service + Controller
 │   └── dto/          ← PacienteRequest, PacienteResponse
 ├── psicologa/        ← Psicologa + PerfilController + AtualizarPerfilRequest
 │   └── dto/          ← PsicologaResponse, EnderecoDto, AtualizarPerfilRequest
+├── whatsapp/         ← lembretes: LembreteScheduler + tick, envio, webhook, máquina de estados, configuração
+│   ├── client/       ← WhatsappClient (MetaWhatsappClient real + MockWhatsappClient dev)
+│   └── dto/          ← ConfiguracaoWhatsappResponse, EnviarTeste*, LembreteResponse, LembretesEnvelope
 ├── common/
 │   ├── Endereco                   ← @Embeddable usado em Psicologa e Paciente
 │   ├── validation/                ← @Cpf, @SenhaValida, CpfUtil
@@ -152,8 +159,8 @@ Formato único de resposta de erro:
 ### 2.9 Documentação OpenAPI
 
 - `springdoc-openapi` 2.6 gera spec automaticamente.
-- **Todos os 5 controllers** têm `@Tag(name = ..., description = ...)`.
-- **Todos os 18 endpoints** têm `@Operation(summary = ...)` em pt-BR.
+- **Todos os controllers** têm `@Tag(name = ..., description = ...)`.
+- **Todos os endpoints** têm `@Operation(summary = ...)` em pt-BR.
 - Swagger UI em `/swagger-ui.html`.
 - Sumário humano em [API.md](API.md).
 
@@ -177,8 +184,11 @@ src/
 │   ├── cep.ts          ← ViaCEP
 │   ├── consultas.ts
 │   ├── dashboard.ts
+│   ├── financeiro.ts
+│   ├── notificacoes.ts
 │   ├── pacientes.ts
-│   └── perfil.ts
+│   ├── perfil.ts
+│   └── whatsapp.ts
 ├── auth/
 │   ├── authContext.ts  ← Context + useAuth (separado pra react-refresh)
 │   ├── AuthProvider.tsx
@@ -187,6 +197,9 @@ src/
 │   ├── AppShell.tsx, AuthShell.tsx, PaletteSwitcher.tsx
 │   ├── PacienteForm.tsx, EnderecoForm.tsx
 │   ├── ConsultaDialog.tsx, ConsultaCard.tsx, ConsultasPacienteList.tsx
+│   ├── ConsultasARevisarBanner.tsx
+│   ├── Financeiro{ConsultaItem,ConsultasList,PendentesList}.tsx
+│   ├── NotificacoesBadge.tsx
 │   └── InativarPacienteDialog.tsx
 ├── dashboard/          ← isolado por ser sistema próprio
 │   ├── types.ts
@@ -199,7 +212,9 @@ src/
 │   ├── DashboardPage.tsx
 │   ├── AgendaPage.tsx
 │   ├── PacientesPage.tsx, PacienteDetalhePage.tsx
+│   ├── FinanceiroPage.tsx
 │   ├── PerfilPage.tsx
+│   ├── ConfiguracoesWhatsappPage.tsx, HistoricoWhatsappPage.tsx
 │   ├── LoginPage.tsx, SignupPage.tsx
 ├── theme/              ← design system
 │   ├── tokens.ts       ← PaletteTokens, StatusToken, SurfaceContainerTokens, globalTokens
@@ -207,6 +222,7 @@ src/
 │   ├── derive.ts       ← derivarStatusConsulta, derivarSurfaceContainer, mix
 │   ├── createAppTheme.ts
 │   ├── appThemeContext.ts, AppThemeProvider.tsx
+│   ├── sx.ts            ← sx helpers compartilhados (sxInputSemSpinner)
 │   └── mui-augment.d.ts ← extensão de types do MUI
 └── utils/
     └── datas.ts        ← formatadores e cálculos de semana/mês
@@ -217,11 +233,14 @@ src/
 ```
 /login                  ← LoginPage (público)
 /signup                 ← SignupPage (público)
-/                       ← DashboardPage  ┐
-/agenda                 ← AgendaPage      │
-/pacientes              ← PacientesPage   │ ProtectedRoute → AppShell
-/pacientes/:id          ← PacienteDetalhe │
-/perfil                 ← PerfilPage      ┘
+/                               ← DashboardPage           ┐
+/agenda                         ← AgendaPage               │
+/pacientes                      ← PacientesPage            │
+/pacientes/:id                  ← PacienteDetalhe          │ ProtectedRoute → AppShell
+/financeiro                     ← FinanceiroPage           │
+/perfil                         ← PerfilPage               │
+/configuracoes/whatsapp         ← ConfiguracoesWhatsapp    │
+/configuracoes/whatsapp/historico ← HistoricoWhatsapp      ┘
 ```
 
 `ProtectedRoute` checa `useAuth().psicologa`. Se ausente, redireciona pra `/login`.
@@ -250,14 +269,14 @@ src/
 ### 3.5 Sistema de widgets do dashboard
 
 `dashboard/`:
-- **Catálogo** (`widgets.tsx`): 10 widgets — Hoje, Mês, Recebido, Comparativo, Taxa, Futuras, Pacientes, NovosPacientes, Próximos7Dias, ProximasConsultas. Cada um declara `defaultAtivo`.
+- **Catálogo** (`widgets.tsx`): 11 widgets — Hoje, Mês, Recebido, Futuras, Próximos7Dias, ProximasConsultas, ARevisar, Comparativo, Taxa, Pacientes, NovosPacientes. Cada um declara `defaultAtivo`.
 - **Grid** (`DashboardGrid.tsx`): `@dnd-kit/core` + `sortable`. Layout em CSS Grid responsivo (1 col xs / 2 sm / 3 md / 4 lg). Drag handle no canto superior direito do widget (aparece no hover) — permite clicar dentro do widget sem disparar drag.
 - **Swap semantics**:
   - Drop direto sobre outro widget → swap imediato
   - **Hover por 1s** sobre outro widget → swap antecipado (state muda → CSS transition anima). Continuar arrastando troca de novo.
   - ESC durante drag → cancela, restaura ordem original
 - **Settings drawer** (`WidgetSettings.tsx`): toggles + botão "Restaurar padrão".
-- **Persistência** em `localStorage['psi.dashboard.widgets']` como `{ ativos, ordem }`. Higienizado no load (remove widgets fora do catálogo, adiciona novos defaults).
+- **Persistência** em `localStorage['psi.dashboard.widgets']` como `{ ativos, ordem, conhecidos }`. Higienizado no load: remove widgets fora do catálogo; `conhecidos` distingue widget **novo no catálogo** (entra como default) de **desativado de propósito** (fica fora). Prefs antigas sem o campo assumem `conhecidos = ativos ∪ ordem`.
 
 ### 3.6 Persistência local
 
@@ -269,7 +288,7 @@ Chaves usadas no `localStorage`:
 | `psi.user` | Dados resumidos da psicóloga pro AppShell (cache do `/me`) |
 | `psi.paleta` | ID da paleta ativa |
 | `psi.agenda.ocultarFds` | `'1'` ou `'0'` — toggle ocultar fim de semana |
-| `psi.dashboard.widgets` | `{ ativos: WidgetId[], ordem: WidgetId[] }` |
+| `psi.dashboard.widgets` | `{ ativos: WidgetId[], ordem: WidgetId[], conhecidos: WidgetId[] }` |
 
 Nada sensível além do JWT. Sem dados de paciente em cache.
 

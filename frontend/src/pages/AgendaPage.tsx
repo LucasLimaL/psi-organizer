@@ -79,8 +79,9 @@ export default function AgendaPage() {
     const h = new Date()
     return { year: h.getFullYear(), month: h.getMonth() }
   })
+  // Default: fim de semana oculto. Só mostra se o usuário escolheu mostrar ('0').
   const [ocultarFds, setOcultarFds] = useState(() =>
-    localStorage.getItem(PREF_FDS_KEY) === '1')
+    localStorage.getItem(PREF_FDS_KEY) !== '0')
   const [consultas, setConsultas] = useState<Consulta[]>([])
   const [dialogAberto, setDialogAberto] = useState(false)
   const [consultaSelecionada, setConsultaSelecionada] = useState<Consulta | null>(null)

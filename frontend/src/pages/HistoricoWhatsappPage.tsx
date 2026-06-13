@@ -104,12 +104,12 @@ export default function HistoricoWhatsappPage() {
       <Box>
         <Button
           component={RouterLink}
-          to="/configuracoes/whatsapp"
+          to="/configuracoes"
           startIcon={<ArrowBackIcon />}
           size="small"
           sx={{ mb: 1 }}
         >
-          Voltar à configuração
+          Voltar às configurações
         </Button>
         <Typography variant="h5" sx={{ fontWeight: 600 }}>
           Histórico de lembretes

@@ -31,7 +31,7 @@ const NAV = [
   { to: '/financeiro', label: 'Financeiro', icon: <PaidIcon /> },
   { to: '/assinatura', label: 'Assinatura', icon: <CardMembershipIcon /> },
   { to: '/perfil', label: 'Perfil', icon: <PersonOutlineIcon /> },
-  { to: '/configuracoes/whatsapp', label: 'WhatsApp', icon: <SettingsIcon /> },
+  { to: '/configuracoes', label: 'Configurações', icon: <SettingsIcon /> },
 ]
 
 // Conta admin é exclusiva de gestão — telas clínicas ficam fora do menu
@@ -54,7 +54,7 @@ function tituloDaRota(pathname: string): string {
   if (pathname.startsWith('/admin')) return 'Admin'
   if (pathname.startsWith('/assinatura')) return 'Assinatura'
   if (pathname.startsWith('/perfil')) return 'Perfil'
-  if (pathname.startsWith('/configuracoes/whatsapp')) return 'WhatsApp'
+  if (pathname.startsWith('/configuracoes')) return 'Configurações'
   return 'Início'
 }
 

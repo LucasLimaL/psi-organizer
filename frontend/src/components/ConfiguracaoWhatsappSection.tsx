@@ -15,7 +15,12 @@ import { useDirty } from '../hooks/useDirty'
 import { addDias } from '../utils/datas'
 import { formatarTelefoneBr, paraE164Br } from '../utils/telefones'
 
-export default function ConfiguracoesWhatsappPage() {
+/**
+ * Seção de configuração dos lembretes via WhatsApp — renderizada dentro da
+ * página Configurações. Self-contained: carrega e salva a própria config
+ * (GET/PUT /me/whatsapp), com prévia do template, envio de teste e link pro histórico.
+ */
+export default function ConfiguracaoWhatsappSection() {
   const { psicologa } = useAuth()
   const [config, setConfig] = useState<ConfiguracaoWhatsapp | null>(null)
   const [carregando, setCarregando] = useState(true)
@@ -118,8 +123,7 @@ export default function ConfiguracoesWhatsappPage() {
   return (
     <Stack spacing={3}>
       <Box>
-        <Typography variant="caption" color="text.secondary">Configurações</Typography>
-        <Typography variant="h5" sx={{ fontWeight: 600, mt: 0.5 }}>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>
           Lembretes via WhatsApp
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>

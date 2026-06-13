@@ -51,8 +51,10 @@ Toda resposta de erro segue o mesmo envelope:
 | Método | Path | Sumário | Códigos |
 |---|---|---|---|
 | `GET` | `/me` | Retorna dados da psicóloga autenticada (inclui flag `admin`) | `200` · `401` |
-| `PUT` | `/me` | Atualiza nome, CRP, telefone, endereço e a preferência `cobrarFaltas` (consultas FALTA entram na cobrança?). **E-mail e CPF não são editáveis.** | `200` · `400` validação · `401` |
+| `PUT` | `/me` | Atualiza nome, CRP, telefone e endereço. **E-mail e CPF não são editáveis.** Preferências de cobrança ficam em `/me/preferencias`. | `200` · `400` validação · `401` |
+| `PUT` | `/me/preferencias` | Atualiza preferências de cobrança (hoje `cobrarFaltas` — consultas FALTA entram na cobrança?). Aba Configurações. | `200` · `400` · `401` |
 | `PUT` | `/me/senha` | Altera a senha (exige `senhaAtual` + `novaSenha` com `@SenhaValida`) | `204` · `400` senha atual incorreta ou nova inválida · `401` |
+| `POST` | `/me/renovar-sessao` | Re-emite o token recalculando a situação de cobrança (botão "já paguei" da Assinatura). Liberado em sessão restrita. | `200` · `401` |
 | `GET` | `/me/assinatura` | Assinatura do psicólogo autenticado (somente leitura): dia de fechamento, contratos, faturas com rateio e prévias do ciclo corrente/próximo. Escopo sempre do token. | `200` · `401` |
 
 ### Admin · `/admin/**` (exclusivo de administradores)

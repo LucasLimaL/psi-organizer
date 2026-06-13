@@ -13,7 +13,7 @@ import AdminPage from './pages/AdminPage'
 import AdminPsicologoDetalhePage from './pages/AdminPsicologoDetalhePage'
 import AssinaturaPage from './pages/AssinaturaPage'
 import PerfilPage from './pages/PerfilPage'
-import ConfiguracoesWhatsappPage from './pages/ConfiguracoesWhatsappPage'
+import ConfiguracoesPage from './pages/ConfiguracoesPage'
 import HistoricoWhatsappPage from './pages/HistoricoWhatsappPage'
 
 function App() {
@@ -33,7 +33,9 @@ function App() {
           <Route path="/admin/psicologos/:id" element={<AdminPsicologoDetalhePage />} />
           <Route path="/assinatura" element={<AssinaturaPage />} />
           <Route path="/perfil" element={<PerfilPage />} />
-          <Route path="/configuracoes/whatsapp" element={<ConfiguracoesWhatsappPage />} />
+          <Route path="/configuracoes" element={<ConfiguracoesPage />} />
+          {/* rota antiga da aba WhatsApp → agora é uma seção dentro de Configurações */}
+          <Route path="/configuracoes/whatsapp" element={<Navigate to="/configuracoes" replace />} />
           <Route path="/configuracoes/whatsapp/historico" element={<HistoricoWhatsappPage />} />
         </Route>
       </Route>

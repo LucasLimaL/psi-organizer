@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import {
   Stack, Box, Paper, Typography, TextField, Button, Alert, Avatar,
-  Grid, Divider, Skeleton, InputAdornment, Snackbar, Switch, FormControlLabel,
+  Grid, Divider, Skeleton, InputAdornment, Snackbar,
 } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import LockIcon from '@mui/icons-material/LockOutlined'
@@ -54,7 +54,6 @@ export default function PerfilPage() {
       crp: p.crp,
       telefone: formatarTelefoneBr(p.telefone),
       endereco: { ...p.endereco, complemento: p.endereco.complemento ?? '' },
-      cobrarFaltas: p.cobrarFaltas,
     }
     setForm(inicial)
     setBaseline(inicial)
@@ -237,35 +236,6 @@ export default function PerfilPage() {
             <EnderecoForm
               value={form.endereco as EnderecoFormValor}
               onChange={endereco => setCampo('endereco', endereco)}
-            />
-          </Secao>
-
-          <Divider />
-
-          <Secao
-            titulo="Cobrança"
-            descricao="Personalize como o financeiro trata suas consultas"
-          >
-            <FormControlLabel
-              control={(
-                <Switch
-                  checked={form.cobrarFaltas}
-                  onChange={e => setCampo('cobrarFaltas', e.target.checked)}
-                />
-              )}
-              label={(
-                <Box>
-                  <Typography variant="body2">
-                    Cobrar consultas com falta
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Quando ativado, consultas marcadas como Falta entram no financeiro
-                    como pagamento pendente. Faltas que você já recebeu continuam
-                    contando mesmo com a opção desativada.
-                  </Typography>
-                </Box>
-              )}
-              sx={{ alignItems: 'flex-start', ml: 0, gap: 1 }}
             />
           </Secao>
 

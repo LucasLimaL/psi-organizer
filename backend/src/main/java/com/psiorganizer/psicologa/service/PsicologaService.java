@@ -91,13 +91,14 @@ public class PsicologaService {
     }
 
     /**
-     * Preferências de cobrança/uso — editadas na aba Configurações, separadas do
-     * perfil. Hoje só {@code cobrarFaltas}; ponto de extensão pra futuras opções.
+     * Preferências de uso — editadas na aba Configurações, separadas do perfil:
+     * cobrança de faltas e duração padrão das consultas.
      */
     @Transactional
-    public Psicologa atualizarPreferencias(UUID id, boolean cobrarFaltas) {
+    public Psicologa atualizarPreferencias(UUID id, boolean cobrarFaltas, int duracaoPadraoMinutos) {
         Psicologa p = buscarPorId(id);
         p.setCobrarFaltas(cobrarFaltas);
+        p.setDuracaoPadraoMinutos(duracaoPadraoMinutos);
         return repository.save(p);
     }
 }

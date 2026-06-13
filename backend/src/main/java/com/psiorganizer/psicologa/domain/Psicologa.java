@@ -65,6 +65,13 @@ public class Psicologa {
     @Column(name = "cobrar_faltas", nullable = false)
     private boolean cobrarFaltas = true;
 
+    /**
+     * Duração padrão (minutos) que pré-preenche o formulário de nova consulta.
+     * A psicóloga pode alterar na hora. Editável em Configurações.
+     */
+    @Column(name = "duracao_padrao_minutos", nullable = false)
+    private int duracaoPadraoMinutos = 50;
+
     /** Conta só loga depois de validar o e-mail. Contas pré-existentes nascem validadas (V10). */
     @Column(name = "email_validado", nullable = false)
     private boolean emailValidado;
@@ -126,6 +133,9 @@ public class Psicologa {
 
     public boolean isCobrarFaltas() { return cobrarFaltas; }
     public void setCobrarFaltas(boolean c) { this.cobrarFaltas = c; }
+
+    public int getDuracaoPadraoMinutos() { return duracaoPadraoMinutos; }
+    public void setDuracaoPadraoMinutos(int d) { this.duracaoPadraoMinutos = d; }
 
     public boolean isEmailValidado() { return emailValidado; }
     public void setEmailValidado(boolean v) { this.emailValidado = v; }

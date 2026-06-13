@@ -59,7 +59,9 @@ public class SeedDataRunner implements ApplicationRunner {
         @Override
         @Transactional
         public void run(ApplicationArguments args) {
-                if (psicologaRepo.count() > 0) {
+                // Ignora contas admin: a migração inicial sempre insere o admin do dono,
+                // então count() > 0 nunca detectaria banco recém-criado.
+                if (psicologaRepo.existsByAdminFalse()) {
                         log.info("Seed: banco já populado, pulando.");
                         return;
                 }

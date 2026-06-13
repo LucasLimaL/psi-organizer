@@ -16,6 +16,7 @@ public interface PsicologaRepository extends JpaRepository<Psicologa, UUID> {
     Optional<Psicologa> findByValidacaoTokenHash(String validacaoTokenHash);
     boolean existsByEmail(String email);
     boolean existsByCpf(String cpf);
+    boolean existsByAdminFalse();
 
     /**
      * Lista do painel admin — busca por nome ou e-mail, mais recentes primeiro.

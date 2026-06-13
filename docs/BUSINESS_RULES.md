@@ -21,10 +21,10 @@ Todas as regras enforced pelo sistema, em um único lugar. Cada regra cita onde 
 | Regra | Onde |
 |---|---|
 | Signup cria a conta **não validada** e envia link de ativação por e-mail; **sem validar, não loga** (`401`, `motivo: EMAIL_NAO_VALIDADO`, checado após a senha pra não revelar estado de conta) | `AuthController.signup` + `AuthService.autenticar` |
-| Token de validação: 32 bytes aleatórios, validade **24h**, banco guarda só o **SHA-256** (uso único — validar limpa o hash) | `ValidacaoEmailService` + V10 |
+| Token de validação: 32 bytes aleatórios, validade **24h**, banco guarda só o **SHA-256** (uso único — validar limpa o hash) | `ValidacaoEmailService` + `V1__schema_inicial.sql` |
 | Reenvio em `/auth/reenviar-validacao` é silencioso (`202` sempre) e regenera o token, invalidando o anterior | `ValidacaoEmailService.reenviar` |
 | E-mails em `psi.auth.emails-pre-validados` (CSV; default `claude-audit@psi.com`, tenant da auditoria noturna) nascem validados no signup e recebem JWT direto | `ValidacaoEmailService.preValidado` |
-| Contas pré-existentes à V10 e contas do seed nascem validadas | `V10__psicologa_validacao_email.sql` · `SeedDataRunner` |
+| Contas do seed e o admin da migração nascem validados | `V1__schema_inicial.sql` · `SeedDataRunner` |
 | Envio: `psi.email.modo=smtp` (Gmail, ver [runbooks/EMAIL.md](runbooks/EMAIL.md)) ou `log` (default dev — escreve o link no log) | `SmtpEmailValidacaoSender` / `LogEmailValidacaoSender` |
 
 ---
@@ -170,7 +170,7 @@ A UI reforça a regra com o `InativarPacienteDialog` (Alert outlined warning exp
 ### Pago vs faturamento
 
 - `consulta.pago` é boolean, independente do status.
-- `consulta.pago_em` registra o instante da transição não-pago → pago (`ConsultaService.atualizar`). Desmarcar como pago **limpa** a data. Consultas pagas antes da migração V5 têm `pago_em = NULL` (data real desconhecida).
+- `consulta.pago_em` registra o instante da transição não-pago → pago (`ConsultaService.atualizar`). Desmarcar como pago **limpa** a data.
 - **Cobrável** = `status REALIZADA`, ou `FALTA` quando a psicóloga cobra faltas (preferência `cobrarFaltas` do perfil, default ligada). Exceção: **FALTA já paga conta sempre** — desligar a preferência não remove das somas dinheiro já recebido. Regra única usada pelo dashboard e pelo financeiro (`DashboardService.cobravel`, `FinanceiroRepository`).
   - `faturamentoRealizado` = soma de `valor` onde cobrável
   - `faturamentoPago` = soma onde cobrável `AND pago = true`
@@ -226,8 +226,8 @@ A UI reforça a regra com o `InativarPacienteDialog` (Alert outlined warning exp
 
 | Regra | Onde |
 |---|---|
-| `admin` é flag em `psicologa` — **nunca** setada via signup; nasce apenas via migração ou SQL manual | `V6__admin_contratos_mensalidades.sql` · `AuthController.signup` gera token com `admin=false` |
-| Usuário admin do dono do sistema (`lucas_221910@hotmail.com`) é **garantido em qualquer ambiente** pela V6 (idempotente via `WHERE NOT EXISTS`); CPF placeholder `00000000000` nunca colide com cadastro real (signup valida dígito verificador) | `V6__admin_contratos_mensalidades.sql` |
+| `admin` é flag em `psicologa` — **nunca** setada via signup; nasce apenas via migração ou SQL manual | `V1__schema_inicial.sql` · `AuthController.signup` gera token com `admin=false` |
+| Usuário admin do dono do sistema (`lucas_221910@hotmail.com`) é **garantido em qualquer ambiente** pela migração inicial (idempotente via `WHERE NOT EXISTS`); CPF placeholder `00000000000` nunca colide com cadastro real (signup valida dígito verificador) | `V1__schema_inicial.sql` |
 | Endpoints `/admin/**` revalidam a flag `admin` **no banco** a cada chamada — não-admin → `403` | `AdminService.exigirAdmin` |
 | Admin enxerga **apenas dados cadastrais e contratuais** das psicólogas — dados clínicos (pacientes, consultas) ficam fora por princípio LGPD | escopo do `AdminService`/DTOs |
 | **Bloqueio** vale a partir do **próximo login** (`401` com mensagem específica); token vigente expira sozinho em até 24h. Decisão consciente: evita query por request no filtro JWT. | `AuthService.autenticar` |

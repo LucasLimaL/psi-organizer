@@ -3,10 +3,10 @@ package com.psiorganizer.whatsapp.dto;
 import java.time.Instant;
 import java.util.UUID;
 
-import com.psiorganizer.whatsapp.EscolhaLembrete;
-import com.psiorganizer.whatsapp.EtapaLembrete;
-import com.psiorganizer.whatsapp.LembreteEnviado;
-import com.psiorganizer.whatsapp.StatusEntrega;
+import com.psiorganizer.whatsapp.domain.EscolhaLembrete;
+import com.psiorganizer.whatsapp.domain.EtapaLembrete;
+import com.psiorganizer.whatsapp.domain.LembreteEnviado;
+import com.psiorganizer.whatsapp.domain.StatusEntrega;
 
 public record LembreteResponse(
         UUID id,

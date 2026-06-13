@@ -1,4 +1,4 @@
-package com.psiorganizer.whatsapp;
+package com.psiorganizer.whatsapp.service;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -15,6 +15,10 @@ import com.psiorganizer.consulta.domain.Consulta;
 import com.psiorganizer.consulta.repository.ConsultaRepository;
 import com.psiorganizer.paciente.domain.Paciente;
 import com.psiorganizer.paciente.repository.PacienteRepository;
+import com.psiorganizer.whatsapp.domain.EtapaLembrete;
+import com.psiorganizer.whatsapp.domain.LembreteEnviado;
+import com.psiorganizer.whatsapp.domain.StatusEntrega;
+import com.psiorganizer.whatsapp.repository.LembreteEnviadoRepository;
 
 /**
  * Consultas paginadas de lembretes pra auditoria. Spec §3.2 /me/whatsapp/lembretes.

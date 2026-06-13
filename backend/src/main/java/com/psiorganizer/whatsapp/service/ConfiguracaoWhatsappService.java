@@ -1,4 +1,4 @@
-package com.psiorganizer.whatsapp;
+package com.psiorganizer.whatsapp.service;
 
 import java.time.LocalTime;
 import java.util.List;
@@ -11,6 +11,8 @@ import com.psiorganizer.common.exception.ApiException;
 import com.psiorganizer.whatsapp.client.EnvioResultado;
 import com.psiorganizer.whatsapp.client.WhatsappClient;
 import com.psiorganizer.whatsapp.client.WhatsappException;
+import com.psiorganizer.whatsapp.domain.ConfiguracaoWhatsapp;
+import com.psiorganizer.whatsapp.repository.ConfiguracaoWhatsappRepository;
 
 @Service
 public class ConfiguracaoWhatsappService {

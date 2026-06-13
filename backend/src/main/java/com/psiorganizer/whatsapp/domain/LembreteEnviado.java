@@ -1,4 +1,4 @@
-package com.psiorganizer.whatsapp;
+package com.psiorganizer.whatsapp.domain;
 
 import java.time.Instant;
 import java.util.UUID;

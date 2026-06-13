@@ -1,4 +1,4 @@
-package com.psiorganizer.whatsapp;
+package com.psiorganizer.whatsapp.service;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -17,6 +17,12 @@ import com.psiorganizer.paciente.domain.Paciente;
 import com.psiorganizer.psicologa.domain.Psicologa;
 import com.psiorganizer.whatsapp.client.EnvioResultado;
 import com.psiorganizer.whatsapp.client.WhatsappException;
+import com.psiorganizer.whatsapp.domain.EscolhaLembrete;
+import com.psiorganizer.whatsapp.domain.EtapaLembrete;
+import com.psiorganizer.whatsapp.domain.LembreteEnviado;
+import com.psiorganizer.whatsapp.domain.StatusEntrega;
+import com.psiorganizer.whatsapp.domain.WhatsappMetricas;
+import com.psiorganizer.whatsapp.repository.LembreteEnviadoRepository;
 
 /**
  * State machine de 5 estados que reage a botões clicados pela paciente. Spec §5.4.

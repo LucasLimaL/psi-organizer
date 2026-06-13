@@ -20,15 +20,17 @@ psi-organizer/
 ├── backend/                   ← Spring Boot
 │   ├── pom.xml
 │   └── src/main/java/com/psiorganizer/
-│       ├── auth/              ← signup, login, JWT
+│       │  (cada domínio: controller/ service/ repository/ domain/ dto/)
+│       ├── admin/             ← gestão SaaS: contratos, faturas, bloqueio
+│       ├── auth/              ← signup, login, JWT, validação de e-mail (+ email/)
 │       ├── consulta/          ← agenda + recorrência + dashboard helpers
 │       ├── dashboard/         ← /dashboard
 │       ├── financeiro/        ← resumo, pendentes por paciente, listas paginadas
 │       ├── notificacao/       ← notificações in-app
 │       ├── paciente/          ← CRUD + soft delete + histórico
 │       ├── psicologa/         ← perfil + GET/PUT /me
-│       ├── whatsapp/          ← lembretes: scheduler + tick, webhook, configuração
-│       ├── common/            ← Endereco embeddable, validators, exceptions
+│       ├── whatsapp/          ← lembretes: scheduler + tick, webhook, configuração (+ client/)
+│       ├── common/            ← Endereco embeddable, validators, security, observability, exceptions
 │       └── config/            ← Security, JWT filter, OpenAPI, Seed
 ├── frontend/                  ← React SPA
 │   └── src/

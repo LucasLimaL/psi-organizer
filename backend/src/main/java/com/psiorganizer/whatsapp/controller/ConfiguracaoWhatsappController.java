@@ -1,4 +1,4 @@
-package com.psiorganizer.whatsapp;
+package com.psiorganizer.whatsapp.controller;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -19,12 +19,17 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.psiorganizer.common.Fusos;
 import com.psiorganizer.common.security.PsicologaPrincipal;
+import com.psiorganizer.whatsapp.domain.ConfiguracaoWhatsapp;
+import com.psiorganizer.whatsapp.domain.EtapaLembrete;
+import com.psiorganizer.whatsapp.domain.StatusEntrega;
 import com.psiorganizer.whatsapp.dto.AtualizarConfiguracaoWhatsappRequest;
 import com.psiorganizer.whatsapp.dto.ConfiguracaoWhatsappResponse;
 import com.psiorganizer.whatsapp.dto.EnviarTesteRequest;
 import com.psiorganizer.whatsapp.dto.EnviarTesteResponse;
 import com.psiorganizer.whatsapp.dto.LembreteResponse;
 import com.psiorganizer.whatsapp.dto.LembretesEnvelope;
+import com.psiorganizer.whatsapp.service.ConfiguracaoWhatsappService;
+import com.psiorganizer.whatsapp.service.HistoricoLembretesService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

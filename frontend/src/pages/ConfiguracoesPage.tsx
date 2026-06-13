@@ -1,18 +1,23 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   Alert, Box, Button, Divider, FormControlLabel, Paper, Skeleton, Snackbar,
-  Stack, Switch, Typography,
+  Stack, Switch, TextField, Typography,
 } from '@mui/material'
 import { perfilApi } from '../api/perfil'
+import { useAuth } from '../auth/authContext'
 import ConfiguracaoWhatsappSection from '../components/ConfiguracaoWhatsappSection'
 
 /**
- * Aba Configurações — reúne as preferências do psicólogo: cobrança (cobrarFaltas)
- * e os lembretes via WhatsApp. Cada seção salva de forma independente.
+ * Aba Configurações — reúne as preferências do psicólogo: cobrança (cobrarFaltas),
+ * duração padrão das consultas e os lembretes via WhatsApp. As preferências
+ * (cobrança + consultas) salvam juntas; o WhatsApp tem seu próprio salvar.
  */
 export default function ConfiguracoesPage() {
+  const { atualizarPsicologa } = useAuth()
   const [cobrarFaltas, setCobrarFaltas] = useState<boolean | null>(null)
-  const [baseline, setBaseline] = useState<boolean | null>(null)
+  const [duracao, setDuracao] = useState<number>(50)
+  const [baseCobrar, setBaseCobrar] = useState<boolean | null>(null)
+  const [baseDuracao, setBaseDuracao] = useState<number>(50)
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [salvo, setSalvo] = useState(false)
@@ -20,21 +25,35 @@ export default function ConfiguracoesPage() {
   const carregar = useCallback(async () => {
     const p = await perfilApi.buscar()
     setCobrarFaltas(p.cobrarFaltas)
-    setBaseline(p.cobrarFaltas)
+    setBaseCobrar(p.cobrarFaltas)
+    setDuracao(p.duracaoPadraoMinutos)
+    setBaseDuracao(p.duracaoPadraoMinutos)
   }, [])
 
   useEffect(() => { void carregar() }, [carregar])
 
-  const dirty = cobrarFaltas !== null && cobrarFaltas !== baseline
+  const duracaoValida = Number.isInteger(duracao) && duracao >= 5 && duracao <= 600
+  const dirty = cobrarFaltas !== null
+    && (cobrarFaltas !== baseCobrar || duracao !== baseDuracao)
 
-  async function salvarCobranca() {
-    if (cobrarFaltas === null) return
+  async function salvar() {
+    if (cobrarFaltas === null || !duracaoValida) return
     setErro(null)
     setSalvando(true)
     try {
-      const p = await perfilApi.atualizarPreferencias({ cobrarFaltas })
-      setBaseline(p.cobrarFaltas)
+      const p = await perfilApi.atualizarPreferencias({
+        cobrarFaltas, duracaoPadraoMinutos: duracao,
+      })
       setCobrarFaltas(p.cobrarFaltas)
+      setBaseCobrar(p.cobrarFaltas)
+      setDuracao(p.duracaoPadraoMinutos)
+      setBaseDuracao(p.duracaoPadraoMinutos)
+      // Reflete no contexto pra o ConsultaDialog usar o novo padrão sem re-login.
+      atualizarPsicologa({
+        id: p.id, nomeCompleto: p.nomeCompleto, email: p.email, cpf: p.cpf,
+        crp: p.crp, telefone: p.telefone, admin: p.admin,
+        duracaoPadraoMinutos: p.duracaoPadraoMinutos,
+      })
       setSalvo(true)
     } catch (err) {
       const e = err as { erro?: string; detalhes?: Record<string, string> }
@@ -47,22 +66,21 @@ export default function ConfiguracoesPage() {
 
   return (
     <Stack spacing={3}>
-      {/* Cobrança */}
-      <Box>
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-          Cobrança
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          Personalize como o financeiro trata suas consultas.
-        </Typography>
-      </Box>
-
       {erro && <Alert severity="error" onClose={() => setErro(null)}>{erro}</Alert>}
 
       {cobrarFaltas === null ? (
-        <Skeleton variant="rounded" height={120} />
+        <Skeleton variant="rounded" height={240} />
       ) : (
         <>
+          {/* Cobrança */}
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              Cobrança
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Personalize como o financeiro trata suas consultas.
+            </Typography>
+          </Box>
           <Paper variant="outlined" sx={{ p: 3 }}>
             <FormControlLabel
               control={(
@@ -86,11 +104,36 @@ export default function ConfiguracoesPage() {
               sx={{ alignItems: 'flex-start', ml: 0, gap: 1 }}
             />
           </Paper>
+
+          {/* Consultas */}
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              Consultas
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Padrões usados ao agendar.
+            </Typography>
+          </Box>
+          <Paper variant="outlined" sx={{ p: 3 }}>
+            <TextField
+              type="number"
+              label="Duração padrão (min)"
+              value={duracao}
+              onChange={e => setDuracao(Number(e.target.value))}
+              error={!duracaoValida}
+              helperText={duracaoValida
+                ? 'Pré-preenche a duração ao criar uma consulta — você pode alterar na hora.'
+                : 'Informe um valor entre 5 e 600 minutos.'}
+              slotProps={{ htmlInput: { min: 5, max: 600, step: 5 } }}
+              sx={{ maxWidth: 260 }}
+            />
+          </Paper>
+
           <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
             <Button
               variant="contained"
-              onClick={() => void salvarCobranca()}
-              disabled={salvando || !dirty}
+              onClick={() => void salvar()}
+              disabled={salvando || !dirty || !duracaoValida}
             >
               {salvando ? 'Salvando…' : 'Salvar'}
             </Button>
@@ -110,7 +153,7 @@ export default function ConfiguracoesPage() {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert severity="success" variant="filled" sx={{ width: '100%' }}>
-          Preferência de cobrança salva
+          Preferências salvas
         </Alert>
       </Snackbar>
     </Stack>

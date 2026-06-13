@@ -20,6 +20,8 @@ export type PerfilCompleto = Psicologa & {
   cobrarFaltas: boolean
 }
 
+// (duracaoPadraoMinutos já vem de Psicologa)
+
 export type AtualizarPerfilInput = {
   nomeCompleto: string
   crp: string
@@ -27,9 +29,10 @@ export type AtualizarPerfilInput = {
   endereco: Endereco
 }
 
-/** Preferências de cobrança — editadas na aba Configurações (separadas do perfil). */
+/** Preferências editadas na aba Configurações (separadas do perfil). */
 export type AtualizarPreferenciasInput = {
   cobrarFaltas: boolean
+  duracaoPadraoMinutos: number
 }
 
 export type AlterarSenhaInput = {

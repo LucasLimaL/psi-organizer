@@ -57,11 +57,12 @@ public class PerfilController {
     }
 
     @PutMapping("/preferencias")
-    @Operation(summary = "Atualiza as preferências de cobrança do psicólogo autenticado "
-            + "(hoje: cobrarFaltas) — usado pela aba Configurações.")
+    @Operation(summary = "Atualiza as preferências do psicólogo autenticado "
+            + "(cobrarFaltas e duracaoPadraoMinutos) — usado pela aba Configurações.")
     public PsicologaResponse atualizarPreferencias(@Valid @RequestBody AtualizarPreferenciasRequest req) {
         var principal = PsicologaPrincipal.corrente();
-        var atualizada = psicologaService.atualizarPreferencias(principal.id(), req.cobrarFaltas());
+        var atualizada = psicologaService.atualizarPreferencias(
+                principal.id(), req.cobrarFaltas(), req.duracaoPadraoMinutos());
         return PsicologaResponse.fromDomain(atualizada);
     }
 

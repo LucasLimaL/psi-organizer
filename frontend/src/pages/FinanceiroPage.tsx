@@ -101,38 +101,42 @@ export default function FinanceiroPage() {
           <ToggleButton value="ano">Ano</ToggleButton>
         </ToggleButtonGroup>
 
-        {modo === 'mes' ? (
-          <Paper
-            variant="outlined"
-            sx={{
-              display: 'flex', alignItems: 'center',
-              border: `1px solid ${theme.palette.divider}`, boxShadow: 'none',
-              borderRadius: 999, p: 0.25,
-            }}
-          >
-            <Tooltip title="Mês anterior">
-              <IconButton size="small" aria-label="Mês anterior" onClick={() => pularMes(-1)}>
-                <ChevronLeftIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Próximo mês">
-              <IconButton size="small" aria-label="Próximo mês" onClick={() => pularMes(1)}>
-                <ChevronRightIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Paper>
-        ) : (
-          <TextField
-            select
-            size="small"
-            label="Ano"
-            value={anoSel}
-            onChange={e => setAnoSel(Number(e.target.value))}
-            sx={{ minWidth: 110 }}
-          >
-            {anos.map(a => <MenuItem key={a} value={a}>{a}</MenuItem>)}
-          </TextField>
-        )}
+        {/* Largura fixa: o controle de período (chevrons no Mês, select no Ano) tem
+            larguras diferentes; reservar o espaço mantém o toggle Mês/Ano parado. */}
+        <Box sx={{ width: 132, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+          {modo === 'mes' ? (
+            <Paper
+              variant="outlined"
+              sx={{
+                display: 'flex', alignItems: 'center',
+                border: `1px solid ${theme.palette.divider}`, boxShadow: 'none',
+                borderRadius: 999, p: 0.25,
+              }}
+            >
+              <Tooltip title="Mês anterior">
+                <IconButton size="small" aria-label="Mês anterior" onClick={() => pularMes(-1)}>
+                  <ChevronLeftIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Próximo mês">
+                <IconButton size="small" aria-label="Próximo mês" onClick={() => pularMes(1)}>
+                  <ChevronRightIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Paper>
+          ) : (
+            <TextField
+              select
+              size="small"
+              label="Ano"
+              value={anoSel}
+              onChange={e => setAnoSel(Number(e.target.value))}
+              fullWidth
+            >
+              {anos.map(a => <MenuItem key={a} value={a}>{a}</MenuItem>)}
+            </TextField>
+          )}
+        </Box>
       </Stack>
 
       {/* Banner fixo: pendências anteriores ao período */}

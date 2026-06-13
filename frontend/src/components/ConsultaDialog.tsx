@@ -10,6 +10,7 @@ import type {
 import { consultasApi } from '../api/consultas'
 import type { Paciente } from '../api/pacientes'
 import { pacientesApi } from '../api/pacientes'
+import { useAuth } from '../auth/authContext'
 import { toDatetimeLocal, fromDatetimeLocal } from '../utils/datas'
 import { useDirty } from '../hooks/useDirty'
 import { sxInputSemSpinner } from '../theme/sx'
@@ -57,6 +58,8 @@ function horarioDaData(d: Date): string {
 export default function ConsultaDialog({
   aberto, consulta, inicioPadrao, pacientePadraoId, onFechar, onSalvo,
 }: Props) {
+  const { psicologa } = useAuth()
+  const duracaoPadrao = psicologa?.duracaoPadraoMinutos ?? 50
   const editando = consulta !== null
   const [pacientes, setPacientes] = useState<Paciente[]>([])
   const [pacienteId, setPacienteId] = useState('')
@@ -112,7 +115,7 @@ export default function ConsultaDialog({
       proximo = {
         pacienteId: pacientePadraoId ?? '',
         inicio: toDatetimeLocal(base),
-        duracaoMinutos: 50,
+        duracaoMinutos: duracaoPadrao,
         valor: 0,
         status: 'AGENDADA' as StatusConsulta,
         pago: false,

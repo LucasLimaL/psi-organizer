@@ -9,6 +9,8 @@ export type Psicologa = {
   telefone: string
   /** Conta de gestão do SaaS — habilita o painel /admin. */
   admin: boolean
+  /** Duração (min) que pré-preenche o formulário de nova consulta. Editável em Configurações. */
+  duracaoPadraoMinutos: number
   /**
    * Sessão restrita por inadimplência: só a tela de Assinatura fica acessível.
    * Vem do topo do LoginResponse (não do PsicologaResponse) e é dobrado aqui pra

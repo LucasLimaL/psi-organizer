@@ -82,6 +82,7 @@ export default function PerfilPage() {
         crp: atualizado.crp,
         telefone: atualizado.telefone,
         admin: atualizado.admin,
+        duracaoPadraoMinutos: atualizado.duracaoPadraoMinutos,
       })
       // Baseline vira o estado pós-save → botão desabilita até a próxima edição
       setBaseline(form)

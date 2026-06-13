@@ -14,7 +14,8 @@ public record PsicologaResponse(
         EnderecoDto endereco,
         boolean admin,
         int diaFechamento,
-        boolean cobrarFaltas
+        boolean cobrarFaltas,
+        int duracaoPadraoMinutos
 ) {
     public static PsicologaResponse fromDomain(Psicologa p) {
         return new PsicologaResponse(
@@ -27,6 +28,7 @@ public record PsicologaResponse(
                 EnderecoDto.fromDomain(p.getEndereco()),
                 p.isAdmin(),
                 p.getDiaFechamento(),
-                p.isCobrarFaltas());
+                p.isCobrarFaltas(),
+                p.getDuracaoPadraoMinutos());
     }
 }

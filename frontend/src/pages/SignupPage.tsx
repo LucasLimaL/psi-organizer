@@ -61,6 +61,7 @@ export default function SignupPage() {
   const { signup } = useAuth()
   const navigate = useNavigate()
   const [form, setForm] = useState<Form>(inicial)
+  const [confirmarSenha, setConfirmarSenha] = useState('')
   const [mostrarSenha, setMostrarSenha] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
@@ -71,9 +72,15 @@ export default function SignupPage() {
     setForm(f => ({ ...f, [k]: v }))
   }
 
+  const senhasDivergem = confirmarSenha !== '' && confirmarSenha !== form.senha
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
     setErro(null)
+    if (form.senha !== confirmarSenha) {
+      setErro('As senhas não conferem — digite a mesma senha nos dois campos')
+      return
+    }
     setEnviando(true)
     try {
       const payload = {
@@ -153,7 +160,7 @@ export default function SignupPage() {
                          value={form.nomeCompleto}
                          onChange={e => set('nomeCompleto', e.target.value)} />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
+            <Grid size={12}>
               <TextField fullWidth label="E-mail" type="email" required
                          autoComplete="email"
                          value={form.email} onChange={e => set('email', e.target.value)} />
@@ -183,6 +190,19 @@ export default function SignupPage() {
                     ),
                   },
                 }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                fullWidth
+                label="Confirmar senha"
+                type={mostrarSenha ? 'text' : 'password'}
+                autoComplete="new-password"
+                required
+                error={senhasDivergem}
+                helperText={senhasDivergem ? 'As senhas não conferem' : 'Digite a mesma senha novamente'}
+                value={confirmarSenha}
+                onChange={e => setConfirmarSenha(e.target.value)}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>

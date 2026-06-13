@@ -1,4 +1,4 @@
-package com.psiorganizer.admin;
+package com.psiorganizer.admin.service;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -9,10 +9,15 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.psiorganizer.admin.domain.Fatura;
+import com.psiorganizer.admin.domain.FaturaItem;
 import com.psiorganizer.admin.dto.AssinaturaResponse;
 import com.psiorganizer.admin.dto.ContratoResponse;
 import com.psiorganizer.admin.dto.FaturaResponse;
 import com.psiorganizer.admin.dto.PreviaFaturaResponse;
+import com.psiorganizer.admin.repository.ContratoRepository;
+import com.psiorganizer.admin.repository.FaturaItemRepository;
+import com.psiorganizer.admin.repository.FaturaRepository;
 import com.psiorganizer.common.Fusos;
 import com.psiorganizer.common.exception.ApiException;
 import com.psiorganizer.psicologa.domain.Psicologa;

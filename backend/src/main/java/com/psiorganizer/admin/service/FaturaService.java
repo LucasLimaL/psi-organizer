@@ -1,4 +1,4 @@
-package com.psiorganizer.admin;
+package com.psiorganizer.admin.service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -12,6 +12,13 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.psiorganizer.admin.domain.Ciclos;
+import com.psiorganizer.admin.domain.Contrato;
+import com.psiorganizer.admin.domain.Fatura;
+import com.psiorganizer.admin.domain.FaturaItem;
+import com.psiorganizer.admin.repository.ContratoRepository;
+import com.psiorganizer.admin.repository.FaturaItemRepository;
+import com.psiorganizer.admin.repository.FaturaRepository;
 import com.psiorganizer.common.Fusos;
 import com.psiorganizer.psicologa.domain.Psicologa;
 import com.psiorganizer.psicologa.repository.PsicologaRepository;

@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
-import com.psiorganizer.admin.Contrato;
+import com.psiorganizer.admin.domain.Contrato;
 
 /** Sem flag de estado — vigência derivada das datas (null = indeterminado). */
 public record ContratoResponse(

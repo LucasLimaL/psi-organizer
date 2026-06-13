@@ -1,4 +1,4 @@
-package com.psiorganizer.admin;
+package com.psiorganizer.admin.domain;
 
 import java.math.BigDecimal;
 import java.util.UUID;

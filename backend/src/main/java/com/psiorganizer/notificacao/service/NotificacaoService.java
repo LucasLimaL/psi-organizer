@@ -1,4 +1,4 @@
-package com.psiorganizer.notificacao;
+package com.psiorganizer.notificacao.service;
 
 import java.util.List;
 import java.util.UUID;
@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.psiorganizer.common.exception.ApiException;
+import com.psiorganizer.notificacao.domain.Notificacao;
+import com.psiorganizer.notificacao.repository.NotificacaoRepository;
 
 @Service
 public class NotificacaoService {

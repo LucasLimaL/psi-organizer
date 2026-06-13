@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-import com.psiorganizer.admin.FaturaService;
+import com.psiorganizer.admin.service.FaturaService;
 
 /** Ciclo ainda não fechado (corrente/próximo) — projeção calculada, não persiste. */
 public record PreviaFaturaResponse(

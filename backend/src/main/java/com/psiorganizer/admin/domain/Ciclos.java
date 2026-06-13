@@ -1,4 +1,4 @@
-package com.psiorganizer.admin;
+package com.psiorganizer.admin.domain;
 
 import java.time.LocalDate;
 import java.time.YearMonth;

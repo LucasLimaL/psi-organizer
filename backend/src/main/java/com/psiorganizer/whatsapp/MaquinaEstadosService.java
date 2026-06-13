@@ -12,7 +12,7 @@ import com.psiorganizer.consulta.domain.Consulta;
 import com.psiorganizer.consulta.domain.StatusConfirmacao;
 import com.psiorganizer.consulta.domain.StatusConsulta;
 import com.psiorganizer.consulta.repository.ConsultaRepository;
-import com.psiorganizer.notificacao.NotificacaoService;
+import com.psiorganizer.notificacao.service.NotificacaoService;
 import com.psiorganizer.paciente.domain.Paciente;
 import com.psiorganizer.psicologa.domain.Psicologa;
 import com.psiorganizer.whatsapp.client.EnvioResultado;

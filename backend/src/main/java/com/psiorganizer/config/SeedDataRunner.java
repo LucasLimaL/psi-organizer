@@ -14,8 +14,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.psiorganizer.admin.Contrato;
-import com.psiorganizer.admin.ContratoRepository;
+import com.psiorganizer.admin.domain.Contrato;
+import com.psiorganizer.admin.repository.ContratoRepository;
 import com.psiorganizer.common.Endereco;
 import com.psiorganizer.common.Fusos;
 import com.psiorganizer.consulta.domain.Consulta;

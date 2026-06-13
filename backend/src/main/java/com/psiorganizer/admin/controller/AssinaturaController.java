@@ -1,4 +1,4 @@
-package com.psiorganizer.admin;
+package com.psiorganizer.admin.controller;
 
 import java.util.UUID;
 
@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.psiorganizer.admin.dto.AssinaturaResponse;
+import com.psiorganizer.admin.service.AssinaturaService;
 import com.psiorganizer.common.security.PsicologaPrincipal;
 
 import io.swagger.v3.oas.annotations.Operation;

@@ -6,8 +6,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-import com.psiorganizer.admin.Fatura;
-import com.psiorganizer.admin.FaturaItem;
+import com.psiorganizer.admin.domain.Fatura;
+import com.psiorganizer.admin.domain.FaturaItem;
 
 /** Status derivado: PAGA · VENCIDA (vencimento passou) · A_VENCER. */
 public record FaturaResponse(

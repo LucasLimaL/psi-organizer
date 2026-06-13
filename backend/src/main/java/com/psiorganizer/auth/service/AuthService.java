@@ -5,7 +5,7 @@ import java.util.Map;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.psiorganizer.admin.FaturaService;
+import com.psiorganizer.admin.service.FaturaService;
 import com.psiorganizer.common.exception.ApiException;
 import com.psiorganizer.psicologa.domain.Psicologa;
 import com.psiorganizer.psicologa.repository.PsicologaRepository;

@@ -1,4 +1,4 @@
-package com.psiorganizer.consulta;
+package com.psiorganizer.consulta.repository;
 
 import java.time.Instant;
 import java.util.List;
@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import com.psiorganizer.consulta.domain.Consulta;
 
 public interface ConsultaRepository extends JpaRepository<Consulta, UUID> {
 
@@ -40,8 +42,8 @@ public interface ConsultaRepository extends JpaRepository<Consulta, UUID> {
             delete from Consulta c
             where c.pacienteId = :pacienteId
               and c.inicio > :agora
-              and c.status in (com.psiorganizer.consulta.StatusConsulta.AGENDADA,
-                               com.psiorganizer.consulta.StatusConsulta.CONFIRMADA)
+              and c.status in (com.psiorganizer.consulta.domain.StatusConsulta.AGENDADA,
+                               com.psiorganizer.consulta.domain.StatusConsulta.CONFIRMADA)
             """)
     int apagarFuturasDoPaciente(@Param("pacienteId") UUID pacienteId,
                                 @Param("agora") Instant agora);
@@ -50,8 +52,8 @@ public interface ConsultaRepository extends JpaRepository<Consulta, UUID> {
             select c from Consulta c
             where c.psicologaId = :psicologaId
               and c.inicio >= :agora
-              and c.status in (com.psiorganizer.consulta.StatusConsulta.AGENDADA,
-                               com.psiorganizer.consulta.StatusConsulta.CONFIRMADA)
+              and c.status in (com.psiorganizer.consulta.domain.StatusConsulta.AGENDADA,
+                               com.psiorganizer.consulta.domain.StatusConsulta.CONFIRMADA)
             order by c.inicio asc
             """)
     List<Consulta> proximasConsultas(@Param("psicologaId") UUID psicologaId,
@@ -62,8 +64,8 @@ public interface ConsultaRepository extends JpaRepository<Consulta, UUID> {
             select count(c) from Consulta c
             where c.psicologaId = :psicologaId
               and c.inicio > :agora
-              and c.status in (com.psiorganizer.consulta.StatusConsulta.AGENDADA,
-                               com.psiorganizer.consulta.StatusConsulta.CONFIRMADA)
+              and c.status in (com.psiorganizer.consulta.domain.StatusConsulta.AGENDADA,
+                               com.psiorganizer.consulta.domain.StatusConsulta.CONFIRMADA)
             """)
     long contarFuturasAgendadas(@Param("psicologaId") UUID psicologaId,
                                 @Param("agora") Instant agora);
@@ -76,8 +78,8 @@ public interface ConsultaRepository extends JpaRepository<Consulta, UUID> {
             select c from Consulta c
             where c.psicologaId = :psicologaId
               and c.inicio < :agora
-              and c.status in (com.psiorganizer.consulta.StatusConsulta.AGENDADA,
-                               com.psiorganizer.consulta.StatusConsulta.CONFIRMADA)
+              and c.status in (com.psiorganizer.consulta.domain.StatusConsulta.AGENDADA,
+                               com.psiorganizer.consulta.domain.StatusConsulta.CONFIRMADA)
             order by c.inicio asc
             """)
     List<Consulta> aRevisar(@Param("psicologaId") UUID psicologaId,
@@ -88,8 +90,8 @@ public interface ConsultaRepository extends JpaRepository<Consulta, UUID> {
             select count(c) from Consulta c
             where c.psicologaId = :psicologaId
               and c.inicio < :agora
-              and c.status in (com.psiorganizer.consulta.StatusConsulta.AGENDADA,
-                               com.psiorganizer.consulta.StatusConsulta.CONFIRMADA)
+              and c.status in (com.psiorganizer.consulta.domain.StatusConsulta.AGENDADA,
+                               com.psiorganizer.consulta.domain.StatusConsulta.CONFIRMADA)
             """)
     long contarARevisar(@Param("psicologaId") UUID psicologaId,
                         @Param("agora") Instant agora);
@@ -140,9 +142,9 @@ public interface ConsultaRepository extends JpaRepository<Consulta, UUID> {
             where c.psicologaId = :psicologaId
               and c.inicio >= :amanhaInicio
               and c.inicio < :amanhaFim
-              and c.statusConfirmacao = com.psiorganizer.consulta.StatusConfirmacao.AGUARDANDO
-              and c.status in (com.psiorganizer.consulta.StatusConsulta.AGENDADA,
-                               com.psiorganizer.consulta.StatusConsulta.CONFIRMADA)
+              and c.statusConfirmacao = com.psiorganizer.consulta.domain.StatusConfirmacao.AGUARDANDO
+              and c.status in (com.psiorganizer.consulta.domain.StatusConsulta.AGENDADA,
+                               com.psiorganizer.consulta.domain.StatusConsulta.CONFIRMADA)
               and not exists (
                   select 1 from LembreteEnviado le where le.consultaId = c.id
               )
@@ -163,9 +165,9 @@ public interface ConsultaRepository extends JpaRepository<Consulta, UUID> {
               and c.inicio > :inicioMin
               and c.inicio <= :inicioMax
               and c.criadoEm > :criadoApos
-              and c.statusConfirmacao = com.psiorganizer.consulta.StatusConfirmacao.AGUARDANDO
-              and c.status in (com.psiorganizer.consulta.StatusConsulta.AGENDADA,
-                               com.psiorganizer.consulta.StatusConsulta.CONFIRMADA)
+              and c.statusConfirmacao = com.psiorganizer.consulta.domain.StatusConfirmacao.AGUARDANDO
+              and c.status in (com.psiorganizer.consulta.domain.StatusConsulta.AGENDADA,
+                               com.psiorganizer.consulta.domain.StatusConsulta.CONFIRMADA)
               and not exists (
                   select 1 from LembreteEnviado le where le.consultaId = c.id
               )

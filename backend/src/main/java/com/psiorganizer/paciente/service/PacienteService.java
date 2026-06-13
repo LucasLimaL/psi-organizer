@@ -1,4 +1,4 @@
-package com.psiorganizer.paciente;
+package com.psiorganizer.paciente.service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -12,7 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.psiorganizer.common.Endereco;
 import com.psiorganizer.common.exception.ApiException;
 import com.psiorganizer.common.validation.CpfUtil;
-import com.psiorganizer.consulta.ConsultaRepository;
+import com.psiorganizer.consulta.repository.ConsultaRepository;
+import com.psiorganizer.paciente.domain.Paciente;
+import com.psiorganizer.paciente.repository.PacienteRepository;
 
 @Service
 public class PacienteService {

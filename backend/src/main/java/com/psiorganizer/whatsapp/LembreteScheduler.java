@@ -12,8 +12,8 @@ import org.springframework.stereotype.Component;
 import com.psiorganizer.common.Fusos;
 import com.psiorganizer.common.observability.FlowLogger;
 import com.psiorganizer.common.observability.LogFields;
-import com.psiorganizer.consulta.Consulta;
-import com.psiorganizer.consulta.ConsultaRepository;
+import com.psiorganizer.consulta.domain.Consulta;
+import com.psiorganizer.consulta.repository.ConsultaRepository;
 
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 
@@ -42,14 +42,14 @@ public class LembreteScheduler {
     private final ConsultaRepository consultaRepo;
     private final LembreteEnvioService envioService;
     private final LembreteEnviadoRepository lembreteRepo;
-    private final com.psiorganizer.paciente.PacienteRepository pacienteRepo;
+    private final com.psiorganizer.paciente.repository.PacienteRepository pacienteRepo;
     private final WhatsappMetricas metricas;
 
     public LembreteScheduler(ConfiguracaoWhatsappRepository configRepo,
                              ConsultaRepository consultaRepo,
                              LembreteEnvioService envioService,
                              LembreteEnviadoRepository lembreteRepo,
-                             com.psiorganizer.paciente.PacienteRepository pacienteRepo,
+                             com.psiorganizer.paciente.repository.PacienteRepository pacienteRepo,
                              WhatsappMetricas metricas) {
         this.configRepo = configRepo;
         this.consultaRepo = consultaRepo;
@@ -123,7 +123,7 @@ public class LembreteScheduler {
                 continue;
             }
             if (le.getEscolhaInicial() == null) continue;
-            com.psiorganizer.paciente.Paciente paciente = pacienteRepo
+            com.psiorganizer.paciente.domain.Paciente paciente = pacienteRepo
                     .findById(consulta.getPacienteId()).orElse(null);
             if (paciente == null) {
                 metricas.estadoOrfao();

@@ -15,8 +15,8 @@ import com.psiorganizer.admin.dto.FaturaResponse;
 import com.psiorganizer.admin.dto.PreviaFaturaResponse;
 import com.psiorganizer.common.Fusos;
 import com.psiorganizer.common.exception.ApiException;
-import com.psiorganizer.psicologa.Psicologa;
-import com.psiorganizer.psicologa.PsicologaRepository;
+import com.psiorganizer.psicologa.domain.Psicologa;
+import com.psiorganizer.psicologa.repository.PsicologaRepository;
 
 /**
  * Assinatura self-service: o psicólogo autenticado consulta os PRÓPRIOS

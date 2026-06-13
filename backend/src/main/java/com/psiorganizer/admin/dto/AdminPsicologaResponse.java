@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
-import com.psiorganizer.psicologa.Psicologa;
+import com.psiorganizer.psicologa.domain.Psicologa;
 
 /**
  * Visão de gestão de conta no painel admin — dados cadastrais e contratuais,

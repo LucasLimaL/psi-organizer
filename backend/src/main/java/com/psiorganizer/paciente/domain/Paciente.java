@@ -1,4 +1,4 @@
-package com.psiorganizer.paciente;
+package com.psiorganizer.paciente.domain;
 
 import java.math.BigDecimal;
 import java.time.Instant;

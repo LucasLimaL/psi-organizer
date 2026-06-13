@@ -6,7 +6,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-import com.psiorganizer.consulta.StatusConsulta;
+import com.psiorganizer.consulta.domain.StatusConsulta;
 
 /**
  * Métricas agregadas para os widgets do dashboard.

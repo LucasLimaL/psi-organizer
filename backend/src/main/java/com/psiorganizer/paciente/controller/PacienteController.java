@@ -1,4 +1,4 @@
-package com.psiorganizer.paciente;
+package com.psiorganizer.paciente.controller;
 
 import java.util.List;
 import java.util.UUID;
@@ -12,10 +12,12 @@ import org.springframework.web.bind.annotation.*;
 
 import com.psiorganizer.common.observability.LogFields;
 import com.psiorganizer.common.security.PsicologaPrincipal;
-import com.psiorganizer.consulta.ConsultaService;
 import com.psiorganizer.consulta.dto.ConsultasPaginadoResponse;
+import com.psiorganizer.consulta.service.ConsultaService;
+import com.psiorganizer.paciente.domain.Paciente;
 import com.psiorganizer.paciente.dto.PacienteRequest;
 import com.psiorganizer.paciente.dto.PacienteResponse;
+import com.psiorganizer.paciente.service.PacienteService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

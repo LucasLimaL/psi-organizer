@@ -5,7 +5,7 @@ import java.time.Instant;
 
 import jakarta.validation.constraints.*;
 
-import com.psiorganizer.consulta.StatusConsulta;
+import com.psiorganizer.consulta.domain.StatusConsulta;
 
 public record ConsultaUpdateRequest(
         @NotNull Instant inicio,

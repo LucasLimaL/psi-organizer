@@ -1,4 +1,4 @@
-package com.psiorganizer.consulta;
+package com.psiorganizer.consulta.service;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -17,8 +17,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.psiorganizer.common.Fusos;
 import com.psiorganizer.common.exception.ApiException;
-import com.psiorganizer.paciente.Paciente;
-import com.psiorganizer.paciente.PacienteRepository;
+import com.psiorganizer.consulta.domain.Consulta;
+import com.psiorganizer.consulta.domain.DiaSemana;
+import com.psiorganizer.consulta.domain.StatusConsulta;
+import com.psiorganizer.consulta.repository.ConsultaRepository;
+import com.psiorganizer.paciente.domain.Paciente;
+import com.psiorganizer.paciente.repository.PacienteRepository;
 import com.psiorganizer.whatsapp.LembreteEnviado;
 import com.psiorganizer.whatsapp.LembreteEnviadoRepository;
 

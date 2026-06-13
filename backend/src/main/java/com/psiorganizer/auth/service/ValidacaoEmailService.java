@@ -1,4 +1,4 @@
-package com.psiorganizer.auth;
+package com.psiorganizer.auth.service;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -16,8 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.psiorganizer.auth.email.EmailValidacaoSender;
 import com.psiorganizer.common.exception.ApiException;
-import com.psiorganizer.psicologa.Psicologa;
-import com.psiorganizer.psicologa.PsicologaRepository;
+import com.psiorganizer.psicologa.domain.Psicologa;
+import com.psiorganizer.psicologa.repository.PsicologaRepository;
 
 /**
  * Ciclo de validação de e-mail da conta: gera token (24h), envia o link,

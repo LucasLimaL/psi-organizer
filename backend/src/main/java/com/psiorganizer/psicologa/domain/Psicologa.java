@@ -1,4 +1,4 @@
-package com.psiorganizer.psicologa;
+package com.psiorganizer.psicologa.domain;
 
 import java.time.Instant;
 import java.util.UUID;

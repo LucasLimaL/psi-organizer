@@ -4,9 +4,9 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
-import com.psiorganizer.consulta.Consulta;
-import com.psiorganizer.consulta.StatusConfirmacao;
-import com.psiorganizer.consulta.StatusConsulta;
+import com.psiorganizer.consulta.domain.Consulta;
+import com.psiorganizer.consulta.domain.StatusConfirmacao;
+import com.psiorganizer.consulta.domain.StatusConsulta;
 import com.psiorganizer.whatsapp.EtapaLembrete;
 import com.psiorganizer.whatsapp.StatusEntrega;
 

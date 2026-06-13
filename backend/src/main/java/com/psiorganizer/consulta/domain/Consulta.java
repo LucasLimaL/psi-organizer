@@ -1,4 +1,4 @@
-package com.psiorganizer.consulta;
+package com.psiorganizer.consulta.domain;
 
 import java.math.BigDecimal;
 import java.time.Instant;

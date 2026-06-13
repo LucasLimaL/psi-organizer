@@ -4,8 +4,8 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
-import com.psiorganizer.consulta.Consulta;
-import com.psiorganizer.consulta.StatusConsulta;
+import com.psiorganizer.consulta.domain.Consulta;
+import com.psiorganizer.consulta.domain.StatusConsulta;
 
 /** Visão enxuta de uma consulta pra tela financeiro — sem campos de agenda/lembrete. */
 public record FinanceiroConsultaResponse(

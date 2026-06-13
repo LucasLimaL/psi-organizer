@@ -15,14 +15,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.psiorganizer.common.Fusos;
-import com.psiorganizer.consulta.Consulta;
+import com.psiorganizer.consulta.domain.Consulta;
 import com.psiorganizer.financeiro.dto.FinanceiroConsultaResponse;
 import com.psiorganizer.financeiro.dto.FinanceiroConsultasPaginadoResponse;
 import com.psiorganizer.financeiro.dto.FinanceiroPendentesPaginadoResponse;
 import com.psiorganizer.financeiro.dto.FinanceiroResumoResponse;
-import com.psiorganizer.paciente.Paciente;
-import com.psiorganizer.paciente.PacienteRepository;
-import com.psiorganizer.psicologa.PsicologaService;
+import com.psiorganizer.paciente.domain.Paciente;
+import com.psiorganizer.paciente.repository.PacienteRepository;
+import com.psiorganizer.psicologa.service.PsicologaService;
 
 /**
  * Visão financeira por competência: tudo é recortado pelo mês/ano da CONSULTA

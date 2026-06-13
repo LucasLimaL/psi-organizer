@@ -1,4 +1,4 @@
-package com.psiorganizer.psicologa;
+package com.psiorganizer.psicologa.controller;
 
 import jakarta.validation.Valid;
 
@@ -13,6 +13,7 @@ import com.psiorganizer.common.security.PsicologaPrincipal;
 import com.psiorganizer.psicologa.dto.AlterarSenhaRequest;
 import com.psiorganizer.psicologa.dto.AtualizarPerfilRequest;
 import com.psiorganizer.psicologa.dto.PsicologaResponse;
+import com.psiorganizer.psicologa.service.PsicologaService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

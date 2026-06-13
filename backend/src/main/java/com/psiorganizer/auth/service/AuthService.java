@@ -1,4 +1,4 @@
-package com.psiorganizer.auth;
+package com.psiorganizer.auth.service;
 
 import java.util.Map;
 
@@ -7,8 +7,8 @@ import org.springframework.stereotype.Service;
 
 import com.psiorganizer.admin.FaturaService;
 import com.psiorganizer.common.exception.ApiException;
-import com.psiorganizer.psicologa.Psicologa;
-import com.psiorganizer.psicologa.PsicologaRepository;
+import com.psiorganizer.psicologa.domain.Psicologa;
+import com.psiorganizer.psicologa.repository.PsicologaRepository;
 
 @Service
 public class AuthService {

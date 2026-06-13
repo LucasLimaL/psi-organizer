@@ -23,7 +23,7 @@ import com.psiorganizer.consulta.dto.ConsultaRequest;
 import com.psiorganizer.consulta.dto.ConsultaResponse;
 import com.psiorganizer.consulta.dto.ConsultaUpdateRequest;
 import com.psiorganizer.consulta.service.ConsultaService;
-import com.psiorganizer.whatsapp.LembreteEnviado;
+import com.psiorganizer.whatsapp.domain.LembreteEnviado;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

@@ -1,4 +1,4 @@
-package com.psiorganizer.whatsapp;
+package com.psiorganizer.whatsapp.service;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -14,6 +14,12 @@ import com.psiorganizer.common.observability.FlowLogger;
 import com.psiorganizer.common.observability.LogFields;
 import com.psiorganizer.consulta.domain.Consulta;
 import com.psiorganizer.consulta.repository.ConsultaRepository;
+import com.psiorganizer.whatsapp.domain.ConfiguracaoWhatsapp;
+import com.psiorganizer.whatsapp.domain.EtapaLembrete;
+import com.psiorganizer.whatsapp.domain.LembreteEnviado;
+import com.psiorganizer.whatsapp.domain.WhatsappMetricas;
+import com.psiorganizer.whatsapp.repository.ConfiguracaoWhatsappRepository;
+import com.psiorganizer.whatsapp.repository.LembreteEnviadoRepository;
 
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 

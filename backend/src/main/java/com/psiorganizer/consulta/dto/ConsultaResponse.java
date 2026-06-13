@@ -7,8 +7,8 @@ import java.util.UUID;
 import com.psiorganizer.consulta.domain.Consulta;
 import com.psiorganizer.consulta.domain.StatusConfirmacao;
 import com.psiorganizer.consulta.domain.StatusConsulta;
-import com.psiorganizer.whatsapp.EtapaLembrete;
-import com.psiorganizer.whatsapp.StatusEntrega;
+import com.psiorganizer.whatsapp.domain.EtapaLembrete;
+import com.psiorganizer.whatsapp.domain.StatusEntrega;
 
 public record ConsultaResponse(
         UUID id,

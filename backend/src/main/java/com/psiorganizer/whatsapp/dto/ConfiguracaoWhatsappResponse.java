@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
-import com.psiorganizer.whatsapp.ConfiguracaoWhatsapp;
+import com.psiorganizer.whatsapp.domain.ConfiguracaoWhatsapp;
 
 public record ConfiguracaoWhatsappResponse(
         boolean ativo,

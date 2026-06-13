@@ -1,4 +1,4 @@
-package com.psiorganizer.whatsapp;
+package com.psiorganizer.whatsapp.repository;
 
 import java.util.List;
 import java.util.Optional;
@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import com.psiorganizer.whatsapp.domain.LembreteEnviado;
 
 public interface LembreteEnviadoRepository extends JpaRepository<LembreteEnviado, UUID> {
 
@@ -76,7 +78,7 @@ public interface LembreteEnviadoRepository extends JpaRepository<LembreteEnviado
     /** Passo (c) do scheduler: lembretes em AGUARDANDO_CONFIRMACAO_DUPLA pra retry/EXPIRADO. */
     @Query("""
             select le from LembreteEnviado le
-            where le.etapa = com.psiorganizer.whatsapp.EtapaLembrete.AGUARDANDO_CONFIRMACAO_DUPLA
+            where le.etapa = com.psiorganizer.whatsapp.domain.EtapaLembrete.AGUARDANDO_CONFIRMACAO_DUPLA
               and le.confirmacaoDuplaEnviadaEm < :limiteUmaHora
             """)
     List<LembreteEnviado> findPendentesConfirmacaoDupla(
@@ -99,8 +101,8 @@ public interface LembreteEnviadoRepository extends JpaRepository<LembreteEnviado
     List<LembreteEnviado> historicoPaginado(
             @Param("psicologaId") UUID psicologaId,
             @Param("consultaId") UUID consultaId,
-            @Param("etapa") com.psiorganizer.whatsapp.EtapaLembrete etapa,
-            @Param("statusEntrega") com.psiorganizer.whatsapp.StatusEntrega statusEntrega,
+            @Param("etapa") com.psiorganizer.whatsapp.domain.EtapaLembrete etapa,
+            @Param("statusEntrega") com.psiorganizer.whatsapp.domain.StatusEntrega statusEntrega,
             @Param("enviadoApos") java.time.Instant enviadoApos,
             @Param("enviadoAntes") java.time.Instant enviadoAntes,
             org.springframework.data.domain.Pageable pageable);
@@ -117,8 +119,8 @@ public interface LembreteEnviadoRepository extends JpaRepository<LembreteEnviado
     long historicoCount(
             @Param("psicologaId") UUID psicologaId,
             @Param("consultaId") UUID consultaId,
-            @Param("etapa") com.psiorganizer.whatsapp.EtapaLembrete etapa,
-            @Param("statusEntrega") com.psiorganizer.whatsapp.StatusEntrega statusEntrega,
+            @Param("etapa") com.psiorganizer.whatsapp.domain.EtapaLembrete etapa,
+            @Param("statusEntrega") com.psiorganizer.whatsapp.domain.StatusEntrega statusEntrega,
             @Param("enviadoApos") java.time.Instant enviadoApos,
             @Param("enviadoAntes") java.time.Instant enviadoAntes);
 }

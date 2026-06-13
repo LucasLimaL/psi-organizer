@@ -56,28 +56,57 @@ PostgreSQL
 
 ### 2.2 Estrutura de pacotes
 
+Organização **por domínio** e, dentro de cada domínio, **por camada** — subpacotes `controller/`, `service/`, `repository/`, `domain/` (entities, enums, projeções) e `dto/`:
+
 ```
 com.psiorganizer/
-├── auth/             ← signup, login, JwtService, AuthController
-│   └── dto/          ← LoginRequest, LoginResponse, SignupRequest
-├── consulta/         ← Consulta + StatusConsulta + DiaSemana
+├── auth/             ← signup, login, validação de e-mail
+│   ├── controller/   ← AuthController
+│   ├── service/      ← AuthService, JwtService, ValidacaoEmailService
+│   ├── email/        ← EmailValidacaoSender (Smtp real + Log dev)
+│   └── dto/          ← LoginRequest/Response, SignupRequest/Response, Validar/ReenviarValidacao
+├── consulta/
+│   ├── controller/ · service/ · repository/
+│   ├── domain/       ← Consulta, StatusConsulta, StatusConfirmacao, DiaSemana
 │   └── dto/          ← Request, UpdateRequest, RecorrenteRequest, Response, PaginadoResponse
-├── dashboard/        ← DashboardController + Service + Response
-├── financeiro/       ← FinanceiroController + Service + Repository (regime de competência)
-│   └── dto/          ← FinanceiroResumoResponse, FinanceiroPendentesPaginadoResponse, FinanceiroConsultasPaginadoResponse
-├── notificacao/      ← Notificacao + Repository + Service + Controller (notificações in-app)
+├── dashboard/
+│   ├── controller/ · service/
+│   └── dto/          ← DashboardResponse
+├── financeiro/       ← regime de competência
+│   ├── controller/ · service/ · repository/
+│   ├── domain/       ← TotalCategoria, GrupoPendenteProjecao
+│   └── dto/          ← Resumo, PendentesPaginado, ConsultasPaginado
+├── notificacao/      ← notificações in-app
+│   ├── controller/ · service/ · repository/
+│   ├── domain/       ← Notificacao
 │   └── dto/          ← NotificacaoResponse, NotificacoesEnvelope
-├── paciente/         ← Paciente + Repository + Service + Controller
+├── paciente/
+│   ├── controller/ · service/ · repository/
+│   ├── domain/       ← Paciente
 │   └── dto/          ← PacienteRequest, PacienteResponse
-├── psicologa/        ← Psicologa + PerfilController + AtualizarPerfilRequest
-│   └── dto/          ← PsicologaResponse, EnderecoDto, AtualizarPerfilRequest
-├── whatsapp/         ← lembretes: LembreteScheduler + tick, envio, webhook, máquina de estados, configuração
+├── psicologa/
+│   ├── controller/   ← PerfilController
+│   ├── service/ · repository/
+│   ├── domain/       ← Psicologa
+│   └── dto/          ← PsicologaResponse, EnderecoDto, AtualizarPerfilRequest, AlterarSenhaRequest
+├── admin/            ← gestão do SaaS (contratos, faturas, bloqueio)
+│   ├── controller/   ← AdminController, AssinaturaController
+│   ├── service/      ← AdminService, AssinaturaService, FaturaService
+│   ├── repository/   ← Contrato, Fatura, FaturaItem
+│   ├── domain/       ← Contrato, Fatura, FaturaItem, Ciclos, PendenciaProjecao
+│   └── dto/
+├── whatsapp/         ← lembretes: scheduler + tick, envio, webhook, máquina de estados
+│   ├── controller/   ← ConfiguracaoWhatsapp, Webhook, SchedulerTick, DevSimulacao
+│   ├── service/      ← Configuracao, Envio, Historico, MaquinaEstados, Webhook, LembreteScheduler
+│   ├── repository/   ← ConfiguracaoWhatsapp, LembreteEnviado
+│   ├── domain/       ← ConfiguracaoWhatsapp, LembreteEnviado, enums, WhatsappMetricas
 │   ├── client/       ← WhatsappClient (MetaWhatsappClient real + MockWhatsappClient dev)
-│   └── dto/          ← ConfiguracaoWhatsappResponse, EnviarTeste*, LembreteResponse, LembretesEnvelope
-├── common/
+│   └── dto/
+├── common/           ← organizados por função (não muda por domínio)
 │   ├── Endereco                   ← @Embeddable usado em Psicologa e Paciente
-│   ├── validation/                ← @Cpf, @SenhaValida, CpfUtil
+│   ├── validation/                ← @Cpf, @SenhaValida, @TelefoneE164, CpfUtil
 │   ├── security/PsicologaPrincipal ← record com {id, email}, posto no SecurityContext
+│   ├── observability/             ← RequestLoggingFilter, BodyRedactor, Mdc, LogFields
 │   └── exception/                 ← ApiException, GlobalExceptionHandler
 └── config/
     ├── SecurityConfig             ← stateless, CORS, BCrypt

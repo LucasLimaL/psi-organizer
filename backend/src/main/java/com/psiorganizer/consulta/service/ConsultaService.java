@@ -23,8 +23,8 @@ import com.psiorganizer.consulta.domain.StatusConsulta;
 import com.psiorganizer.consulta.repository.ConsultaRepository;
 import com.psiorganizer.paciente.domain.Paciente;
 import com.psiorganizer.paciente.repository.PacienteRepository;
-import com.psiorganizer.whatsapp.LembreteEnviado;
-import com.psiorganizer.whatsapp.LembreteEnviadoRepository;
+import com.psiorganizer.whatsapp.domain.LembreteEnviado;
+import com.psiorganizer.whatsapp.repository.LembreteEnviadoRepository;
 
 @Service
 public class ConsultaService {

@@ -1,4 +1,4 @@
-package com.psiorganizer.whatsapp;
+package com.psiorganizer.whatsapp.controller;
 
 import java.util.Map;
 
@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.psiorganizer.common.util.HmacValidator;
 import com.psiorganizer.whatsapp.client.WhatsappProperties;
+import com.psiorganizer.whatsapp.domain.WhatsappMetricas;
+import com.psiorganizer.whatsapp.service.WebhookService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

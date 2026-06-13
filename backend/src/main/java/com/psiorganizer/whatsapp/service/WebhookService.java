@@ -1,4 +1,4 @@
-package com.psiorganizer.whatsapp;
+package com.psiorganizer.whatsapp.service;
 
 import java.util.List;
 import java.util.Map;
@@ -8,6 +8,10 @@ import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 
 import com.psiorganizer.common.observability.LogFields;
+import com.psiorganizer.whatsapp.domain.LembreteEnviado;
+import com.psiorganizer.whatsapp.domain.StatusEntrega;
+import com.psiorganizer.whatsapp.domain.WhatsappMetricas;
+import com.psiorganizer.whatsapp.repository.LembreteEnviadoRepository;
 
 /**
  * Parse + dispatch do payload Meta. Spec §5.

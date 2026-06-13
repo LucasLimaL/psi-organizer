@@ -1,4 +1,4 @@
-package com.psiorganizer.whatsapp;
+package com.psiorganizer.whatsapp.domain;
 
 public enum StatusEntrega {
     PENDENTE,

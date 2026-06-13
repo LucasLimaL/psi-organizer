@@ -1,4 +1,4 @@
-package com.psiorganizer.whatsapp;
+package com.psiorganizer.whatsapp.service;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -24,6 +24,11 @@ import com.psiorganizer.whatsapp.client.EnvioResultado;
 import com.psiorganizer.whatsapp.client.WhatsappClient;
 import com.psiorganizer.whatsapp.client.WhatsappException;
 import com.psiorganizer.whatsapp.client.WhatsappProperties;
+import com.psiorganizer.whatsapp.domain.EscolhaLembrete;
+import com.psiorganizer.whatsapp.domain.LembreteEnviado;
+import com.psiorganizer.whatsapp.domain.StatusEntrega;
+import com.psiorganizer.whatsapp.domain.WhatsappMetricas;
+import com.psiorganizer.whatsapp.repository.LembreteEnviadoRepository;
 
 /**
  * Disparo de lembrete de 1 consulta. Encapsula:

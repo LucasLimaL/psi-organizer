@@ -112,6 +112,7 @@ Skills project-level automatizam fluxos repetidos do projeto. Invoque com `/<nom
 | [`/psi-pr-merge-seguro`](.claude/skills/psi-pr-merge-seguro/SKILL.md) `<numero>` | Mergear PR seguindo o protocolo (multi-tenant check + stack management + rebase + force-push) |
 | [`/psi-novo-endpoint`](.claude/skills/psi-novo-endpoint/SKILL.md) | Adicionar endpoint REST cumprindo todos os 12 passos do padrão |
 | [`/psi-docs-sync`](.claude/skills/psi-docs-sync/SKILL.md) `<pr>` | Depois de mergear feature — identifica gaps de doc e propõe diffs |
+| [`/psi-consolidar-migracoes`](.claude/skills/psi-consolidar-migracoes/SKILL.md) `[prod-agora\|prod-no-deploy]` | Squash de todas as migrações Flyway numa V1 — **apaga o banco** (inclusive prod no deploy); **sempre** confirma que a app não está em produção, mesmo "só local" |
 | [`/trade-off-analysis`](.claude/skills/trade-off-analysis/SKILL.md) | Decisão arquitetural com 2-4 opções — produz mini-ADR opinado |
 
 **Auto-invocação ativa.** O Claude decide sozinho quando carregar cada skill com base no que você pedir (ex: "mergeia o #12" dispara `psi-pr-merge-seguro`; "adiciona GET /pacientes/X" dispara `psi-novo-endpoint`). Você pode forçar manual com `/<nome>`. Se o auto-trigger virar incômodo (carregando demais ou de menos), me avise — calibra-se via `when_to_use` no SKILL.md.

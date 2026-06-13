@@ -58,8 +58,9 @@ export default function FinanceiroPendentesList({ periodo, anteriores = false, o
     }
   }
 
-  // O update de consulta exige o payload completo — busca antes de marcar pago
-  async function marcarPago(id: string) {
+  // O update de consulta exige o payload completo — busca antes de marcar pago.
+  // pagoEm é o instante escolhido pela psicóloga (default: agora) no diálogo.
+  async function marcarPago(id: string, pagoEm: string) {
     const c = await consultasApi.buscar(id)
     await consultasApi.atualizar(id, {
       inicio: c.inicio,
@@ -67,6 +68,7 @@ export default function FinanceiroPendentesList({ periodo, anteriores = false, o
       valor: c.valor,
       status: c.status,
       pago: true,
+      pagoEm,
       observacoes: c.observacoes ?? '',
     })
     onPagamento(new Date(c.inicio))

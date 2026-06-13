@@ -271,11 +271,14 @@ export default function AssinaturaPage() {
                     </ButtonBase>
                     <Typography variant="body2" sx={{
                       fontWeight: 600, fontVariantNumeric: 'tabular-nums', opacity: 0.8,
+                      minWidth: 84, textAlign: 'right', flexShrink: 0,
                     }}>
                       {brl(p.valor)}
                     </Typography>
-                    <Chip size="small" label={rotulo} variant="outlined" color="info"
-                          sx={{ height: 22, fontSize: 11, fontWeight: 600, borderStyle: 'dashed' }} />
+                    <Box sx={{ width: 120, flexShrink: 0, display: 'flex', justifyContent: 'flex-end' }}>
+                      <Chip size="small" label={rotulo} variant="outlined" color="info"
+                            sx={{ height: 22, fontSize: 11, fontWeight: 600, borderStyle: 'dashed' }} />
+                    </Box>
                   </Stack>
                   <Collapse in={aberta}>
                     <DetalheFatura
@@ -311,12 +314,17 @@ export default function AssinaturaPage() {
                         {competencia(f.periodoFim)}
                       </Typography>
                     </ButtonBase>
-                    <Typography variant="body2" sx={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+                    <Typography variant="body2" sx={{
+                      fontWeight: 700, fontVariantNumeric: 'tabular-nums',
+                      minWidth: 84, textAlign: 'right', flexShrink: 0,
+                    }}>
                       {brl(f.valor)}
                     </Typography>
-                    <Chip size="small" label={chip.rotulo} color={chip.cor}
-                          variant={f.status === 'VENCIDA' ? 'filled' : 'outlined'}
-                          sx={{ height: 22, fontSize: 11, fontWeight: 600 }} />
+                    <Box sx={{ width: 120, flexShrink: 0, display: 'flex', justifyContent: 'flex-end' }}>
+                      <Chip size="small" label={chip.rotulo} color={chip.cor}
+                            variant={f.status === 'VENCIDA' ? 'filled' : 'outlined'}
+                            sx={{ height: 22, fontSize: 11, fontWeight: 600 }} />
+                    </Box>
                   </Stack>
                   <Collapse in={aberta}>
                     <DetalheFatura

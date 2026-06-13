@@ -119,7 +119,7 @@ public class ConsultaController {
         MDC.put(LogFields.CONSULTA_ID, id.toString());
         UUID psicologaId = PsicologaPrincipal.corrente().id();
         Consulta c = service.atualizar(psicologaId, id, req.inicio(), req.duracaoMinutos(),
-                req.valor(), req.status(), req.pago(), req.observacoes());
+                req.valor(), req.status(), req.pago(), req.pagoEm(), req.observacoes());
         Map<UUID, String> nomes = service.nomesPacientes(List.of(c.getPacienteId()));
         return ConsultaResponse.from(c, nomes.getOrDefault(c.getPacienteId(), "?"));
     }

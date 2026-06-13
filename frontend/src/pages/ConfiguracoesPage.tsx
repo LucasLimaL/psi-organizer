@@ -47,15 +47,6 @@ export default function ConfiguracoesPage() {
 
   return (
     <Stack spacing={3}>
-      <Box>
-        <Typography variant="h5" sx={{ fontWeight: 600 }}>
-          Configurações
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          Preferências de cobrança e lembretes via WhatsApp.
-        </Typography>
-      </Box>
-
       {/* Cobrança */}
       <Box>
         <Typography variant="h6" sx={{ fontWeight: 600 }}>

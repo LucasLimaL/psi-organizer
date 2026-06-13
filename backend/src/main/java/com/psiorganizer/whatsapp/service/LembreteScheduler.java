@@ -78,7 +78,7 @@ public class LembreteScheduler {
             return;
         }
 
-        List<ConfiguracaoWhatsapp> ativas = configRepo.findByAtivoTrue();
+        List<ConfiguracaoWhatsapp> ativas = configRepo.findAtivasDePsicologasNaoBloqueadas();
         if (ativas.isEmpty()) {
             return;
         }

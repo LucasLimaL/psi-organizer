@@ -11,7 +11,9 @@ export async function api<T>(
     'Content-Type': 'application/json',
     ...((init.headers as Record<string, string>) ?? {}),
   }
-  if (token) headers.Authorization = `Bearer ${token}`
+  // Chamadas de auth (login/signup/validar) nunca precisam do token e NÃO devem
+  // carregá-lo: um token restrito/expirado anexado faria o backend barrar o re-login.
+  if (token && !path.startsWith('/auth')) headers.Authorization = `Bearer ${token}`
 
   const res = await fetch(`${API_BASE}${path}`, { ...init, headers })
   // Sessão expirada/token inválido: limpa credenciais e força re-login com aviso.
@@ -26,6 +28,15 @@ export async function api<T>(
   }
   if (!res.ok) {
     const body: ApiError = await res.json().catch(() => ({ erro: res.statusText }))
+    // Conta restrita por inadimplência tentou um endpoint fora do allowlist.
+    // Rede de segurança: manda pra /assinatura (o sandbox). Não limpa a sessão —
+    // diferente do 401, a sessão é válida, só está restrita.
+    const motivo = (body.detalhes as { motivo?: string } | undefined)?.motivo
+    if (res.status === 403 && motivo === 'CONTA_BLOQUEADA'
+        && !path.startsWith('/auth')
+        && !window.location.pathname.startsWith('/assinatura')) {
+      window.location.assign('/assinatura')
+    }
     throw body
   }
   if (res.status === 204 || res.status === 202) return undefined as T

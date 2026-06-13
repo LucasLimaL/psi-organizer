@@ -1,4 +1,4 @@
-package com.psiorganizer.notificacao;
+package com.psiorganizer.notificacao.repository;
 
 import java.util.List;
 import java.util.Optional;
@@ -7,6 +7,8 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import com.psiorganizer.notificacao.domain.Notificacao;
 
 public interface NotificacaoRepository extends JpaRepository<Notificacao, UUID> {
 

@@ -1,4 +1,4 @@
-package com.psiorganizer.admin;
+package com.psiorganizer.admin.service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -13,12 +13,20 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.psiorganizer.admin.domain.Ciclos;
+import com.psiorganizer.admin.domain.Contrato;
+import com.psiorganizer.admin.domain.Fatura;
+import com.psiorganizer.admin.domain.FaturaItem;
+import com.psiorganizer.admin.domain.PendenciaProjecao;
 import com.psiorganizer.admin.dto.AdminPsicologaResponse;
 import com.psiorganizer.admin.dto.AdminPsicologasPaginadoResponse;
 import com.psiorganizer.admin.dto.ContratoResponse;
 import com.psiorganizer.admin.dto.FaturaResponse;
 import com.psiorganizer.admin.dto.FaturasResponse;
 import com.psiorganizer.admin.dto.PreviaFaturaResponse;
+import com.psiorganizer.admin.repository.ContratoRepository;
+import com.psiorganizer.admin.repository.FaturaItemRepository;
+import com.psiorganizer.admin.repository.FaturaRepository;
 import com.psiorganizer.common.Fusos;
 import com.psiorganizer.common.exception.ApiException;
 import com.psiorganizer.psicologa.domain.Psicologa;

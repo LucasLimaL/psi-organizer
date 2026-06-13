@@ -1,4 +1,4 @@
-package com.psiorganizer.admin;
+package com.psiorganizer.admin.controller;
 
 import java.util.List;
 import java.util.UUID;
@@ -18,6 +18,7 @@ import com.psiorganizer.admin.dto.ContratoRequest;
 import com.psiorganizer.admin.dto.ContratoResponse;
 import com.psiorganizer.admin.dto.FaturaResponse;
 import com.psiorganizer.admin.dto.FaturasResponse;
+import com.psiorganizer.admin.service.AdminService;
 import com.psiorganizer.common.observability.LogFields;
 import com.psiorganizer.common.security.PsicologaPrincipal;
 

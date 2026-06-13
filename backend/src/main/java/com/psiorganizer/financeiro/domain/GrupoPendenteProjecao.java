@@ -1,4 +1,4 @@
-package com.psiorganizer.financeiro;
+package com.psiorganizer.financeiro.domain;
 
 import java.math.BigDecimal;
 import java.util.UUID;

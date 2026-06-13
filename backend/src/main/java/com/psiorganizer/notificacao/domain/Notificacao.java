@@ -1,4 +1,4 @@
-package com.psiorganizer.notificacao;
+package com.psiorganizer.notificacao.domain;
 
 import java.time.Instant;
 import java.util.UUID;

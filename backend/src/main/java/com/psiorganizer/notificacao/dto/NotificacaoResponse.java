@@ -3,7 +3,7 @@ package com.psiorganizer.notificacao.dto;
 import java.time.Instant;
 import java.util.UUID;
 
-import com.psiorganizer.notificacao.Notificacao;
+import com.psiorganizer.notificacao.domain.Notificacao;
 
 public record NotificacaoResponse(
         UUID id,

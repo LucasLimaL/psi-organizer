@@ -1,4 +1,4 @@
-package com.psiorganizer.notificacao;
+package com.psiorganizer.notificacao.controller;
 
 import java.util.List;
 import java.util.UUID;
@@ -16,6 +16,7 @@ import com.psiorganizer.common.observability.LogFields;
 import com.psiorganizer.common.security.PsicologaPrincipal;
 import com.psiorganizer.notificacao.dto.NotificacaoResponse;
 import com.psiorganizer.notificacao.dto.NotificacoesEnvelope;
+import com.psiorganizer.notificacao.service.NotificacaoService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

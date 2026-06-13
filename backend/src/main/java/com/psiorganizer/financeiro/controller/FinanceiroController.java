@@ -1,4 +1,4 @@
-package com.psiorganizer.financeiro;
+package com.psiorganizer.financeiro.controller;
 
 import java.time.Instant;
 import java.time.Year;
@@ -17,6 +17,7 @@ import com.psiorganizer.common.security.PsicologaPrincipal;
 import com.psiorganizer.financeiro.dto.FinanceiroConsultasPaginadoResponse;
 import com.psiorganizer.financeiro.dto.FinanceiroPendentesPaginadoResponse;
 import com.psiorganizer.financeiro.dto.FinanceiroResumoResponse;
+import com.psiorganizer.financeiro.service.FinanceiroService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

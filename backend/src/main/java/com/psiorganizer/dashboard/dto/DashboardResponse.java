@@ -1,4 +1,4 @@
-package com.psiorganizer.dashboard;
+package com.psiorganizer.dashboard.dto;
 
 import java.math.BigDecimal;
 import java.time.Instant;

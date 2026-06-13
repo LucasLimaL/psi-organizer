@@ -1,4 +1,4 @@
-package com.psiorganizer.dashboard;
+package com.psiorganizer.dashboard.service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -18,6 +18,7 @@ import com.psiorganizer.common.Fusos;
 import com.psiorganizer.consulta.domain.Consulta;
 import com.psiorganizer.consulta.domain.StatusConsulta;
 import com.psiorganizer.consulta.repository.ConsultaRepository;
+import com.psiorganizer.dashboard.dto.DashboardResponse;
 import com.psiorganizer.paciente.domain.Paciente;
 import com.psiorganizer.paciente.repository.PacienteRepository;
 import com.psiorganizer.psicologa.service.PsicologaService;

@@ -1,4 +1,4 @@
-package com.psiorganizer.financeiro;
+package com.psiorganizer.financeiro.repository;
 
 import java.time.Instant;
 import java.util.List;
@@ -10,6 +10,8 @@ import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
 
 import com.psiorganizer.consulta.domain.Consulta;
+import com.psiorganizer.financeiro.domain.GrupoPendenteProjecao;
+import com.psiorganizer.financeiro.domain.TotalCategoria;
 
 /**
  * Queries financeiras sobre a entidade Consulta. Repositório separado do
@@ -28,7 +30,7 @@ import com.psiorganizer.consulta.domain.Consulta;
 public interface FinanceiroRepository extends Repository<Consulta, UUID> {
 
     @Query("""
-            select new com.psiorganizer.financeiro.TotalCategoria(sum(c.valor), count(c))
+            select new com.psiorganizer.financeiro.domain.TotalCategoria(sum(c.valor), count(c))
             from Consulta c
             where c.psicologaId = :psicologaId
               and c.inicio >= :ini and c.inicio < :fim
@@ -43,7 +45,7 @@ public interface FinanceiroRepository extends Repository<Consulta, UUID> {
                                   @Param("cobrarFaltas") boolean cobrarFaltas);
 
     @Query("""
-            select new com.psiorganizer.financeiro.TotalCategoria(sum(c.valor), count(c))
+            select new com.psiorganizer.financeiro.domain.TotalCategoria(sum(c.valor), count(c))
             from Consulta c
             where c.psicologaId = :psicologaId
               and c.inicio >= :ini and c.inicio < :fim
@@ -56,7 +58,7 @@ public interface FinanceiroRepository extends Repository<Consulta, UUID> {
                                    @Param("fim") Instant fim);
 
     @Query("""
-            select new com.psiorganizer.financeiro.TotalCategoria(sum(c.valor), count(c))
+            select new com.psiorganizer.financeiro.domain.TotalCategoria(sum(c.valor), count(c))
             from Consulta c
             where c.psicologaId = :psicologaId
               and c.inicio >= :ini and c.inicio < :fim
@@ -68,7 +70,7 @@ public interface FinanceiroRepository extends Repository<Consulta, UUID> {
                                 @Param("fim") Instant fim);
 
     @Query("""
-            select new com.psiorganizer.financeiro.GrupoPendenteProjecao(
+            select new com.psiorganizer.financeiro.domain.GrupoPendenteProjecao(
                 c.pacienteId, count(c), sum(c.valor))
             from Consulta c
             where c.psicologaId = :psicologaId

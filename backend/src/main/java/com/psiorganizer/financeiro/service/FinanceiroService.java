@@ -1,4 +1,4 @@
-package com.psiorganizer.financeiro;
+package com.psiorganizer.financeiro.service;
 
 import java.time.Instant;
 import java.time.Year;
@@ -16,10 +16,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.psiorganizer.common.Fusos;
 import com.psiorganizer.consulta.domain.Consulta;
+import com.psiorganizer.financeiro.domain.GrupoPendenteProjecao;
+import com.psiorganizer.financeiro.domain.TotalCategoria;
 import com.psiorganizer.financeiro.dto.FinanceiroConsultaResponse;
 import com.psiorganizer.financeiro.dto.FinanceiroConsultasPaginadoResponse;
 import com.psiorganizer.financeiro.dto.FinanceiroPendentesPaginadoResponse;
 import com.psiorganizer.financeiro.dto.FinanceiroResumoResponse;
+import com.psiorganizer.financeiro.repository.FinanceiroRepository;
 import com.psiorganizer.paciente.domain.Paciente;
 import com.psiorganizer.paciente.repository.PacienteRepository;
 import com.psiorganizer.psicologa.service.PsicologaService;

@@ -15,6 +15,7 @@ import com.psiorganizer.auth.service.AuthService;
 import com.psiorganizer.common.security.PsicologaPrincipal;
 import com.psiorganizer.psicologa.dto.AlterarSenhaRequest;
 import com.psiorganizer.psicologa.dto.AtualizarPerfilRequest;
+import com.psiorganizer.psicologa.dto.AtualizarPreferenciasRequest;
 import com.psiorganizer.psicologa.dto.PsicologaResponse;
 import com.psiorganizer.psicologa.service.PsicologaService;
 
@@ -42,8 +43,8 @@ public class PerfilController {
     }
 
     @PutMapping
-    @Operation(summary = "Atualiza dados do perfil (nome, CRP, telefone, endereço) e "
-            + "preferências de cobrança (cobrarFaltas). E-mail e CPF não são editáveis por aqui.")
+    @Operation(summary = "Atualiza dados do perfil (nome, CRP, telefone, endereço). E-mail e CPF "
+            + "não são editáveis por aqui; preferências de cobrança ficam em PUT /me/preferencias.")
     public PsicologaResponse atualizar(@Valid @RequestBody AtualizarPerfilRequest req) {
         var principal = PsicologaPrincipal.corrente();
         var atualizada = psicologaService.atualizarPerfil(
@@ -51,8 +52,16 @@ public class PerfilController {
                 req.nomeCompleto(),
                 req.crp(),
                 req.telefone(),
-                req.endereco().toDomain(),
-                req.cobrarFaltas());
+                req.endereco().toDomain());
+        return PsicologaResponse.fromDomain(atualizada);
+    }
+
+    @PutMapping("/preferencias")
+    @Operation(summary = "Atualiza as preferências de cobrança do psicólogo autenticado "
+            + "(hoje: cobrarFaltas) — usado pela aba Configurações.")
+    public PsicologaResponse atualizarPreferencias(@Valid @RequestBody AtualizarPreferenciasRequest req) {
+        var principal = PsicologaPrincipal.corrente();
+        var atualizada = psicologaService.atualizarPreferencias(principal.id(), req.cobrarFaltas());
         return PsicologaResponse.fromDomain(atualizada);
     }
 

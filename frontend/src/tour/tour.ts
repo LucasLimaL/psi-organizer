@@ -91,12 +91,12 @@ const PASSOS_MENU_DESKTOP: DriveStep[] = [
     },
   },
   {
-    element: 'nav a[href="/configuracoes/whatsapp"]',
+    element: 'nav a[href="/configuracoes"]',
     popover: {
-      title: 'Lembretes por WhatsApp',
-      description: 'O sistema lembra seus pacientes da consulta automaticamente um '
-        + 'dia antes, e eles confirmam ou desmarcam pelo próprio WhatsApp. Ative e '
-        + 'escolha o horário de envio aqui.',
+      title: 'Configurações',
+      description: 'Suas preferências num só lugar: se consultas com falta entram na '
+        + 'cobrança e os lembretes por WhatsApp — que avisam a paciente um dia antes, '
+        + 'com confirmação pelo próprio WhatsApp.',
       side: 'right',
     },
   },

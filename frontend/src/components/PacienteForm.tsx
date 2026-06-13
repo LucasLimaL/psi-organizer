@@ -6,6 +6,7 @@ import type { PacienteInput } from '../api/pacientes'
 import { useAuth } from '../auth/authContext'
 import { useDirty } from '../hooks/useDirty'
 import { formatarTelefoneBr, paraE164Br } from '../utils/telefones'
+import { mascararCpf } from '../utils/formatadores'
 import { sxInputSemSpinner } from '../theme/sx'
 import EnderecoForm from './EnderecoForm'
 
@@ -30,7 +31,11 @@ export default function PacienteForm({ inicial, textoBotao, onSubmit }: Props) {
   // apenas na montagem inicial. As mudanças subsequentes (digitação) já vivem em formato BR.
   const inicialFormatado: PacienteInput | undefined = useMemo(() => {
     if (!inicial) return undefined
-    return { ...inicial, telefone: formatarTelefoneBr(inicial.telefone) }
+    return {
+      ...inicial,
+      telefone: formatarTelefoneBr(inicial.telefone),
+      cpf: mascararCpf(inicial.cpf),
+    }
   }, [inicial])
 
   const [form, setForm] = useState<PacienteInput>(inicialFormatado ?? vazio)
@@ -103,7 +108,8 @@ export default function PacienteForm({ inicial, textoBotao, onSubmit }: Props) {
         <Grid size={8}><TextField fullWidth label="Nome" required value={form.nome}
           onChange={e => setCampo('nome', e.target.value)} /></Grid>
         <Grid size={4}><TextField fullWidth label="CPF" required value={form.cpf}
-          onChange={e => setCampo('cpf', e.target.value)} /></Grid>
+          placeholder="000.000.000-00"
+          onChange={e => setCampo('cpf', mascararCpf(e.target.value))} /></Grid>
         <Grid size={4}><TextField fullWidth label="Data de nascimento" type="date" required
           slotProps={{ inputLabel: { shrink: true } }}
           value={form.dataNascimento} onChange={e => setCampo('dataNascimento', e.target.value)} /></Grid>

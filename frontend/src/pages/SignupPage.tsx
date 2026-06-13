@@ -11,6 +11,8 @@ import { useAuth } from '../auth/authContext'
 import AuthShell from '../components/AuthShell'
 import EnderecoForm from '../components/EnderecoForm'
 import { authValidacaoApi } from '../api/authValidacao'
+import { mascararCpf } from '../utils/formatadores'
+import { formatarTelefoneBr } from '../utils/telefones'
 
 import type { EnderecoFormValor } from '../components/EnderecoForm'
 
@@ -185,13 +187,16 @@ export default function SignupPage() {
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField fullWidth label="CPF" required
-                         helperText="Apenas números ou com pontuação"
-                         value={form.cpf} onChange={e => set('cpf', e.target.value)} />
+                         placeholder="000.000.000-00"
+                         value={form.cpf}
+                         onChange={e => set('cpf', mascararCpf(e.target.value))} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField fullWidth label="Telefone" required
                          autoComplete="tel"
-                         value={form.telefone} onChange={e => set('telefone', e.target.value)} />
+                         placeholder="(11) 96666-3333"
+                         value={form.telefone}
+                         onChange={e => set('telefone', formatarTelefoneBr(e.target.value))} />
             </Grid>
           </Grid>
         </Secao>

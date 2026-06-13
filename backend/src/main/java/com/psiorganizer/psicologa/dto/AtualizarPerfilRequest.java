@@ -3,6 +3,7 @@ package com.psiorganizer.psicologa.dto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 /**
  * Campos editáveis do perfil da psicóloga. Email e CPF são imutáveis
@@ -10,8 +11,9 @@ import jakarta.validation.constraints.NotNull;
  * verificação. Senha tem endpoint próprio (não implementado no MVP).
  */
 public record AtualizarPerfilRequest(
-        @NotBlank String nomeCompleto,
-        @NotBlank String crp,
-        @NotBlank String telefone,
+        @NotBlank @Size(max = 200, message = "Nome deve ter no máximo 200 caracteres") String nomeCompleto,
+        @NotBlank @Size(max = 50, message = "CRP deve ter no máximo 50 caracteres") String crp,
+        /** Limite da coluna `psicologa.telefone` — sem isso, entrada gigante vira 500. */
+        @NotBlank @Size(max = 30, message = "Telefone deve ter no máximo 30 caracteres") String telefone,
         @Valid EnderecoDto endereco,
         @NotNull Boolean cobrarFaltas) {}

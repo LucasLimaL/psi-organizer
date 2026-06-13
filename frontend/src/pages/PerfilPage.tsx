@@ -11,6 +11,7 @@ import AlterarSenhaCard from '../components/AlterarSenhaCard'
 import { useAuth } from '../auth/authContext'
 import { useDirty } from '../hooks/useDirty'
 import { formatarCpf, iniciais } from '../utils/formatadores'
+import { formatarTelefoneBr } from '../utils/telefones'
 
 function Secao({ titulo, descricao, children }: {
   titulo: string
@@ -51,7 +52,7 @@ export default function PerfilPage() {
     const inicial: AtualizarPerfilInput = {
       nomeCompleto: p.nomeCompleto,
       crp: p.crp,
-      telefone: p.telefone,
+      telefone: formatarTelefoneBr(p.telefone),
       endereco: { ...p.endereco, complemento: p.endereco.complemento ?? '' },
       cobrarFaltas: p.cobrarFaltas,
     }
@@ -211,8 +212,9 @@ export default function PerfilPage() {
                 <TextField
                   fullWidth label="Telefone" required
                   autoComplete="tel"
+                  placeholder="(11) 96666-3333"
                   value={form.telefone}
-                  onChange={e => setCampo('telefone', e.target.value)}
+                  onChange={e => setCampo('telefone', formatarTelefoneBr(e.target.value))}
                 />
               </Grid>
             </Grid>

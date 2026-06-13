@@ -38,7 +38,9 @@ export default function LoginPage() {
     setEnviando(true)
     try {
       const p = await login(email, senha)
-      navigate(p.admin ? '/admin' : '/', { replace: true })
+      // Conta restrita (inadimplência) entra direto na Assinatura pra regularizar.
+      const destino = p.admin ? '/admin' : p.restrito ? '/assinatura' : '/'
+      navigate(destino, { replace: true })
     } catch (err) {
       const e = err as {
         erro?: string

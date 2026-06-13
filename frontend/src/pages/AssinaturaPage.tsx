@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Stack, Box, Paper, Typography, Chip, Skeleton, Grid, Divider, ButtonBase, Collapse,
+  Alert, AlertTitle, Button,
 } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
+import { useNavigate } from 'react-router-dom'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { assinaturaApi, type Assinatura } from '../api/assinatura'
+import { useAuth } from '../auth/authContext'
 import { formatarMoeda as brl } from '../utils/formatadores'
 import {
   CHIP_STATUS, competencia, dataHoraLocal, dataLocal, situacaoContrato, vigencia,
@@ -18,9 +21,29 @@ import DetalheFatura from '../components/DetalheFatura'
  */
 export default function AssinaturaPage() {
   const theme = useTheme()
+  const navigate = useNavigate()
+  const { psicologa, renovarSessao } = useAuth()
+  const restrito = psicologa?.restrito ?? false
   const [assinatura, setAssinatura] = useState<Assinatura | null>(null)
   const [itensAbertos, setItensAbertos] = useState<string | null>(null)
   const [anoFiltro, setAnoFiltro] = useState<number | null>(null)
+  const [renovando, setRenovando] = useState(false)
+  const [aindaPendente, setAindaPendente] = useState(false)
+
+  async function aoRenovar() {
+    setRenovando(true)
+    setAindaPendente(false)
+    try {
+      const p = await renovarSessao()
+      // Regularizou → acesso liberado, volta pro início. Senão, segue restrito.
+      if (!p.restrito) navigate('/', { replace: true })
+      else setAindaPendente(true)
+    } catch {
+      setAindaPendente(true)
+    } finally {
+      setRenovando(false)
+    }
+  }
 
   const carregar = useCallback(async () => {
     const a = await assinaturaApi.minha()
@@ -81,6 +104,46 @@ export default function AssinaturaPage() {
           Assinatura
         </Typography>
       </Stack>
+
+      {/* Aviso de acesso restrito por inadimplência — única tela liberada até regularizar */}
+      {restrito && (
+        <Alert
+          severity="error"
+          action={(
+            <Button
+              color="inherit"
+              size="small"
+              variant="outlined"
+              disabled={renovando}
+              onClick={aoRenovar}
+            >
+              {renovando ? 'Verificando…' : 'Já paguei — liberar acesso'}
+            </Button>
+          )}
+        >
+          <AlertTitle sx={{ fontWeight: 700 }}>Acesso restrito</AlertTitle>
+          {vencidas.length > 0 ? (
+            <>
+              Sua conta está bloqueada por{' '}
+              {vencidas.length} fatura{vencidas.length === 1 ? '' : 's'} vencida
+              {vencidas.length === 1 ? '' : 's'}, totalizando{' '}
+              <strong>{brl(totalVencido)}</strong>. Quite o valor em aberto para
+              voltar a usar o sistema.
+            </>
+          ) : (
+            <>
+              Sua conta está bloqueada por falta de um plano vigente. Regularize a
+              assinatura para voltar a usar o sistema.
+            </>
+          )}
+          {aindaPendente && (
+            <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>
+              Ainda consta pendência em aberto. Se você acabou de pagar, aguarde a
+              confirmação e tente novamente.
+            </Typography>
+          )}
+        </Alert>
+      )}
 
       {/* Cards de resumo */}
       <Grid container spacing={1.5}>

@@ -29,12 +29,15 @@ public class JwtService {
         this.expiracaoHoras = expiracaoHoras;
     }
 
-    public String gerar(UUID psicologaId, String email, boolean admin) {
+    public String gerar(UUID psicologaId, String email, boolean admin, boolean restrito) {
         Instant agora = Instant.now();
         return Jwts.builder()
                 .subject(psicologaId.toString())
                 .claim("email", email)
                 .claim("admin", admin)
+                // Conta em situação irregular (inadimplência): a sessão sobe, mas o
+                // filtro só libera a tela de Assinatura. Ver docs/BUSINESS_RULES.md §11.
+                .claim("restrito", restrito)
                 .issuedAt(Date.from(agora))
                 .expiration(Date.from(agora.plus(expiracaoHoras, ChronoUnit.HOURS)))
                 .signWith(key)
@@ -47,9 +50,10 @@ public class JwtService {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-        // Tokens antigos não têm o claim — tratados como não-admin
+        // Tokens antigos não têm os claims — tratados como não-admin e não-restrito
         boolean admin = Boolean.TRUE.equals(claims.get("admin", Boolean.class));
+        boolean restrito = Boolean.TRUE.equals(claims.get("restrito", Boolean.class));
         return new PsicologaPrincipal(UUID.fromString(claims.getSubject()),
-                claims.get("email", String.class), admin);
+                claims.get("email", String.class), admin, restrito);
     }
 }

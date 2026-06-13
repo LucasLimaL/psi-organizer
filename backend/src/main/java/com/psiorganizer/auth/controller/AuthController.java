@@ -62,7 +62,7 @@ public class AuthController {
                 req.endereco().toDomain(),
                 preValidado);
         if (preValidado) {
-            String token = jwtService.gerar(p.getId(), p.getEmail(), false);
+            String token = jwtService.gerar(p.getId(), p.getEmail(), false, false);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new SignupResponse(false, token, PsicologaResponse.fromDomain(p)));
         }
@@ -88,9 +88,10 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Autentica psicólogo e retorna JWT")
+    @Operation(summary = "Autentica psicólogo e retorna JWT. Conta inadimplente loga em "
+            + "modo restrito (restrito=true) — só a tela de Assinatura fica acessível.")
     public LoginResponse login(@Valid @RequestBody LoginRequest req) {
         var r = authService.autenticar(req.email(), req.senha());
-        return new LoginResponse(r.token(), PsicologaResponse.fromDomain(r.psicologa()));
+        return new LoginResponse(r.token(), PsicologaResponse.fromDomain(r.psicologa()), r.restrito());
     }
 }

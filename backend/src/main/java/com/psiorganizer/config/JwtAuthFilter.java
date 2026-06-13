@@ -47,10 +47,34 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 if (principal.email() != null) {
                     MDC.put(LogFields.EMAIL, principal.email());
                 }
+                // Sessão restrita (inadimplência): só a tela de Assinatura e o renovar
+                // ficam acessíveis — o resto recebe 403. Enforcement pelo claim do
+                // token, sem ida ao banco. Ver docs/BUSINESS_RULES.md §11.
+                if (principal.restrito() && !permitidoEmModoRestrito(request)) {
+                    responderContaBloqueada(response);
+                    return;
+                }
             } catch (Exception ignored) {
                 // token inválido — segue sem autenticação; SecurityConfig devolve 401
             }
         }
         chain.doFilter(request, response);
+    }
+
+    /** Endpoints liberados pra uma sessão restrita: ver/regularizar a assinatura. */
+    private static boolean permitidoEmModoRestrito(HttpServletRequest request) {
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            return true; // preflight CORS
+        }
+        String uri = request.getRequestURI();
+        return uri.equals("/me/assinatura") || uri.equals("/me/renovar-sessao");
+    }
+
+    private static void responderContaBloqueada(HttpServletResponse response) throws IOException {
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write(
+                "{\"erro\":\"Conta com acesso restrito — regularize a assinatura para "
+                + "voltar a usar o sistema.\",\"detalhes\":{\"motivo\":\"CONTA_BLOQUEADA\"}}");
     }
 }

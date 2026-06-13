@@ -2,11 +2,13 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { api } from '../api/client'
 import { AuthContext, type Psicologa } from './authContext'
 
-type LoginResponse = { token: string; psicologa: Psicologa }
+// `restrito` vem no topo do LoginResponse (não dentro de psicologa) — dobramos
+// no objeto guardado pra persistir entre reloads.
+type LoginResponse = { token: string; psicologa: Omit<Psicologa, 'restrito'>; restrito: boolean }
 type SignupResponse = {
   emailValidacaoPendente: boolean
   token: string | null
-  psicologa: Psicologa
+  psicologa: Omit<Psicologa, 'restrito'>
 }
 
 const TOKEN_KEY = 'psi.jwt'
@@ -23,10 +25,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setCarregando(false)
   }, [])
 
-  function aplicar(resp: LoginResponse) {
+  function aplicar(resp: LoginResponse): Psicologa {
+    const user: Psicologa = { ...resp.psicologa, restrito: resp.restrito }
     localStorage.setItem(TOKEN_KEY, resp.token)
-    localStorage.setItem(USER_KEY, JSON.stringify(resp.psicologa))
-    setPsicologa(resp.psicologa)
+    localStorage.setItem(USER_KEY, JSON.stringify(user))
+    setPsicologa(user)
+    return user
   }
 
   async function login(email: string, senha: string) {
@@ -34,8 +38,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       method: 'POST',
       body: JSON.stringify({ email, senha }),
     })
-    aplicar(resp)
-    return resp.psicologa
+    return aplicar(resp)
+  }
+
+  async function renovarSessao() {
+    const resp = await api<LoginResponse>('/me/renovar-sessao', { method: 'POST' })
+    return aplicar(resp)
   }
 
   async function signup(payload: unknown) {
@@ -46,7 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (resp.emailValidacaoPendente || !resp.token) {
       return { pendenteValidacao: true }
     }
-    aplicar({ token: resp.token, psicologa: resp.psicologa })
+    // Conta recém-criada nasce com cortesia — nunca restrita.
+    aplicar({ token: resp.token, psicologa: resp.psicologa, restrito: false })
     return { pendenteValidacao: false }
   }
 
@@ -56,14 +65,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setPsicologa(null)
   }
 
-  function atualizarPsicologa(p: Psicologa) {
-    localStorage.setItem(USER_KEY, JSON.stringify(p))
-    setPsicologa(p)
+  function atualizarPsicologa(p: Omit<Psicologa, 'restrito'>) {
+    setPsicologa(prev => {
+      const user: Psicologa = { ...p, restrito: prev?.restrito ?? false }
+      localStorage.setItem(USER_KEY, JSON.stringify(user))
+      return user
+    })
   }
 
   return (
     <AuthContext.Provider value={{
-      psicologa, carregando, login, signup, logout, atualizarPsicologa,
+      psicologa, carregando, login, signup, logout, atualizarPsicologa, renovarSessao,
     }}>
       {children}
     </AuthContext.Provider>

@@ -26,6 +26,14 @@ export async function api<T>(
   }
   if (!res.ok) {
     const body: ApiError = await res.json().catch(() => ({ erro: res.statusText }))
+    // Conta restrita por inadimplência tentou um endpoint fora do allowlist.
+    // Rede de segurança: manda pra /assinatura (o sandbox). Não limpa a sessão —
+    // diferente do 401, a sessão é válida, só está restrita.
+    const motivo = (body.detalhes as { motivo?: string } | undefined)?.motivo
+    if (res.status === 403 && motivo === 'CONTA_BLOQUEADA'
+        && !window.location.pathname.startsWith('/assinatura')) {
+      window.location.assign('/assinatura')
+    }
     throw body
   }
   if (res.status === 204 || res.status === 202) return undefined as T

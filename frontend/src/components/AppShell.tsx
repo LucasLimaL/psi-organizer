@@ -40,6 +40,11 @@ const NAV_ADMIN = [
   { to: '/perfil', label: 'Perfil', icon: <PersonOutlineIcon /> },
 ]
 
+// Conta restrita por inadimplência — só Assinatura, pra regularizar
+const NAV_RESTRITO = [
+  { to: '/assinatura', label: 'Assinatura', icon: <CardMembershipIcon /> },
+]
+
 const { drawerWidth, appBarHeight } = globalTokens.layout
 
 function tituloDaRota(pathname: string): string {
@@ -60,19 +65,21 @@ export default function AppShell() {
   const location = useLocation()
   const navigate = useNavigate()
   const { psicologa, logout } = useAuth()
+  const restrito = psicologa?.restrito ?? false
+  const navItems = psicologa?.admin ? NAV_ADMIN : restrito ? NAV_RESTRITO : NAV
 
   // Primeiro acesso: inicia o tour uma única vez por usuário (psicólogos —
   // o admin tem menu próprio, fora do roteiro). Pode ser revisto no #botao-tour.
   // A flag é marcada já no início: refresh no meio do tour não o reapresenta.
   useEffect(() => {
-    if (!psicologa || psicologa.admin || tourJaVisto(psicologa.id)) return
+    if (!psicologa || psicologa.admin || restrito || tourJaVisto(psicologa.id)) return
     const id = psicologa.id
     const t = setTimeout(() => {
       marcarTourVisto(id)
       iniciarTour()
     }, 900)
     return () => clearTimeout(t)
-  }, [psicologa])
+  }, [psicologa, restrito])
 
   function onLogout() {
     logout()
@@ -109,7 +116,7 @@ export default function AppShell() {
       <Divider />
 
       <List sx={{ flexGrow: 1, px: 1.5, py: 2 }} component="nav" aria-label="Navegação principal">
-        {(psicologa?.admin ? NAV_ADMIN : NAV).map(item => {
+        {navItems.map(item => {
           const ativo = item.to === '/'
             ? location.pathname === '/'
             : location.pathname.startsWith(item.to)
@@ -190,7 +197,7 @@ export default function AppShell() {
           <Typography variant="h6" component="h1" sx={{ flexGrow: 1, fontWeight: 600 }}>
             {tituloDaRota(location.pathname)}
           </Typography>
-          {!psicologa?.admin && (
+          {!psicologa?.admin && !restrito && (
             <Tooltip title="Tour do sistema">
               <IconButton
                 id="botao-tour"
@@ -202,9 +209,11 @@ export default function AppShell() {
               </IconButton>
             </Tooltip>
           )}
-          <Box id="sino-notificacoes" sx={{ display: 'inline-flex' }}>
-            <NotificacoesBadge />
-          </Box>
+          {!restrito && (
+            <Box id="sino-notificacoes" sx={{ display: 'inline-flex' }}>
+              <NotificacoesBadge />
+            </Box>
+          )}
           <PaletteSwitcher />
         </Toolbar>
       </AppBar>

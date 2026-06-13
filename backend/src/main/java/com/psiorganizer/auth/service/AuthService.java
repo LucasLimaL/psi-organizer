@@ -1,6 +1,7 @@
 package com.psiorganizer.auth.service;
 
 import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -13,7 +14,7 @@ import com.psiorganizer.psicologa.repository.PsicologaRepository;
 @Service
 public class AuthService {
 
-    public record Resultado(String token, Psicologa psicologa) {}
+    public record Resultado(String token, Psicologa psicologa, boolean restrito) {}
 
     private final PsicologaRepository psicologaRepository;
     private final PasswordEncoder passwordEncoder;
@@ -31,13 +32,11 @@ public class AuthService {
     }
 
     /**
-     * Autentica e avalia a situação contratual no momento do login:
-     * sem contrato vigente OU fatura vencida → bloqueio automático
-     * (INADIMPLENCIA) e 401 com motivo estruturado pra tela de situação
-     * irregular. Baixa/contrato novo regularizam e desfazem o bloqueio.
-     *
-     * SEM @Transactional de propósito: cada passo do FaturaService commita na
-     * própria transação — o 401 lançado no fim não pode reverter o bloqueio.
+     * Autentica e avalia a situação contratual no momento do login. Inadimplência
+     * (sem contrato vigente OU fatura vencida) NÃO barra o login: a sessão sobe em
+     * modo restrito (token com claim {@code restrito=true}), e o JwtAuthFilter só
+     * libera a tela de Assinatura — onde o psicólogo regulariza. Bloqueio manual
+     * (motivo ADMIN) continua sendo recusa dura (401). Ver docs/BUSINESS_RULES.md §11.
      */
     public Resultado autenticar(String email, String senha) {
         Psicologa p = psicologaRepository.findByEmail(email)
@@ -51,6 +50,29 @@ public class AuthService {
                     "E-mail ainda não validado. Confira sua caixa de entrada ou peça um novo link.",
                     Map.of("motivo", "EMAIL_NAO_VALIDADO"));
         }
+        return avaliarEEmitir(p);
+    }
+
+    /**
+     * Re-emite o token recalculando a situação — usado pelo botão "já paguei /
+     * renovar sessão" da tela de Assinatura: assim que a inadimplência é
+     * regularizada (baixa do admin hoje; callback do PIX no futuro), o psicólogo
+     * recupera o acesso sem esperar o token de 24h expirar. Bloqueio ADMIN surgido
+     * no meio → 401, derrubando a sessão.
+     */
+    public Resultado renovarSessao(UUID psicologaId) {
+        Psicologa p = psicologaRepository.findById(psicologaId)
+                .orElseThrow(() -> ApiException.naoAutorizado("Sessão inválida"));
+        return avaliarEEmitir(p);
+    }
+
+    /**
+     * Avalia a situação contratual e emite o token. SEM @Transactional de
+     * propósito: cada passo do FaturaService commita na própria transação — o
+     * bloqueio não pode depender da transação que emite o token.
+     */
+    private Resultado avaliarEEmitir(Psicologa p) {
+        boolean restrito = false;
         if (!p.isAdmin()) {
             if (p.isBloqueada() && FaturaService.MOTIVO_ADMIN.equals(p.getBloqueadaMotivo())) {
                 throw ApiException.naoAutorizado(
@@ -59,17 +81,9 @@ public class AuthService {
             }
             faturaService.materializar(p);
             faturaService.regularizarSePossivel(p);
-            FaturaService.Situacao s = faturaService.bloquearSeIrregular(p);
-            if (s.irregular()) {
-                throw ApiException.naoAutorizado(
-                        "Conta em situação irregular",
-                        Map.of("motivo", "SITUACAO_IRREGULAR",
-                                "temContratoVigente", s.temContratoVigente(),
-                                "faturasVencidas", s.faturasVencidas(),
-                                "totalVencido", s.totalVencido()));
-            }
+            restrito = faturaService.bloquearSeIrregular(p).irregular();
         }
-        String token = jwtService.gerar(p.getId(), p.getEmail(), p.isAdmin());
-        return new Resultado(token, p);
+        String token = jwtService.gerar(p.getId(), p.getEmail(), p.isAdmin(), restrito);
+        return new Resultado(token, p, restrito);
     }
 }

@@ -9,6 +9,13 @@ export type Psicologa = {
   telefone: string
   /** Conta de gestão do SaaS — habilita o painel /admin. */
   admin: boolean
+  /**
+   * Sessão restrita por inadimplência: só a tela de Assinatura fica acessível.
+   * Vem do topo do LoginResponse (não do PsicologaResponse) e é dobrado aqui pra
+   * persistir entre reloads. Fonte de verdade do bloqueio é o backend (claim do JWT);
+   * este campo é só pra UX. Ver docs/BUSINESS_RULES.md §11.
+   */
+  restrito: boolean
 }
 
 export type AuthCtx = {
@@ -19,8 +26,13 @@ export type AuthCtx = {
   /** Conta comum nasce não validada → { pendenteValidacao: true } (sem sessão). */
   signup: (payload: unknown) => Promise<{ pendenteValidacao: boolean }>
   logout: () => void
-  /** Atualiza a psicóloga no contexto e em localStorage. */
-  atualizarPsicologa: (p: Psicologa) => void
+  /** Atualiza a psicóloga no contexto e em localStorage (preserva `restrito`). */
+  atualizarPsicologa: (p: Omit<Psicologa, 'restrito'>) => void
+  /**
+   * Re-emite o token recalculando a situação de cobrança (botão "já paguei").
+   * Retorna a psicóloga atualizada — `restrito === false` significa que regularizou.
+   */
+  renovarSessao: () => Promise<Psicologa>
 }
 
 export const AuthContext = createContext<AuthCtx | undefined>(undefined)

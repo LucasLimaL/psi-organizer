@@ -230,7 +230,7 @@ A UI reforça a regra com o `InativarPacienteDialog` (Alert outlined warning exp
 | Usuário admin do dono do sistema (`lucas_221910@hotmail.com`) é **garantido em qualquer ambiente** pela migração inicial (idempotente via `WHERE NOT EXISTS`); CPF placeholder `00000000000` nunca colide com cadastro real (signup valida dígito verificador) | `V1__schema_inicial.sql` |
 | Endpoints `/admin/**` revalidam a flag `admin` **no banco** a cada chamada — não-admin → `403` | `AdminService.exigirAdmin` |
 | Admin enxerga **apenas dados cadastrais e contratuais** das psicólogas — dados clínicos (pacientes, consultas) ficam fora por princípio LGPD | escopo do `AdminService`/DTOs |
-| **Bloqueio** vale a partir do **próximo login** (`401` com mensagem específica); token vigente expira sozinho em até 24h. Decisão consciente: evita query por request no filtro JWT. | `AuthService.autenticar` |
+| **Bloqueio** vale a partir do **próximo login** (`401` com mensagem específica); token vigente expira sozinho em até 24h. Decisão consciente: evita query por request no filtro JWT. ⚠️ **Muda com a decisão de acesso restrito (fim do §11):** `INADIMPLENCIA` passará a **logar em modo restrito**; só `ADMIN` segue como `401` duro. | `AuthService.autenticar` |
 | Bloqueio tem **motivo**: `ADMIN` (manual — só sai pela mão do admin) ou `INADIMPLENCIA` (automático — desfeito sozinho quando a situação regulariza) | `psicologa.bloqueada_motivo` · `FaturaService` |
 | Admin não pode bloquear a própria conta nem outra conta admin | `AdminService.bloquear` → `400` |
 | **Troca de senha** exige a senha atual e valida a nova com `@SenhaValida` | `PsicologaService.alterarSenha` → `400 "Senha atual incorreta"` |
@@ -246,9 +246,23 @@ A UI reforça a regra com o `InativarPacienteDialog` (Alert outlined warning exp
 | **Contrato tem vigência por datas** (sem flag de estado); **sobreposição de período é recusada** (`409`) — no máximo 1 contrato por dia | `AdminService.criarContrato` |
 | **Encerrar contrato** vale até o fechamento do ciclo corrente (fatura final cheia); contrato ainda não iniciado é removido | `AdminService.encerrarContrato` |
 | **Cortesia**: toda conta nova nasce com contrato de **1 mês a R$ 0**; fatura de valor 0 **nasce paga**. Cortesia expirada sem contrato novo → situação irregular (funil de conversão). | `PsicologaService.criar` · construtor de `Fatura` |
-| **Situação irregular** = sem contrato vigente OU fatura vencida. Avaliada no **login**: bloqueia automaticamente (motivo `INADIMPLENCIA`) e devolve `401` com `detalhes.motivo = SITUACAO_IRREGULAR` + total vencido — frontend mostra a tela explicativa. | `AuthService.autenticar` · `LoginPage` |
+| **Situação irregular** = sem contrato vigente OU fatura vencida. Avaliada no **login**: bloqueia automaticamente (motivo `INADIMPLENCIA`) e devolve `401` com `detalhes.motivo = SITUACAO_IRREGULAR` + total vencido — frontend mostra a tela explicativa. ⚠️ **A implementar:** em vez de `401`, emitir token em **modo restrito** (acesso só a `/assinatura`) — ver decisão no fim do §11. | `AuthService.autenticar` · `LoginPage` |
 | **Baixa que regulariza** (ou contrato novo que cobre a lacuna) **desfaz o bloqueio automático** na hora; o próximo login volta a bloquear se surgir nova vencida | `FaturaService.regularizarSePossivel` |
 | Máximo **1 fatura por (psicólogo, fechamento)** — constraint no banco torna duplicidade impossível | `uq_fatura_psicologa_periodo` |
+
+### Acesso restrito por inadimplência — decisão (🔭 a implementar · 2026-06-13)
+
+Mini-ADR registrado antes da implementação. Substitui, para o motivo `INADIMPLENCIA`, o comportamento de "bloqueio = `401` no login" das regras acima (o motivo `ADMIN` não muda).
+
+- **Decisão.** Conta bloqueada por **`INADIMPLENCIA`** passa a **conseguir logar**, porém em **modo restrito**: todas as funcionalidades bloqueadas, **exceto a tela `/assinatura`**. Bloqueio **`ADMIN`** continua como rejeição dura no login (`401 BLOQUEADO_ADMIN`) — é um "não" deliberado de um humano, não um funil de pagamento.
+- **Mecanismo — claim no JWT, sem query por request (Opção A).** O login calcula a situação e, se irregular, emite o token com um claim de situação restrita (ex.: `situacao: IRREGULAR`). O `JwtAuthFilter` lê o claim e libera apenas um **allowlist** — `/assinatura` e o que ela consome (`GET /me/assinatura`, `GET /me`, logout, endpoint de regularização); qualquer outro endpoint → **`403 CONTA_BLOQUEADA`**. Nenhuma ida ao banco por request.
+- **Por que não checar fresco no banco a cada request (Opção B).** Seria um `SELECT` por request por um frescor que, na arquitetura atual, é ilusório: a inadimplência só é avaliada **no login** (`bloquearSeIrregular`), não há job mexendo no flag durante a sessão. **Defasagem aceita conscientemente:** quem fica irregular durante a sessão segue até o token expirar (≤24h) — sem impacto de negócio (no máximo ~1 dia extra com fatura vencida).
+- **Tela `/assinatura` em modo restrito.** Exibe aviso explicando que o acesso está bloqueado por fatura(s) vencida(s) e que é preciso **pagar as faturas atrasadas para regularizar**, com total vencido e a lista de faturas.
+- **Liberação após pagamento.**
+  - **Agora (sem integração de pagamento):** botão **"Renovar sessão / Já paguei"** que re-autentica e re-emite o token; recalculada a situação como regular, o claim some e o acesso volta — sem esperar as 24h. (A regularização hoje vem do admin dando baixa na fatura; o botão faz a sessão refletir isso na hora.)
+  - **Futuro (PIX):** QR code de pagamento PIX na própria tela; ao receber o **callback de PIX pago**, a sessão é recarregada **automaticamente** (token re-emitido), liberando o acesso **sem clique**.
+- **Rotinas WhatsApp.** O `LembreteScheduler` passa a **pular psicólogas bloqueadas** (`psicologa.bloqueada = false` na seleção). É job batch — pode consultar o banco à vontade, não é request-scoped, então não conflita com o critério de evitar `SELECT` por request.
+- **Escalonamento futuro (se um dia exigir bloqueio `ADMIN` imediato no meio da sessão):** um conjunto de revogação em memória consultado pelo filtro (lookup O(1), sem `SELECT` por request) — incremental sobre a Opção A, não retrabalho.
 
 ---
 

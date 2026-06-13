@@ -16,7 +16,8 @@ export type AuthCtx = {
   carregando: boolean
   /** Retorna a psicóloga logada — permite redirect condicional (ex.: admin → /admin). */
   login: (email: string, senha: string) => Promise<Psicologa>
-  signup: (payload: unknown) => Promise<void>
+  /** Conta comum nasce não validada → { pendenteValidacao: true } (sem sessão). */
+  signup: (payload: unknown) => Promise<{ pendenteValidacao: boolean }>
   logout: () => void
   /** Atualiza a psicóloga no contexto e em localStorage. */
   atualizarPsicologa: (p: Psicologa) => void

@@ -28,6 +28,6 @@ export async function api<T>(
     const body: ApiError = await res.json().catch(() => ({ erro: res.statusText }))
     throw body
   }
-  if (res.status === 204) return undefined as T
+  if (res.status === 204 || res.status === 202) return undefined as T
   return (await res.json()) as T
 }

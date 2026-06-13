@@ -41,8 +41,10 @@ Toda resposta de erro segue o mesmo envelope:
 
 | Método | Path | Sumário | Códigos relevantes |
 |---|---|---|---|
-| `POST` | `/auth/signup` | Cria conta de psicóloga e retorna JWT | `201` · `400` validação · `409` e-mail ou CPF já cadastrado |
-| `POST` | `/auth/login` | Autentica e retorna JWT. Conta **bloqueada** → `401` com mensagem específica. | `200` · `401` credenciais inválidas ou conta bloqueada |
+| `POST` | `/auth/signup` | Cria conta de psicóloga **não validada** e envia link de ativação por e-mail (24h) — `token` nulo + `emailValidacaoPendente=true`. E-mails em `psi.auth.emails-pre-validados` nascem validados e recebem JWT direto. | `201` · `400` validação · `409` e-mail ou CPF já cadastrado |
+| `POST` | `/auth/login` | Autentica e retorna JWT. Conta **bloqueada** ou **e-mail não validado** (`motivo: EMAIL_NAO_VALIDADO`) → `401` com mensagem específica. | `200` · `401` credenciais inválidas, conta bloqueada ou e-mail não validado |
+| `POST` | `/auth/validar-email` | Ativa a conta a partir do token do link enviado por e-mail | `204` · `400` token inválido, usado ou expirado |
+| `POST` | `/auth/reenviar-validacao` | Reenvia o link de validação (silencioso — não revela se o e-mail existe) | `202` sempre |
 
 ### Perfil · `/me`
 

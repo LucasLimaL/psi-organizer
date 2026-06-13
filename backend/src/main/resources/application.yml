@@ -24,6 +24,17 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
+  # SMTP do e-mail de validação de conta (usado só quando psi.email.modo=smtp).
+  # Gmail: senha de app (não a senha da conta) — ver docs/runbooks/EMAIL.md.
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
 server:
   # Cloud Run injeta PORT; localmente cai no default 8080.
   port: ${PORT:8080}
@@ -40,6 +51,18 @@ psi:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
     # CSV de headers permitidos; default "*" (definido também como fallback no @Value)
     allowed-headers: "*"
+  # Base do link de validação enviado por e-mail (página /validar-email do SPA).
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:5173}
+  email:
+    # log (default): escreve o link de validação no log — dev sem SMTP.
+    # smtp: envia de verdade via spring.mail.* (Gmail em prod).
+    modo: ${EMAIL_MODO:log}
+    remetente: ${EMAIL_REMETENTE:}
+  auth:
+    # CSV de e-mails que nascem validados no signup — contas operacionais sem
+    # caixa de entrada (ex: tenant de auditoria noturna).
+    emails-pre-validados: ${AUTH_EMAILS_PRE_VALIDADOS:claude-audit@psi.com}
   whatsapp:
     # Padrão é true — usa MockWhatsappClient (loga, retorna id sintético).
     # Pra mandar mensagem real via Meta Cloud API, set false + as 3 envs abaixo.
@@ -85,6 +108,12 @@ management:
   endpoint:
     health:
       show-details: when_authorized
+  health:
+    mail:
+      # O starter-mail adiciona health check de SMTP — sem credenciais (modo log)
+      # ele derruba o /actuator/health (503) e, em prod, o probe do Cloud Run.
+      # Falha de SMTP não deve tirar a API do ar; monitoramos pelo log de erro.
+      enabled: false
   prometheus:
     metrics:
       export:

@@ -65,6 +65,17 @@ public class Psicologa {
     @Column(name = "cobrar_faltas", nullable = false)
     private boolean cobrarFaltas = true;
 
+    /** Conta só loga depois de validar o e-mail. Contas pré-existentes nascem validadas (V10). */
+    @Column(name = "email_validado", nullable = false)
+    private boolean emailValidado;
+
+    /** SHA-256 (hex) do token de validação enviado por e-mail — nunca o token em claro. */
+    @Column(name = "validacao_token_hash", length = 64)
+    private String validacaoTokenHash;
+
+    @Column(name = "validacao_token_expira_em")
+    private Instant validacaoTokenExpiraEm;
+
     @Column(name = "criado_em", nullable = false)
     private Instant criadoEm;
 
@@ -115,6 +126,15 @@ public class Psicologa {
 
     public boolean isCobrarFaltas() { return cobrarFaltas; }
     public void setCobrarFaltas(boolean c) { this.cobrarFaltas = c; }
+
+    public boolean isEmailValidado() { return emailValidado; }
+    public void setEmailValidado(boolean v) { this.emailValidado = v; }
+
+    public String getValidacaoTokenHash() { return validacaoTokenHash; }
+    public void setValidacaoTokenHash(String h) { this.validacaoTokenHash = h; }
+
+    public Instant getValidacaoTokenExpiraEm() { return validacaoTokenExpiraEm; }
+    public void setValidacaoTokenExpiraEm(Instant e) { this.validacaoTokenExpiraEm = e; }
 
     public Instant getCriadoEm() { return criadoEm; }
 }

@@ -16,6 +16,17 @@ Todas as regras enforced pelo sistema, em um único lugar. Cada regra cita onde 
 | **IDs** são UUID v4, gerados na aplicação | Construtor de entidade |
 | **Campos imutáveis no perfil** | `AtualizarPerfilRequest` aceita apenas `nomeCompleto`, `crp`, `telefone`, `endereco`. **E-mail e CPF não são editáveis** por aqui (alterá-los exigiria fluxo de verificação separado, fora de escopo). Senha tem endpoint próprio (não implementado no MVP). |
 
+### Validação de e-mail (ativação da conta)
+
+| Regra | Onde |
+|---|---|
+| Signup cria a conta **não validada** e envia link de ativação por e-mail; **sem validar, não loga** (`401`, `motivo: EMAIL_NAO_VALIDADO`, checado após a senha pra não revelar estado de conta) | `AuthController.signup` + `AuthService.autenticar` |
+| Token de validação: 32 bytes aleatórios, validade **24h**, banco guarda só o **SHA-256** (uso único — validar limpa o hash) | `ValidacaoEmailService` + V10 |
+| Reenvio em `/auth/reenviar-validacao` é silencioso (`202` sempre) e regenera o token, invalidando o anterior | `ValidacaoEmailService.reenviar` |
+| E-mails em `psi.auth.emails-pre-validados` (CSV; default `claude-audit@psi.com`, tenant da auditoria noturna) nascem validados no signup e recebem JWT direto | `ValidacaoEmailService.preValidado` |
+| Contas pré-existentes à V10 e contas do seed nascem validadas | `V10__psicologa_validacao_email.sql` · `SeedDataRunner` |
+| Envio: `psi.email.modo=smtp` (Gmail, ver [runbooks/EMAIL.md](runbooks/EMAIL.md)) ou `log` (default dev — escreve o link no log) | `SmtpEmailValidacaoSender` / `LogEmailValidacaoSender` |
+
 ---
 
 ## 2. Multi-tenancy

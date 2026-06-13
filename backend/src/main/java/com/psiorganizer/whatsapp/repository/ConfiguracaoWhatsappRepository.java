@@ -15,9 +15,11 @@ public interface ConfiguracaoWhatsappRepository extends JpaRepository<Configurac
 
     /**
      * Psicólogas com lembretes habilitados E não bloqueadas — usado pelo
-     * LembreteScheduler. Conta bloqueada (inadimplência ou admin) não consome o
-     * WhatsApp: é feature paga e não deve disparar mensagem em nome de conta
-     * suspensa. Ver docs/BUSINESS_RULES.md §11.
+     * LembreteScheduler para NÃO INICIAR novos lembretes de conta bloqueada
+     * (inadimplência ou admin), já que é feature paga. Escopo: apenas a iniciação.
+     * Conversas já em andamento (resposta da paciente via webhook a um lembrete
+     * enviado ANTES do bloqueio) não são interrompidas por aqui — o inbound não
+     * checa bloqueio. Ver docs/BUSINESS_RULES.md §11.
      */
     @Query("select c from ConfiguracaoWhatsapp c where c.ativo = true "
             + "and not exists (select 1 from Psicologa p "

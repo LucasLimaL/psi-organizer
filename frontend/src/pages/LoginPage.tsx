@@ -20,11 +20,6 @@ export default function LoginPage() {
   const [senha, setSenha] = useState('')
   const [mostrarSenha, setMostrarSenha] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
-  const [irregular, setIrregular] = useState<{
-    temContratoVigente: boolean
-    faturasVencidas: number
-    totalVencido: number
-  } | null>(null)
   const [emailNaoValidado, setEmailNaoValidado] = useState(false)
   const [reenviado, setReenviado] = useState(false)
   const [enviando, setEnviando] = useState(false)
@@ -32,7 +27,6 @@ export default function LoginPage() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
     setErro(null)
-    setIrregular(null)
     setEmailNaoValidado(false)
     setReenviado(false)
     setEnviando(true)
@@ -42,23 +36,9 @@ export default function LoginPage() {
       const destino = p.admin ? '/admin' : p.restrito ? '/assinatura' : '/'
       navigate(destino, { replace: true })
     } catch (err) {
-      const e = err as {
-        erro?: string
-        detalhes?: {
-          motivo?: string
-          temContratoVigente?: boolean
-          faturasVencidas?: number
-          totalVencido?: number
-        }
-      }
+      const e = err as { erro?: string; detalhes?: { motivo?: string } }
       if (e?.detalhes?.motivo === 'EMAIL_NAO_VALIDADO') {
         setEmailNaoValidado(true)
-      } else if (e?.detalhes?.motivo === 'SITUACAO_IRREGULAR') {
-        setIrregular({
-          temContratoVigente: e.detalhes.temContratoVigente ?? false,
-          faturasVencidas: e.detalhes.faturasVencidas ?? 0,
-          totalVencido: e.detalhes.totalVencido ?? 0,
-        })
       } else {
         setErro(e?.erro ?? 'Falha ao entrar')
       }
@@ -70,7 +50,7 @@ export default function LoginPage() {
   return (
     <AuthShell titulo="Entrar" subtitulo="Acesse sua conta para gerenciar a agenda">
       <Stack component="form" onSubmit={onSubmit} spacing={2.5}>
-        {sessaoExpirada && !erro && !irregular && (
+        {sessaoExpirada && !erro && (
           <Alert severity="info">
             Sua sessão expirou. Entre novamente para continuar.
           </Alert>
@@ -97,33 +77,6 @@ export default function LoginPage() {
             caixa de entrada (e no spam) — ou reenvie.
           </Alert>
         )}
-        {irregular && (
-          <Alert severity="warning">
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>
-              Sua conta está em situação irregular
-            </Typography>
-            <Typography variant="body2" component="div">
-              {irregular.faturasVencidas > 0 ? (
-                <>
-                  Você possui {irregular.faturasVencidas} fatura
-                  {irregular.faturasVencidas === 1 ? '' : 's'} vencida
-                  {irregular.faturasVencidas === 1 ? '' : 's'}, totalizando{' '}
-                  <strong>
-                    {irregular.totalVencido.toLocaleString('pt-BR', {
-                      style: 'currency', currency: 'BRL',
-                    })}
-                  </strong>.
-                </>
-              ) : (
-                <>Seu período de uso terminou e não há contrato vigente.</>
-              )}
-              {' '}O acesso fica suspenso até a regularização — entre em contato
-              com o administrador do sistema para acertar o pagamento e
-              reativar sua conta.
-            </Typography>
-          </Alert>
-        )}
-
         <TextField
           fullWidth
           label="E-mail"

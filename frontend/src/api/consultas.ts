@@ -44,6 +44,8 @@ export type ConsultaUpdate = {
   valor: number
   status: StatusConsulta
   pago: boolean
+  /** Instante do pagamento (ISO). Opcional — backend usa agora se ausente. */
+  pagoEm?: string
   observacoes?: string
 }
 

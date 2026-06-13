@@ -80,7 +80,7 @@ public class ConsultaService {
     @Transactional
     public Consulta atualizar(UUID psicologaId, UUID id, Instant inicio, int duracaoMinutos,
                               BigDecimal valor, StatusConsulta status, boolean pago,
-                              String observacoes) {
+                              Instant pagoEm, String observacoes) {
         Consulta c = buscar(psicologaId, id);
         if (!c.getInicio().equals(inicio) || c.getDuracaoMinutos() != duracaoMinutos) {
             validarConflito(psicologaId, inicio, duracaoMinutos, c.getId());
@@ -89,9 +89,10 @@ public class ConsultaService {
         c.setDuracaoMinutos(duracaoMinutos);
         c.setValor(valor);
         c.setStatus(status);
-        // pago_em registra a transição não-pago → pago; desmarcar limpa a data
+        // pago_em registra a transição não-pago → pago; usa o instante informado
+        // (escolhido pela psicóloga no financeiro) ou agora se ausente. Desmarcar limpa a data.
         if (pago && !c.isPago()) {
-            c.setPagoEm(Instant.now());
+            c.setPagoEm(pagoEm != null ? pagoEm : Instant.now());
         } else if (!pago) {
             c.setPagoEm(null);
         }

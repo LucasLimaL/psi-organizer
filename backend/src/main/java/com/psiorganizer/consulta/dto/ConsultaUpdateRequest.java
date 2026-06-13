@@ -13,5 +13,7 @@ public record ConsultaUpdateRequest(
         @NotNull @DecimalMin(value = "0.00", inclusive = true) BigDecimal valor,
         @NotNull StatusConsulta status,
         boolean pago,
+        /** Instante do pagamento. Opcional — ausente na transição → usa agora (UTC). */
+        Instant pagoEm,
         String observacoes
 ) {}

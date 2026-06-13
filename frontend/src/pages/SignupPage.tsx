@@ -2,13 +2,15 @@ import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import {
   Stack, TextField, Button, Link, Alert, Grid, Typography, Divider,
-  InputAdornment, IconButton,
+  InputAdornment, IconButton, Box,
 } from '@mui/material'
 import VisibilityIcon from '@mui/icons-material/VisibilityOutlined'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOffOutlined'
+import MarkEmailReadIcon from '@mui/icons-material/MarkEmailReadOutlined'
 import { useAuth } from '../auth/authContext'
 import AuthShell from '../components/AuthShell'
 import EnderecoForm from '../components/EnderecoForm'
+import { authValidacaoApi } from '../api/authValidacao'
 
 import type { EnderecoFormValor } from '../components/EnderecoForm'
 
@@ -60,6 +62,8 @@ export default function SignupPage() {
   const [mostrarSenha, setMostrarSenha] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
+  const [aguardandoValidacao, setAguardandoValidacao] = useState(false)
+  const [reenviado, setReenviado] = useState(false)
 
   function set<K extends keyof Form>(k: K, v: Form[K]) {
     setForm(f => ({ ...f, [k]: v }))
@@ -75,8 +79,12 @@ export default function SignupPage() {
         cpf: form.cpf.replace(/\D/g, ''),
         endereco: { ...form.endereco, cep: form.endereco.cep.replace(/\D/g, '') },
       }
-      await signup(payload)
-      navigate('/', { replace: true })
+      const { pendenteValidacao } = await signup(payload)
+      if (pendenteValidacao) {
+        setAguardandoValidacao(true)
+      } else {
+        navigate('/', { replace: true })
+      }
     } catch (err) {
       const e = err as { erro?: string; detalhes?: Record<string, string> }
       const detalhes = e?.detalhes ? ' — ' + Object.values(e.detalhes).join('; ') : ''
@@ -84,6 +92,46 @@ export default function SignupPage() {
     } finally {
       setEnviando(false)
     }
+  }
+
+  async function onReenviar() {
+    await authValidacaoApi.reenviarValidacao(form.email)
+    setReenviado(true)
+  }
+
+  if (aguardandoValidacao) {
+    return (
+      <AuthShell titulo="Confira seu e-mail" subtitulo="Falta só um passo">
+        <Stack spacing={2.5} sx={{ alignItems: 'center', textAlign: 'center' }}>
+          <Box sx={{ color: 'primary.main' }}>
+            <MarkEmailReadIcon sx={{ fontSize: 56 }} />
+          </Box>
+          <Typography variant="body1">
+            Sua conta foi criada! Enviamos um link de confirmação para{' '}
+            <strong>{form.email}</strong>. Clique nele para ativar a conta —
+            o link vale por 24 horas.
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Não chegou? Olhe a caixa de spam ou reenvie abaixo.
+          </Typography>
+          {reenviado && (
+            <Alert severity="success" sx={{ width: '100%' }}>
+              Link reenviado — confira sua caixa de entrada.
+            </Alert>
+          )}
+          <Button variant="outlined" onClick={onReenviar} disabled={reenviado}>
+            Reenviar e-mail
+          </Button>
+          <Link
+            component={RouterLink}
+            to="/login"
+            sx={{ fontWeight: 600, textDecoration: 'none' }}
+          >
+            Ir para o login
+          </Link>
+        </Stack>
+      </AuthShell>
+    )
   }
 
   return (

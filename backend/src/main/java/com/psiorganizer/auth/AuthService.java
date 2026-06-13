@@ -45,6 +45,12 @@ public class AuthService {
         if (!passwordEncoder.matches(senha, p.getSenhaHash())) {
             throw ApiException.naoAutorizado("Credenciais inválidas");
         }
+        // Checado APÓS a senha — não revela existência/estado de conta a terceiros.
+        if (!p.isEmailValidado()) {
+            throw ApiException.naoAutorizado(
+                    "E-mail ainda não validado. Confira sua caixa de entrada ou peça um novo link.",
+                    Map.of("motivo", "EMAIL_NAO_VALIDADO"));
+        }
         if (!p.isAdmin()) {
             if (p.isBloqueada() && FaturaService.MOTIVO_ADMIN.equals(p.getBloqueadaMotivo())) {
                 throw ApiException.naoAutorizado(

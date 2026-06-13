@@ -32,7 +32,7 @@ public class PsicologaService {
     @Transactional
     public Psicologa criar(String nomeCompleto, String email, String senha,
                            String cpf, String crp, String telefone, int diaFechamento,
-                           Endereco endereco) {
+                           Endereco endereco, boolean emailValidado) {
         String cpfNumerico = CpfUtil.somenteDigitos(cpf);
         if (repository.existsByEmail(email)) {
             throw ApiException.conflito("E-mail já cadastrado");
@@ -50,6 +50,7 @@ public class PsicologaService {
                 telefone,
                 endereco,
                 diaFechamento);
+        p.setEmailValidado(emailValidado);
         repository.save(p);
         // Cortesia: 1 mês de contrato a R$ 0 a partir do cadastro. As faturas
         // de valor zero nascem pagas; expirou sem contrato novo → situação

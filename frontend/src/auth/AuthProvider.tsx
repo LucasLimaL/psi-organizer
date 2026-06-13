@@ -3,6 +3,11 @@ import { api } from '../api/client'
 import { AuthContext, type Psicologa } from './authContext'
 
 type LoginResponse = { token: string; psicologa: Psicologa }
+type SignupResponse = {
+  emailValidacaoPendente: boolean
+  token: string | null
+  psicologa: Psicologa
+}
 
 const TOKEN_KEY = 'psi.jwt'
 const USER_KEY = 'psi.user'
@@ -34,11 +39,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signup(payload: unknown) {
-    const resp = await api<LoginResponse>('/auth/signup', {
+    const resp = await api<SignupResponse>('/auth/signup', {
       method: 'POST',
       body: JSON.stringify(payload),
     })
-    aplicar(resp)
+    if (resp.emailValidacaoPendente || !resp.token) {
+      return { pendenteValidacao: true }
+    }
+    aplicar({ token: resp.token, psicologa: resp.psicologa })
+    return { pendenteValidacao: false }
   }
 
   function logout() {

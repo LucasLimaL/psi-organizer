@@ -3,6 +3,7 @@ import AppShell from './components/AppShell'
 import ProtectedRoute from './auth/ProtectedRoute'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
+import ValidarEmailPage from './pages/ValidarEmailPage'
 import DashboardPage from './pages/DashboardPage'
 import AgendaPage from './pages/AgendaPage'
 import PacientesPage from './pages/PacientesPage'
@@ -20,6 +21,7 @@ function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/validar-email" element={<ValidarEmailPage />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
           <Route path="/" element={<DashboardPage />} />

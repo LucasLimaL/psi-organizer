@@ -76,6 +76,7 @@ public class SeedDataRunner implements ApplicationRunner {
                                 new Endereco("01310100", "Av. Paulista", "1000", "10º andar",
                                                 "Bela Vista", "São Paulo", "SP"),
                                 31);
+                psi.setEmailValidado(true);
                 psicologaRepo.save(psi);
 
                 // Cortesia de 1 mês — mesma regra do signup

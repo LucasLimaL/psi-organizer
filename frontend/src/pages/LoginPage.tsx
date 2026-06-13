@@ -9,6 +9,7 @@ import EmailIcon from '@mui/icons-material/EmailOutlined'
 import LockIcon from '@mui/icons-material/LockOutlined'
 import { useAuth } from '../auth/authContext'
 import AuthShell from '../components/AuthShell'
+import { authValidacaoApi } from '../api/authValidacao'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -24,12 +25,16 @@ export default function LoginPage() {
     faturasVencidas: number
     totalVencido: number
   } | null>(null)
+  const [emailNaoValidado, setEmailNaoValidado] = useState(false)
+  const [reenviado, setReenviado] = useState(false)
   const [enviando, setEnviando] = useState(false)
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
     setErro(null)
     setIrregular(null)
+    setEmailNaoValidado(false)
+    setReenviado(false)
     setEnviando(true)
     try {
       const p = await login(email, senha)
@@ -44,7 +49,9 @@ export default function LoginPage() {
           totalVencido?: number
         }
       }
-      if (e?.detalhes?.motivo === 'SITUACAO_IRREGULAR') {
+      if (e?.detalhes?.motivo === 'EMAIL_NAO_VALIDADO') {
+        setEmailNaoValidado(true)
+      } else if (e?.detalhes?.motivo === 'SITUACAO_IRREGULAR') {
         setIrregular({
           temContratoVigente: e.detalhes.temContratoVigente ?? false,
           faturasVencidas: e.detalhes.faturasVencidas ?? 0,
@@ -67,6 +74,27 @@ export default function LoginPage() {
           </Alert>
         )}
         {erro && <Alert severity="error">{erro}</Alert>}
+        {emailNaoValidado && (
+          <Alert
+            severity="warning"
+            action={(
+              <Button
+                color="inherit"
+                size="small"
+                disabled={reenviado}
+                onClick={async () => {
+                  await authValidacaoApi.reenviarValidacao(email)
+                  setReenviado(true)
+                }}
+              >
+                {reenviado ? 'Enviado!' : 'Reenviar'}
+              </Button>
+            )}
+          >
+            Sua conta ainda não foi ativada. Confira o link de validação na sua
+            caixa de entrada (e no spam) — ou reenvie.
+          </Alert>
+        )}
         {irregular && (
           <Alert severity="warning">
             <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>

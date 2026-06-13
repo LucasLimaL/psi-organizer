@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface PsicologaRepository extends JpaRepository<Psicologa, UUID> {
     Optional<Psicologa> findByEmail(String email);
+    Optional<Psicologa> findByValidacaoTokenHash(String validacaoTokenHash);
     boolean existsByEmail(String email);
     boolean existsByCpf(String cpf);
 

@@ -1,4 +1,4 @@
-package com.psiorganizer.auth;
+package com.psiorganizer.auth.controller;
 
 import jakarta.validation.Valid;
 
@@ -15,9 +15,12 @@ import com.psiorganizer.auth.dto.ReenviarValidacaoRequest;
 import com.psiorganizer.auth.dto.SignupRequest;
 import com.psiorganizer.auth.dto.SignupResponse;
 import com.psiorganizer.auth.dto.ValidarEmailRequest;
-import com.psiorganizer.psicologa.Psicologa;
-import com.psiorganizer.psicologa.PsicologaService;
+import com.psiorganizer.auth.service.AuthService;
+import com.psiorganizer.auth.service.JwtService;
+import com.psiorganizer.auth.service.ValidacaoEmailService;
+import com.psiorganizer.psicologa.domain.Psicologa;
 import com.psiorganizer.psicologa.dto.PsicologaResponse;
+import com.psiorganizer.psicologa.service.PsicologaService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

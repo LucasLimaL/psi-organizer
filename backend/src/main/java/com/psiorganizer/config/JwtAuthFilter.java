@@ -15,7 +15,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.psiorganizer.auth.JwtService;
+import com.psiorganizer.auth.service.JwtService;
 import com.psiorganizer.common.observability.LogFields;
 import com.psiorganizer.common.security.PsicologaPrincipal;
 

@@ -13,8 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.psiorganizer.common.Fusos;
-import com.psiorganizer.psicologa.Psicologa;
-import com.psiorganizer.psicologa.PsicologaRepository;
+import com.psiorganizer.psicologa.domain.Psicologa;
+import com.psiorganizer.psicologa.repository.PsicologaRepository;
 
 /**
  * Motor de faturamento por ciclo de fechamento.

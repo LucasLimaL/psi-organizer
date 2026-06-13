@@ -15,12 +15,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.psiorganizer.common.Fusos;
-import com.psiorganizer.consulta.Consulta;
-import com.psiorganizer.consulta.ConsultaRepository;
-import com.psiorganizer.consulta.StatusConsulta;
-import com.psiorganizer.paciente.Paciente;
-import com.psiorganizer.paciente.PacienteRepository;
-import com.psiorganizer.psicologa.PsicologaService;
+import com.psiorganizer.consulta.domain.Consulta;
+import com.psiorganizer.consulta.domain.StatusConsulta;
+import com.psiorganizer.consulta.repository.ConsultaRepository;
+import com.psiorganizer.paciente.domain.Paciente;
+import com.psiorganizer.paciente.repository.PacienteRepository;
+import com.psiorganizer.psicologa.service.PsicologaService;
 
 @Service
 public class DashboardService {

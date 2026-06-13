@@ -1,4 +1,4 @@
-package com.psiorganizer.consulta;
+package com.psiorganizer.consulta.controller;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -17,10 +17,12 @@ import org.springframework.web.bind.annotation.*;
 import com.psiorganizer.common.Fusos;
 import com.psiorganizer.common.observability.LogFields;
 import com.psiorganizer.common.security.PsicologaPrincipal;
+import com.psiorganizer.consulta.domain.Consulta;
 import com.psiorganizer.consulta.dto.ConsultaRecorrenteRequest;
 import com.psiorganizer.consulta.dto.ConsultaRequest;
 import com.psiorganizer.consulta.dto.ConsultaResponse;
 import com.psiorganizer.consulta.dto.ConsultaUpdateRequest;
+import com.psiorganizer.consulta.service.ConsultaService;
 import com.psiorganizer.whatsapp.LembreteEnviado;
 
 import io.swagger.v3.oas.annotations.Operation;

@@ -11,10 +11,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.psiorganizer.consulta.Consulta;
-import com.psiorganizer.consulta.ConsultaRepository;
-import com.psiorganizer.paciente.Paciente;
-import com.psiorganizer.paciente.PacienteRepository;
+import com.psiorganizer.consulta.domain.Consulta;
+import com.psiorganizer.consulta.repository.ConsultaRepository;
+import com.psiorganizer.paciente.domain.Paciente;
+import com.psiorganizer.paciente.repository.PacienteRepository;
 
 /**
  * Consultas paginadas de lembretes pra auditoria. Spec §3.2 /me/whatsapp/lembretes.

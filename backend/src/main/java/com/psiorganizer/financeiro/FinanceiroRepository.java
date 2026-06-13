@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
 
-import com.psiorganizer.consulta.Consulta;
+import com.psiorganizer.consulta.domain.Consulta;
 
 /**
  * Queries financeiras sobre a entidade Consulta. Repositório separado do
@@ -32,8 +32,8 @@ public interface FinanceiroRepository extends Repository<Consulta, UUID> {
             from Consulta c
             where c.psicologaId = :psicologaId
               and c.inicio >= :ini and c.inicio < :fim
-              and (c.status = com.psiorganizer.consulta.StatusConsulta.REALIZADA
-                   or (c.status = com.psiorganizer.consulta.StatusConsulta.FALTA
+              and (c.status = com.psiorganizer.consulta.domain.StatusConsulta.REALIZADA
+                   or (c.status = com.psiorganizer.consulta.domain.StatusConsulta.FALTA
                        and :cobrarFaltas = true))
               and c.pago = false
             """)
@@ -47,8 +47,8 @@ public interface FinanceiroRepository extends Repository<Consulta, UUID> {
             from Consulta c
             where c.psicologaId = :psicologaId
               and c.inicio >= :ini and c.inicio < :fim
-              and c.status in (com.psiorganizer.consulta.StatusConsulta.REALIZADA,
-                               com.psiorganizer.consulta.StatusConsulta.FALTA)
+              and c.status in (com.psiorganizer.consulta.domain.StatusConsulta.REALIZADA,
+                               com.psiorganizer.consulta.domain.StatusConsulta.FALTA)
               and c.pago = true
             """)
     TotalCategoria totalRealizados(@Param("psicologaId") UUID psicologaId,
@@ -60,8 +60,8 @@ public interface FinanceiroRepository extends Repository<Consulta, UUID> {
             from Consulta c
             where c.psicologaId = :psicologaId
               and c.inicio >= :ini and c.inicio < :fim
-              and c.status in (com.psiorganizer.consulta.StatusConsulta.AGENDADA,
-                               com.psiorganizer.consulta.StatusConsulta.CONFIRMADA)
+              and c.status in (com.psiorganizer.consulta.domain.StatusConsulta.AGENDADA,
+                               com.psiorganizer.consulta.domain.StatusConsulta.CONFIRMADA)
             """)
     TotalCategoria totalFuturos(@Param("psicologaId") UUID psicologaId,
                                 @Param("ini") Instant ini,
@@ -73,8 +73,8 @@ public interface FinanceiroRepository extends Repository<Consulta, UUID> {
             from Consulta c
             where c.psicologaId = :psicologaId
               and c.inicio >= :ini and c.inicio < :fim
-              and (c.status = com.psiorganizer.consulta.StatusConsulta.REALIZADA
-                   or (c.status = com.psiorganizer.consulta.StatusConsulta.FALTA
+              and (c.status = com.psiorganizer.consulta.domain.StatusConsulta.REALIZADA
+                   or (c.status = com.psiorganizer.consulta.domain.StatusConsulta.FALTA
                        and :cobrarFaltas = true))
               and c.pago = false
             group by c.pacienteId
@@ -90,8 +90,8 @@ public interface FinanceiroRepository extends Repository<Consulta, UUID> {
             select count(distinct c.pacienteId) from Consulta c
             where c.psicologaId = :psicologaId
               and c.inicio >= :ini and c.inicio < :fim
-              and (c.status = com.psiorganizer.consulta.StatusConsulta.REALIZADA
-                   or (c.status = com.psiorganizer.consulta.StatusConsulta.FALTA
+              and (c.status = com.psiorganizer.consulta.domain.StatusConsulta.REALIZADA
+                   or (c.status = com.psiorganizer.consulta.domain.StatusConsulta.FALTA
                        and :cobrarFaltas = true))
               and c.pago = false
             """)
@@ -105,8 +105,8 @@ public interface FinanceiroRepository extends Repository<Consulta, UUID> {
             where c.psicologaId = :psicologaId
               and c.pacienteId in :pacienteIds
               and c.inicio >= :ini and c.inicio < :fim
-              and (c.status = com.psiorganizer.consulta.StatusConsulta.REALIZADA
-                   or (c.status = com.psiorganizer.consulta.StatusConsulta.FALTA
+              and (c.status = com.psiorganizer.consulta.domain.StatusConsulta.REALIZADA
+                   or (c.status = com.psiorganizer.consulta.domain.StatusConsulta.FALTA
                        and :cobrarFaltas = true))
               and c.pago = false
             order by c.inicio asc
@@ -121,8 +121,8 @@ public interface FinanceiroRepository extends Repository<Consulta, UUID> {
             select c from Consulta c
             where c.psicologaId = :psicologaId
               and c.inicio >= :ini and c.inicio < :fim
-              and c.status in (com.psiorganizer.consulta.StatusConsulta.REALIZADA,
-                               com.psiorganizer.consulta.StatusConsulta.FALTA)
+              and c.status in (com.psiorganizer.consulta.domain.StatusConsulta.REALIZADA,
+                               com.psiorganizer.consulta.domain.StatusConsulta.FALTA)
               and c.pago = true
             order by c.inicio desc
             """)
@@ -135,8 +135,8 @@ public interface FinanceiroRepository extends Repository<Consulta, UUID> {
             select c from Consulta c
             where c.psicologaId = :psicologaId
               and c.inicio >= :ini and c.inicio < :fim
-              and c.status in (com.psiorganizer.consulta.StatusConsulta.AGENDADA,
-                               com.psiorganizer.consulta.StatusConsulta.CONFIRMADA)
+              and c.status in (com.psiorganizer.consulta.domain.StatusConsulta.AGENDADA,
+                               com.psiorganizer.consulta.domain.StatusConsulta.CONFIRMADA)
             order by c.inicio asc
             """)
     List<Consulta> futuros(@Param("psicologaId") UUID psicologaId,

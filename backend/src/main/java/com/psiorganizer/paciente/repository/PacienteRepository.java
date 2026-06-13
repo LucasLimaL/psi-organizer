@@ -1,10 +1,12 @@
-package com.psiorganizer.paciente;
+package com.psiorganizer.paciente.repository;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.psiorganizer.paciente.domain.Paciente;
 
 public interface PacienteRepository extends JpaRepository<Paciente, UUID> {
     List<Paciente> findByPsicologaIdAndAtivoOrderByNomeAsc(UUID psicologaId, boolean ativo);

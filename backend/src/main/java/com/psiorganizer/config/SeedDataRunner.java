@@ -18,13 +18,13 @@ import com.psiorganizer.admin.Contrato;
 import com.psiorganizer.admin.ContratoRepository;
 import com.psiorganizer.common.Endereco;
 import com.psiorganizer.common.Fusos;
-import com.psiorganizer.consulta.Consulta;
-import com.psiorganizer.consulta.ConsultaRepository;
-import com.psiorganizer.consulta.StatusConsulta;
-import com.psiorganizer.paciente.Paciente;
-import com.psiorganizer.paciente.PacienteRepository;
-import com.psiorganizer.psicologa.Psicologa;
-import com.psiorganizer.psicologa.PsicologaRepository;
+import com.psiorganizer.consulta.domain.Consulta;
+import com.psiorganizer.consulta.domain.StatusConsulta;
+import com.psiorganizer.consulta.repository.ConsultaRepository;
+import com.psiorganizer.paciente.domain.Paciente;
+import com.psiorganizer.paciente.repository.PacienteRepository;
+import com.psiorganizer.psicologa.domain.Psicologa;
+import com.psiorganizer.psicologa.repository.PsicologaRepository;
 
 /**
  * Insere dados amostrais quando o banco está vazio e o ambiente NÃO é produção.

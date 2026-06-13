@@ -8,13 +8,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.psiorganizer.common.observability.LogFields;
-import com.psiorganizer.consulta.Consulta;
-import com.psiorganizer.consulta.ConsultaRepository;
-import com.psiorganizer.consulta.StatusConfirmacao;
-import com.psiorganizer.consulta.StatusConsulta;
+import com.psiorganizer.consulta.domain.Consulta;
+import com.psiorganizer.consulta.domain.StatusConfirmacao;
+import com.psiorganizer.consulta.domain.StatusConsulta;
+import com.psiorganizer.consulta.repository.ConsultaRepository;
 import com.psiorganizer.notificacao.NotificacaoService;
-import com.psiorganizer.paciente.Paciente;
-import com.psiorganizer.psicologa.Psicologa;
+import com.psiorganizer.paciente.domain.Paciente;
+import com.psiorganizer.psicologa.domain.Psicologa;
 import com.psiorganizer.whatsapp.client.EnvioResultado;
 import com.psiorganizer.whatsapp.client.WhatsappException;
 

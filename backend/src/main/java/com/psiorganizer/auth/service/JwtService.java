@@ -1,4 +1,4 @@
-package com.psiorganizer.auth;
+package com.psiorganizer.auth.service;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;

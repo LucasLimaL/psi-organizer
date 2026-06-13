@@ -5,7 +5,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
-import com.psiorganizer.paciente.Paciente;
+import com.psiorganizer.paciente.domain.Paciente;
 import com.psiorganizer.psicologa.dto.EnderecoDto;
 
 public record PacienteResponse(

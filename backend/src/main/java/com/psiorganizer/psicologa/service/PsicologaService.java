@@ -1,4 +1,4 @@
-package com.psiorganizer.psicologa;
+package com.psiorganizer.psicologa.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -14,6 +14,8 @@ import com.psiorganizer.common.Endereco;
 import com.psiorganizer.common.Fusos;
 import com.psiorganizer.common.exception.ApiException;
 import com.psiorganizer.common.validation.CpfUtil;
+import com.psiorganizer.psicologa.domain.Psicologa;
+import com.psiorganizer.psicologa.repository.PsicologaRepository;
 
 @Service
 public class PsicologaService {

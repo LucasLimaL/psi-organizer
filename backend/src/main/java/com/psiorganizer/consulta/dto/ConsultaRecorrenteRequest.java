@@ -8,7 +8,7 @@ import java.util.UUID;
 import jakarta.validation.constraints.*;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.psiorganizer.consulta.DiaSemana;
+import com.psiorganizer.consulta.domain.DiaSemana;
 
 public record ConsultaRecorrenteRequest(
         @NotNull UUID pacienteId,

@@ -2,7 +2,7 @@ package com.psiorganizer.psicologa.dto;
 
 import java.util.UUID;
 
-import com.psiorganizer.psicologa.Psicologa;
+import com.psiorganizer.psicologa.domain.Psicologa;
 
 public record PsicologaResponse(
         UUID id,

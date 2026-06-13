@@ -1,4 +1,4 @@
-package com.psiorganizer.psicologa;
+package com.psiorganizer.psicologa.repository;
 
 import java.util.List;
 import java.util.Optional;
@@ -8,6 +8,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import com.psiorganizer.psicologa.domain.Psicologa;
 
 public interface PsicologaRepository extends JpaRepository<Psicologa, UUID> {
     Optional<Psicologa> findByEmail(String email);

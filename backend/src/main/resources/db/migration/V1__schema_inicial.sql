@@ -1,5 +1,6 @@
--- psi-organizer: schema inicial consolidado (reset pré-produção em 2026-06-12,
--- squash das antigas V1–V10 — histórico no git se precisar de arqueologia).
+-- psi-organizer: schema inicial consolidado (reset pré-produção, atualizado em
+-- 2026-06-13 — squash das antigas V1–V10 e da V2 (duracao_padrao_minutos).
+-- Histórico no git se precisar de arqueologia.
 -- Endereço é embeddable: colunas inline com prefixo endereco_*
 
 -- =====================================================================
@@ -39,6 +40,10 @@ CREATE TABLE psicologa (
 
     -- Consultas com status FALTA entram (ou não) na cobrança da paciente.
     cobrar_faltas       BOOLEAN      NOT NULL DEFAULT TRUE,
+
+    -- Duração padrão (min) que pré-preenche o formulário de nova consulta.
+    duracao_padrao_minutos INT       NOT NULL DEFAULT 50
+                        CHECK (duracao_padrao_minutos BETWEEN 5 AND 600),
 
     -- Validação de e-mail pra ativar a conta: signup nasce não validado, recebe
     -- link por e-mail (token de 24h) e só loga depois de validar. O token é

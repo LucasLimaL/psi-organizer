@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.google.i18n.phonenumbers.NumberParseException;
 import com.google.i18n.phonenumbers.PhoneNumberUtil;
 import com.google.i18n.phonenumbers.Phonenumber.PhoneNumber;
+import com.psiorganizer.common.Endereco;
 import com.psiorganizer.common.Fusos;
 import com.psiorganizer.consulta.domain.Consulta;
 import com.psiorganizer.paciente.domain.Paciente;
@@ -34,7 +35,7 @@ import com.psiorganizer.whatsapp.repository.LembreteEnviadoRepository;
  * Disparo de lembrete de 1 consulta. Encapsula:
  *   - Skip rules (opt-in, telefone E.164 válido, paciente ativo)
  *   - Insert idempotente via UNIQUE(consulta_id) + ON CONFLICT DO NOTHING
- *   - Render dos 4 parâmetros do template aprovado pela Meta
+ *   - Render dos 5 parâmetros do template aprovado pela Meta
  *   - Chamada Meta + atualização de status_entrega / mensagem_id_externa
  *   - Logs estruturados por evento
  *
@@ -119,11 +120,12 @@ public class LembreteEnvioService {
         java.time.LocalDateTime inicioSp = java.time.LocalDateTime.ofInstant(
                 consulta.getInicio(), Fusos.ZONA_BR);
         String texto = String.format(
-                "Olá, %s! Sobre a sua consulta com %s em %s às %s — pode confirmar abaixo?",
+                "Olá, %s! Sobre a sua consulta com %s em %s às %s, no endereço %s — pode confirmar abaixo?",
                 primeiroNome(paciente.getNome()),
                 psi.getNomeCompleto(),
                 inicioSp.format(DATA_FMT),
-                inicioSp.format(HORA_FMT));
+                inicioSp.format(HORA_FMT),
+                enderecoConsultorio(psi));
         List<Botao> botoes = List.of(
                 new Botao(BTN_CONFIRMAR, "Confirmar"),
                 new Botao(BTN_CANCELAR, "Cancelar"));
@@ -209,11 +211,12 @@ public class LembreteEnvioService {
     }
 
     /**
-     * Renderiza os 4 parâmetros do template aprovado pela Meta:
+     * Renderiza os 5 parâmetros do template aprovado pela Meta:
      *   {{1}} = primeiro nome da paciente (mais natural na saudação)
      *   {{2}} = nome completo da psi (normalmente já vem com "Dra.")
      *   {{3}} = data dd/MM/yyyy em SP
      *   {{4}} = hora HH:mm em SP
+     *   {{5}} = endereço do consultório (linha única)
      */
     private List<String> renderParametros(Paciente paciente, Psicologa psi, Consulta consulta) {
         LocalDateTime inicioSp = LocalDateTime.ofInstant(consulta.getInicio(), Fusos.ZONA_BR);
@@ -221,7 +224,30 @@ public class LembreteEnvioService {
                 primeiroNome(paciente.getNome()),
                 psi.getNomeCompleto(),
                 inicioSp.format(DATA_FMT),
-                inicioSp.format(HORA_FMT));
+                inicioSp.format(HORA_FMT),
+                enderecoConsultorio(psi));
+    }
+
+    /**
+     * Endereço do consultório numa linha só. Parâmetro de template WhatsApp não
+     * aceita quebra de linha, tab nem 4+ espaços seguidos — por isso tudo inline.
+     * Ex.: "Rua das Flores, 123, Sala 2 - Centro, Belo Horizonte/MG".
+     * Endereço é obrigatório no signup, mas mantemos fallback defensivo porque um
+     * parâmetro vazio faz a Meta rejeitar o envio inteiro (132000).
+     */
+    private String enderecoConsultorio(Psicologa psi) {
+        Endereco e = psi.getEndereco();
+        if (e == null || e.getLogradouro() == null || e.getLogradouro().isBlank()) {
+            return "endereço a confirmar com a sua psicóloga";
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(e.getLogradouro()).append(", ").append(e.getNumero());
+        if (e.getComplemento() != null && !e.getComplemento().isBlank()) {
+            sb.append(", ").append(e.getComplemento());
+        }
+        sb.append(" - ").append(e.getBairro())
+                .append(", ").append(e.getCidade()).append("/").append(e.getUf());
+        return sb.toString();
     }
 
     private String primeiroNome(String completo) {

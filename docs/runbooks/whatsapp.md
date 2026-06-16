@@ -23,6 +23,38 @@ Operação do canal WhatsApp: o que checar quando algo trava, como observar saú
 
 ---
 
+## Ativação do canal em produção (primeira vez)
+
+Sequência testada (2026-06-16). A ordem importa — pular o registro ou criar o template na WABA errada gera erros mudos que custam tempo.
+
+1. **Confirmar a WABA do número.** O número oficial (`phone_number_id` em `WHATSAPP_PHONE_NUMBER_ID`) e o template **precisam estar na mesma WhatsApp Business Account**. Erro clássico: criar o template na WABA do *número de teste público* e tentar enviar pelo número de produção → `132001` (ver troubleshooting). Listar o que existe em cada WABA:
+   ```bash
+   TOKEN=$(gcloud secrets versions access latest --secret=whatsapp-access-token)
+   # templates daquela WABA:
+   curl -s "https://graph.facebook.com/v21.0/<WABA_ID>/message_templates?fields=name,language,status&access_token=$TOKEN"
+   # números daquela WABA (confirmar que o phone_number_id está aqui):
+   curl -s "https://graph.facebook.com/v21.0/<WABA_ID>/phone_numbers?fields=id,display_phone_number&access_token=$TOKEN"
+   ```
+2. **Registrar o número na Cloud API.** "Validar" o número (provar posse) **não** é o mesmo que registrar — sem registro, todo envio falha com `133010`. Registrar exige um PIN de 6 dígitos (two-step verification; se nunca configurou, o valor informado vira o PIN):
+   ```bash
+   curl -i -X POST "https://graph.facebook.com/v21.0/<PHONE_NUMBER_ID>/register" \
+     -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+     -d '{"messaging_product":"whatsapp","pin":"<PIN_6_DIGITOS>"}'
+   # esperado: {"success":true}
+   ```
+3. **Template aprovado na WABA de produção.** Categoria `UTILITY`, idioma `pt_BR`, mesmas variáveis que o código manda (hoje 5: paciente, psicologa, data, hora, endereço — ver `LembreteEnvioService.renderParametros`). Aprovação de UTILITY costuma sair em minutos a poucas horas.
+4. **Teste de envio direto pela API** (isola Meta vs. app), com o template real:
+   ```bash
+   curl -i -X POST "https://graph.facebook.com/v21.0/<PHONE_NUMBER_ID>/messages" \
+     -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+     -d '{"messaging_product":"whatsapp","to":"55DDDXXXXXXXXX","type":"template","template":{"name":"lembrete_consulta_v1","language":{"code":"pt_BR"},"components":[{"type":"body","parameters":[{"type":"text","text":"Maria"},{"type":"text","text":"Dra. Ana"},{"type":"text","text":"17/06/2026"},{"type":"text","text":"14:00"},{"type":"text","text":"Rua X, 123 - Centro, BH/MG"}]}]}}'
+   # esperado: {"messages":[{"id":"wamid...."}]}
+   ```
+5. **Flip do canal** (só depois do passo 4 funcionar): criar os 4 secrets e ligar — ver `docs/runbooks/infra-gcp.md`. Não esquecer de **atualizar a tabela de envs** daquele runbook registrando `WHATSAPP_MOCK=false`.
+6. **Registrar o webhook na Meta** + subscrever o campo `messages`.
+
+---
+
 ## Saúde do canal
 
 ### Endpoints de observação
@@ -78,6 +110,17 @@ Ação:
 2. Atualizar `WHATSAPP_ACCESS_TOKEN` no host
 3. Reiniciar backend
 4. Conferir `whatsapp.enviados.total{tipo=msg1}` retomando
+
+### Códigos de erro da Meta no envio (referência rápida)
+
+| Código | Significado | Ação |
+|---|---|---|
+| `133010` | "Account not registered" — número validado mas não registrado na Cloud API | Rodar o `/register` com o PIN (passo 2 da ativação) |
+| `132001` | "Template name does not exist in the translation" | Template não está **nessa WABA** ou o `language.code` não bate. Listar com `/message_templates` e conferir se número e template estão na mesma WABA |
+| `132000` | Número de parâmetros não bate | O template aprovado tem um número de `{{n}}` diferente do que o app manda (hoje 5). Alinhar template ↔ `renderParametros` |
+| `131058` | "Hello World templates can only be sent from the Public Test Numbers" | Número de produção recusa `hello_world` — é esperado; teste com o template real |
+| `131030` | Destinatário não está na allowlist | Enquanto o negócio não passou pela verificação completa, adicionar o número em API Setup → "To" → Manage phone number list e confirmar o código |
+| `190` | Token inválido/expirado | Ver "Token expirou" abaixo |
 
 ### Template foi despromovido pela Meta
 

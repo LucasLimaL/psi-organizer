@@ -438,7 +438,7 @@ catch MetaHttp4xx e:
 
 **Backoff:** o cliente HTTP tem `RetryTemplate` Spring com 3 tentativas internas (~1min, ~5min, ~15min) só pra 5xx e 429. 4xx fail-fast.
 
-**Render do template:** o template enviado pela Meta é fixo (`lembrete_consulta_v1`, aprovado) com 4 variáveis `{{1}}` paciente, `{{2}}` psicologa, `{{3}}` data, `{{4}}` hora. O campo `configuracao.template_mensagem` é o **texto editorial** que a psi vê e ajusta — esse texto **deve coincidir** com o template aprovado na Meta, exceto pela substituição de variáveis. Decisão: no MVP, edição do `template_mensagem` é "cosmética" (preview pra psi); o que vai pra Meta é sempre o template aprovado. Trade-off discutido em §11. Validação no `PUT /me/whatsapp` verifica que o template editado contém os 4 placeholders esperados — se não contém, `400`.
+**Render do template:** o template enviado pela Meta é fixo (`lembrete_consulta_v1`, aprovado) com 5 variáveis `{{1}}` paciente, `{{2}}` psicologa, `{{3}}` data, `{{4}}` hora, `{{5}}` endereço do consultório (montado em linha única a partir do `Endereco` da psicóloga). O campo `configuracao.template_mensagem` é o **texto editorial** que a psi vê e ajusta — esse texto **deve coincidir** com o template aprovado na Meta, exceto pela substituição de variáveis. Decisão: no MVP, edição do `template_mensagem` é "cosmética" (preview pra psi); o que vai pra Meta é sempre o template aprovado. Trade-off discutido em §11.
 
 ### 4.5 Pacientes ignoradas
 
@@ -786,7 +786,7 @@ Boot fail-fast: `WhatsappProperties` com `@ConfigurationProperties` + validaçã
 3. **Template `lembrete_consulta_v1`** — submeter pra aprovação Meta:
    - Categoria: `UTILITY`
    - Idioma: `pt_BR`
-   - Body: texto base alinhado ao default em §2.1.1, com 4 variáveis `{{1}}`/`{{2}}`/`{{3}}`/`{{4}}` (paciente, psicologa, data, hora)
+   - Body: texto base alinhado ao default em §2.1.1, com 5 variáveis `{{1}}`/`{{2}}`/`{{3}}`/`{{4}}`/`{{5}}` (paciente, psicologa, data, hora, endereço)
    - 2 reply buttons: `Confirmar` e `Cancelar`
    - Aprovação: 1-3 dias úteis (pode bouncear, ajustar texto)
 4. **Template `teste_lembrete_consulta_v1`** — variante 1-variável pra `POST /me/whatsapp/teste`. Body simples: `"Teste de lembrete enviado por {{1}}. Tudo certo do seu lado?"` — sem botões, single-variable.

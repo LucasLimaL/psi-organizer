@@ -1,6 +1,7 @@
 package com.psiorganizer.whatsapp.service;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -140,11 +141,41 @@ public class WebhookService {
     }
 
     private String extrairBotaoId(Map<String, Object> msg) {
+        // Msg 2/3 e reenvio são mensagens interactive que NÓS enviamos — o id do
+        // botão volta em interactive.button_reply.id (controlamos esse id).
         Map<String, Object> interactive = asMap(msg.get("interactive"));
-        if (interactive == null) return null;
-        Map<String, Object> buttonReply = asMap(interactive.get("button_reply"));
-        if (buttonReply == null) return null;
-        return (String) buttonReply.get("id");
+        if (interactive != null) {
+            Map<String, Object> buttonReply = asMap(interactive.get("button_reply"));
+            if (buttonReply != null) {
+                return (String) buttonReply.get("id");
+            }
+        }
+        // Msg 1 é o template HSM aprovado: clique num botão quick-reply de template
+        // chega como type "button" com button.payload/text (o rótulo visível) — NÃO
+        // como interactive.button_reply. Mapeamos o rótulo pro id canônico que a
+        // máquina de estados compara (BTN_CONFIRMAR/BTN_CANCELAR).
+        Map<String, Object> button = asMap(msg.get("button"));
+        if (button != null) {
+            String rotulo = (String) button.get("payload");
+            if (rotulo == null) {
+                rotulo = (String) button.get("text");
+            }
+            return mapearRotuloTemplate(rotulo);
+        }
+        return null;
+    }
+
+    /**
+     * Botão quick-reply de template não carrega o id que definimos no código — só o
+     * rótulo visível ("Confirmar"/"Cancelar"). Mapeia por prefixo, tolerante a
+     * caixa, pros ids conhecidos pela máquina de estados.
+     */
+    private String mapearRotuloTemplate(String rotulo) {
+        if (rotulo == null) return null;
+        String n = rotulo.trim().toLowerCase(Locale.ROOT);
+        if (n.startsWith("confirm")) return LembreteEnvioService.BTN_CONFIRMAR;
+        if (n.startsWith("cancel")) return LembreteEnvioService.BTN_CANCELAR;
+        return null;
     }
 
     private String extrairTexto(Map<String, Object> msg) {

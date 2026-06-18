@@ -12,7 +12,8 @@ Provisionado em 2026-06-11. Decisão de arquitetura: Cloud Run + Cloud SQL + Fir
 | Database/usuário | `psi_organizer` / `psi_prod` | senha em `db-password` (Secret Manager) |
 | Cloud Scheduler | `whatsapp-tick-us` | `0 * * * *` UTC → `POST /internal/whatsapp/tick` com `X-Tick-Token` |
 | Artifact Registry | `psi-organizer` (`us-central1`) | imagem `backend:vN` |
-| Secrets | `jwt-secret`, `scheduler-tick-token`, `db-password` | replicação user-managed |
+| Secrets | `jwt-secret`, `scheduler-tick-token`, `db-password`, `newrelic-license-key` | replicação user-managed |
+| Log forwarding | sink `psi-logs-to-newrelic` → topic `psi-logs-newrelic` → function `newrelic-log-forwarder` | logs do backend → New Relic free (ver §Logs → New Relic) |
 | Firebase Hosting | `psi-organizer-prod` | `https://psi-organizer-prod.web.app` |
 
 Custo de regime estimado: **~US$ 11–13/mês** (Cloud SQL domina; Run/Hosting/Scheduler ~zero no volume MVP).
@@ -28,6 +29,11 @@ Custo de regime estimado: **~US$ 11–13/mês** (Cloud SQL domina; Run/Hosting/S
 | `CORS_ALLOWED_ORIGINS` | `https://psi-organizer-prod.web.app,https://psi-organizer-prod.firebaseapp.com` |
 | `DB_PASSWORD` / `JWT_SECRET` / `SCHEDULER_TICK_TOKEN` | secrets (`--set-secrets`) |
 | `WHATSAPP_MOCK` | default `true` — **canal Meta ainda não ligado**; ligar = setar `false` + secrets `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN` e registrar o webhook na Meta |
+| `NEW_RELIC_AGENT_ENABLED` | `true` (liga o APM Java agent; imagem vem com `false`) |
+| `NEW_RELIC_APP_NAME` | `psi-organizer-api` |
+| `NEW_RELIC_LICENSE_KEY` | secret `newrelic-license-key` (mesma ingest key dos logs) |
+| `NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED` | `false` — logs vão pelo pipeline sink→Function, não pelo agent (evita double-ship; ver OBSERVABILITY §APM) |
+| `NEW_RELIC_APPLICATION_LOGGING_LOCAL_DECORATING_ENABLED` | `true` — injeta `trace.id`/`span.id` nos logs pra correlação |
 
 ## Deploy de nova versão
 
@@ -37,6 +43,11 @@ gcloud builds submit --tag us-central1-docker.pkg.dev/psi-organizer-prod/psi-org
 gcloud run deploy psi-organizer-api --region=us-central1 \
   --image=us-central1-docker.pkg.dev/psi-organizer-prod/psi-organizer/backend:vN
 # (envs/secrets persistem entre deploys; só a imagem muda)
+
+# APM New Relic — set-up ÚNICO (envs/secret persistem; rodar junto do 1º deploy com o agent):
+gcloud run services update psi-organizer-api --region=us-central1 \
+  --update-secrets=NEW_RELIC_LICENSE_KEY=newrelic-license-key:latest \
+  --update-env-vars=NEW_RELIC_AGENT_ENABLED=true,NEW_RELIC_APP_NAME=psi-organizer-api,NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true,NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED=false,NEW_RELIC_APPLICATION_LOGGING_LOCAL_DECORATING_ENABLED=true
 
 # Frontend (na pasta frontend/)
 $env:VITE_API_BASE_URL = "https://psi-organizer-api-283039307907.us-central1.run.app"
@@ -51,6 +62,20 @@ firebase deploy --only hosting --project psi-organizer-prod
 - **Erro de conexão com banco**: Cloud Run precisa do `--add-cloudsql-instances` e o SA default precisa de `roles/cloudsql.client` (já concedido).
 - **Logs**: Cloud Logging ingere o JSON do stdout direto — filtre por `resource.type="cloud_run_revision"`; as chaves do MDC (requestId, psicologaId, pacienteId...) viram campos em `jsonPayload`.
 - **Cold start** (~10–20s na 1ª request após idle): normal com min-instances=0. Incomodando, `--min-instances=1` (~+US$ 10/mês).
+
+## Logs → New Relic
+
+Cloud Logging ingere o stdout do Cloud Run automaticamente (acima). Para mandar pro
+**New Relic free tier**, um Log Router sink publica num Pub/Sub topic e uma Cloud Function
+encaminha pro NR Log API — sem acoplar o app ao vendor (decisão de [OBSERVABILITY.md](../OBSERVABILITY.md#shipping-pra-cloud)).
+
+```
+Cloud Run (stdout JSON) ─auto→ Cloud Logging ─sink→ Pub/Sub ─trigger→ Function ─HTTPS→ NR Log API
+```
+
+- Código + deploy idempotente: [`infra/newrelic-log-forwarder/`](../../infra/newrelic-log-forwarder/README.md) (`deploy.ps1`).
+- Ingest key no secret `newrelic-license-key`; sink filtra só `service_name=psi-organizer-api`.
+- **Não funciona logo?** Cheque: (1) última versão do secret tem a key; (2) `gcloud logging sinks describe psi-logs-to-newrelic` → `writerIdentity` tem `roles/pubsub.publisher` no topic; (3) logs da própria Function (`gcloud functions logs read newrelic-log-forwarder`) — 403 do NR = key errada (User key no lugar da Ingest), 202 = OK.
 
 ## Migração de região (procedimento testado SP → Iowa)
 

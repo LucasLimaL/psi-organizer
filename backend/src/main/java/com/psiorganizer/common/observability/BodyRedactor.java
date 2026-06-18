@@ -29,9 +29,15 @@ public final class BodyRedactor {
     private static final Set<String> SENSITIVE_KEYS = Set.of(
             "senha", "password", "oldpassword", "newpassword", "currentpassword",
             "token", "accesstoken", "refreshtoken", "jwt", "authorization",
-            "anotacao", "anotacoes", "notas",
+            "anotacao", "anotacoes", "notas", "observacoes",
             "appsecret", "verifytoken", "hmacsignature",
-            "clientsecret", "apikey");
+            "clientsecret", "apikey",
+            // PII de paciente (LGPD Art. 6/11). Redigida pra permitir body em todo log
+            // — inclusive 2xx — sem expor dado pessoal pra Cloud Logging / New Relic (EUA).
+            // cpf/telefone ficam no PARTIAL_MASK (preservam últimos 2). cidade/uf seguem
+            // visíveis (coarse, baixo risco, útil pra contexto).
+            "nome", "email", "datanascimento",
+            "logradouro", "numero", "complemento", "bairro", "cep");
 
     /** Chaves com mascaramento parcial — preserva últimos 2 dígitos pra reconhecimento. */
     private static final Set<String> PARTIAL_MASK_KEYS = Set.of(

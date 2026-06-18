@@ -126,35 +126,23 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Smart body por nível:
-     *   - INFO 2xx → só responseFields extraídos do response
-     *   - WARN 4xx → requestBody redacted + responseFields
-     *   - ERROR 5xx → requestBody + responseBody, ambos redacted
+     * Body em TODO request — inclusive 2xx (decisão de observabilidade, ver
+     * OBSERVABILITY.md): sempre grava requestBody + responseBody redacted+truncado.
+     * A PII de paciente (nome, email, endereço, nascimento, observações) é redigida
+     * no {@link BodyRedactor}; cpf/telefone mascarados. /auth/** continua suprimido.
      */
     private void preencherBodyNoMdc(ContentCachingRequestWrapper req,
                                     ContentCachingResponseWrapper resp,
                                     int status) {
-        boolean isAuth = req.getRequestURI().startsWith("/auth/");
-
-        if (isAuth) {
-            // Caso especial: nunca loga body de login/signup, nem redacted.
-            // Loga só o outcome.
+        if (req.getRequestURI().startsWith("/auth/")) {
+            // Caso especial: nunca loga body de login/signup, nem redacted. Só o outcome.
             MDC.put(LogFields.LOGIN_OUTCOME, status >= 200 && status < 300 ? "success" : "failure");
             return;
         }
 
-        byte[] reqBytes = req.getContentAsByteArray();
-        byte[] respBytes = resp.getContentAsByteArray();
-
-        if (status >= 500) {
-            putRedactedBody(LogFields.REQUEST_BODY, reqBytes, req.getContentType());
-            putRedactedBody(LogFields.RESPONSE_BODY, respBytes, resp.getContentType());
-        } else if (status >= 400) {
-            putRedactedBody(LogFields.REQUEST_BODY, reqBytes, req.getContentType());
-            putFields(LogFields.RESPONSE_FIELDS, respBytes);
-        } else {
-            putFields(LogFields.RESPONSE_FIELDS, respBytes);
-        }
+        putRedactedBody(LogFields.REQUEST_BODY, req.getContentAsByteArray(), req.getContentType());
+        putRedactedBody(LogFields.RESPONSE_BODY, resp.getContentAsByteArray(), resp.getContentType());
+        promoverIds(resp.getContentAsByteArray());
     }
 
     private void putRedactedBody(String mdcKey, byte[] body, String contentType) {
@@ -171,21 +159,10 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         }
     }
 
-    private void putFields(String mdcKey, byte[] body) {
-        if (body == null || body.length == 0) return;
-        Map<String, String> fields = BodyRedactor.extractKeyFields(body);
-        if (fields.isEmpty()) return;
-        StringBuilder sb = new StringBuilder("{");
-        boolean first = true;
-        for (Map.Entry<String, String> e : fields.entrySet()) {
-            if (!first) sb.append(',');
-            sb.append('"').append(e.getKey()).append("\":\"").append(e.getValue()).append('"');
-            first = false;
-        }
-        sb.append('}');
-        MDC.put(mdcKey, sb.toString());
-
-        // Promove IDs conhecidos pra MDC top-level (filtros/dashboards usam direto)
+    /** Promove IDs conhecidos do response pra MDC top-level (filtros/dashboards usam direto). */
+    private void promoverIds(byte[] respBytes) {
+        if (respBytes == null || respBytes.length == 0) return;
+        Map<String, String> fields = BodyRedactor.extractKeyFields(respBytes);
         if (fields.containsKey("pacienteId")) MDC.put(LogFields.PACIENTE_ID, fields.get("pacienteId"));
         if (fields.containsKey("consultaId")) MDC.put(LogFields.CONSULTA_ID, fields.get("consultaId"));
         if (fields.containsKey("lembreteId")) MDC.put(LogFields.LEMBRETE_ID, fields.get("lembreteId"));

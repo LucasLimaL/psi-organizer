@@ -153,11 +153,19 @@ Isso permite responder: *"quem (real ou tentando) fez essa request?"* mesmo em l
 
 ### Regra por nível
 
-| Nível do log | O que aparece no campo `body` | Por quê |
+**Decisão (jun/2026): body em TODO request, inclusive 2xx.** `requestBody` + `responseBody`
+(ambos redacted + truncados 4KB) em INFO/WARN/ERROR. Mantém-se **1 log por ação** — os bodies
+entram no mesmo registro de completion. A proteção de dado sensível passa a ser **100%
+responsabilidade da [Redação](#redação)** (não mais do filtro por status).
+
+| Nível do log | O que aparece no `body` | Por quê |
 |---|---|---|
-| **INFO** (2xx) | Apenas `responseFields` — campos-chave extraídos (ex: `pacienteId`, `consultaId`) | Casos felizes não precisam payload completo; campos-chave já viram MDC ou colunas estruturadas |
-| **WARN** (4xx) | `requestBody` (redacted, truncado 4KB) + `responseFields` | Validação falhou — precisa ver o que veio errado |
-| **ERROR** (5xx) | `requestBody` (redacted, truncado 4KB) + `responseBody` (redacted, truncado 4KB) | Falha inesperada — precisa de tudo pra postmortem |
+| **INFO** (2xx) | `requestBody` + `responseBody` redacted | Debug do fluxo feliz: ver o que entrou e o que saiu |
+| **WARN** (4xx) | idem | Validação falhou — ver o que veio errado |
+| **ERROR** (5xx) | idem | Falha inesperada — tudo pra postmortem |
+
+Promoção de IDs (`pacienteId`/`consultaId`/…) pro MDC top-level continua. `/auth/**` segue
+suprimido (só `loginOutcome`).
 
 ### Truncate
 
@@ -176,7 +184,9 @@ senha, password, oldPassword, newPassword, currentPassword
 token, accessToken, refreshToken, jwt, authorization
 cpf  (mascarado: "***.***.***-12" — últimos 2)
 telefone  (mascarado: "+55 ***** ****04" — últimos 2)
-notas, anotacao, anotacoes  (campo de notas clínicas — sensível Art. 11 LGPD)
+notas, anotacao, anotacoes, observacoes  (notas clínicas / sobre o paciente — Art. 11 LGPD)
+nome, email, dataNascimento  (PII de paciente — Art. 6 LGPD)
+logradouro, numero, complemento, bairro, cep  (endereço do paciente; cidade/uf ficam visíveis)
 appSecret, verifyToken, hmacSignature
 clientSecret, apiKey
 ```
@@ -365,18 +375,71 @@ backend/pom.xml                     ← +logstash-logback-encoder
 
 ---
 
-## Shipping pra cloud (decisão diferida)
+## Shipping pra cloud
 
-Hoje: JSON em stdout. Decisão de coletor é de **deploy time**, não de app.
+Hoje: JSON em stdout. Decisão de coletor é de **deploy time**, não de app — o backend
+**nunca** conhece o vendor.
 
-Quando for hora de mandar pra New Relic:
+### Em produção (Cloud Run) — implementado
+
+O deploy real é **Cloud Run serverless** (ver [runbooks/infra-gcp.md](runbooks/infra-gcp.md)),
+não VM/K8s. Logo, **não há host pra rodar agente** (NR Infra Agent, Fluent Bit DaemonSet),
+e **shipping direto do app é inviável**: com `min-instances=0` o Cloud Run faz *CPU throttling*
+fora do request, então uma thread assíncrona de envio não tem garantia de flush antes da
+instância congelar — logs se perderiam.
+
+Pipeline em uso:
+
+```
+Cloud Run (stdout JSON) ─auto→ Cloud Logging ─sink→ Pub/Sub ─trigger→ Cloud Function ─HTTPS→ New Relic Log API
+```
+
+- Código + deploy: [`infra/newrelic-log-forwarder/`](../infra/newrelic-log-forwarder/README.md).
+- Free-tier friendly; sink filtra só `service_name=psi-organizer-api`.
+- O forwarder agrupa nosso MDC enriquecido sob `custom.*` no NR (separa "dado nosso" do
+  básico do framework); campos de evento (`message`, `level`, `logger_name`…) ficam no topo.
+  No stdout / Cloud Logging os campos seguem achatados — o agrupamento é só na borda NR.
+- Logs ficam duráveis no Cloud Logging mesmo se o forward falhar (Pub/Sub faz retry).
+- **Rejeitado:** template Dataflow "Pub/Sub→New Relic" do Google — roda worker VM persistente, não é free.
+
+### APM (métricas + traces) — agent New Relic
+
+Em prod roda o **agent Java da New Relic** (`-javaagent`, baixado pinado no
+[`backend/Dockerfile`](../backend/Dockerfile)) pra **métricas e traces**. Config 100%
+por env (`NEW_RELIC_*`), sem `newrelic.yml`. Desligado por default na imagem
+(`NEW_RELIC_AGENT_ENABLED=false`); só liga no Cloud Run.
+
+**Divisão de responsabilidades com os logs — importante:**
+
+| Sinal | Quem manda pra NR |
+|---|---|
+| Métricas + traces | agent Java (in-process) |
+| **Logs** | **pipeline sink→Pub/Sub→Function** (acima) |
+
+O agent **tem** forwarding de log próprio ("logs in context"), mas ele é **desligado de
+propósito** (`NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED=false`) porque:
+
+1. Sofre o mesmo *CPU throttling* do Cloud Run `min-0` que nos fez evitar shipping
+   in-process — caminho não-confiável.
+2. Causaria **double-ship** (log duplicado + consumo dobrado dos 100GB free).
+
+Pra não perder a correlação log↔trace, liga-se a **decoração local**
+(`NEW_RELIC_APPLICATION_LOGGING_LOCAL_DECORATING_ENABLED=true`): o agent injeta
+`trace.id`/`span.id` na saída (sufixo `NR-LINKING|...` no `message`), o pipeline de logs
+carrega isso, e a NR correlaciona — sem usar o forwarder dele. Em dev (sem agent) os logs
+ficam limpos.
+
+> Nota Cloud Run `min-0`: o harvest de métricas/traces do agent também sofre throttling →
+> pode haver buracos. Tradeoff aceito no MVP; resolver = `--cpu-no-throttling`/min-1 (custo).
+
+### Outros cenários (referência, caso o deploy mude)
 
 | Cenário | Opção recomendada |
 |---|---|
-| Single VM, single instância (hoje) | **New Relic Infrastructure Agent** lê stdout direto (via journald ou file). Zero config no app. |
-| Multi-instância sem K8s | **Fluent Bit** na VM como agente — fan-out pra NR + S3 (audit). |
+| VM única lendo stdout | **New Relic Infrastructure Agent** (journald/file). Zero config no app. |
+| Multi-instância sem K8s | **Fluent Bit** na VM — fan-out pra NR + audit. |
 | Kubernetes | **Fluent Bit DaemonSet** ou **OpenTelemetry Collector**. Vendor-neutral. |
-| Pipeline futuro de logs+métricas+traces unificado | **OpenTelemetry Collector**. |
+| Logs+métricas+traces unificados | **OpenTelemetry Collector**. |
 
 **Fluentd (não Fluent Bit):** evitar. Runtime Ruby pesado, sucessor (Fluent Bit em C) cobre os mesmos casos com fração do consumo.
 

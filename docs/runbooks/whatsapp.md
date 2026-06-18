@@ -14,7 +14,7 @@ Operação do canal WhatsApp: o que checar quando algo trava, como observar saú
 | `WHATSAPP_APP_SECRET` | webhook recebendo eventos reais | painel Meta → App Settings → Basic → "App Secret" (Show) |
 | `WHATSAPP_VERIFY_TOKEN` | webhook (handshake) | inventado por nós — qualquer string |
 | `WHATSAPP_GRAPH_API_VERSION` | default `v21.0` | revisar 1x/trimestre |
-| `WHATSAPP_TEMPLATE_LEMBRETE_NOME` | default `lembrete_consulta_v1` | só sobrescreva se renomear o template Meta |
+| `WHATSAPP_TEMPLATE_LEMBRETE_NOME` | default `confirmacao_atendimento_v1` | só sobrescreva se renomear o template Meta |
 | `WHATSAPP_TEMPLATE_LEMBRETE_IDIOMA` | default `pt_BR` | idem |
 | `WHATSAPP_SCHEDULER_CRON` | default `0 0 * * * *` (UTC) | dev: `0 */2 * * * *` (cada 2 min) |
 | `WHATSAPP_DEV_TOOLS` | default `false` | `true` ativa `/dev/whatsapp/simular-resposta` |
@@ -47,7 +47,7 @@ Sequência testada (2026-06-16). A ordem importa — pular o registro ou criar o
    ```bash
    curl -i -X POST "https://graph.facebook.com/v21.0/<PHONE_NUMBER_ID>/messages" \
      -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-     -d '{"messaging_product":"whatsapp","to":"55DDDXXXXXXXXX","type":"template","template":{"name":"lembrete_consulta_v1","language":{"code":"pt_BR"},"components":[{"type":"body","parameters":[{"type":"text","text":"Maria"},{"type":"text","text":"Dra. Ana"},{"type":"text","text":"17/06/2026"},{"type":"text","text":"14:00"},{"type":"text","text":"Rua X, 123 - Centro, BH/MG"}]}]}}'
+     -d '{"messaging_product":"whatsapp","to":"55DDDXXXXXXXXX","type":"template","template":{"name":"confirmacao_atendimento_v1","language":{"code":"pt_BR"},"components":[{"type":"body","parameters":[{"type":"text","text":"Maria"},{"type":"text","text":"Dra. Ana"},{"type":"text","text":"17/06/2026"},{"type":"text","text":"14:00"},{"type":"text","text":"Rua X, 123 - Centro, BH/MG"}]}]}}'
    # esperado: {"messages":[{"id":"wamid...."}]}
    ```
 5. **Flip do canal** (só depois do passo 4 funcionar): criar os 4 secrets e ligar — ver `docs/runbooks/infra-gcp.md`. Não esquecer de **atualizar a tabela de envs** daquele runbook registrando `WHATSAPP_MOCK=false`.
@@ -126,10 +126,10 @@ Ação:
 
 Sintoma: `whatsapp.falhas.total{codigo=http_400}` + logs com `132xxx` no `erro_codigo`.
 
-Causa: template `lembrete_consulta_v1` saiu de `APPROVED` pra `PAUSED`/`PENDING`/`REJECTED`.
+Causa: template `confirmacao_atendimento_v1` saiu de `APPROVED` pra `PAUSED`/`PENDING`/`REJECTED`.
 
 Ação:
-1. Painel Meta → WhatsApp Manager → Message templates → status do `lembrete_consulta_v1`
+1. Painel Meta → WhatsApp Manager → Message templates → status do `confirmacao_atendimento_v1`
 2. Se `PAUSED`: reativar (Meta às vezes pausa por baixa taxa de leitura)
 3. Se `REJECTED`: ajustar texto, re-submeter, esperar aprovação (1-3 dias)
 4. Enquanto isso: psis veem chip cinza "Lembrete será enviado" na agenda, sem disparo. UI deve avisar com banner — futuro item

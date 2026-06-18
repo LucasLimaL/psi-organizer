@@ -127,7 +127,7 @@ Isso permite responder: *"quem (real ou tentando) fez essa request?"* mesmo em l
 | `notificacaoId` | Marcar notificação como lida | `4c8e...` |
 | `lembreteId` | WhatsApp scheduler/webhook | `7e1d...` |
 | `wamid` | WhatsApp client após resposta da Meta | `wamid.HBg...` |
-| `templateName` | WhatsApp envio | `lembrete_consulta_v1` |
+| `templateName` | WhatsApp envio | `confirmacao_atendimento_v1` |
 | `etapaLembrete` | Webhook após máquina de estados | `AGUARDANDO_CONFIRMACAO_DUPLA` |
 
 ### De fluxo (set por wrappers de scheduler/webhook)

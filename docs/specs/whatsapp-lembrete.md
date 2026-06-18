@@ -783,7 +783,7 @@ Boot fail-fast: `WhatsappProperties` com `@ConfigurationProperties` + validaçã
 
 1. **Meta Business Manager**: criar [business.facebook.com](https://business.facebook.com) com CNPJ da plataforma (Psi Organizer LTDA ou afim). Fazer **verificação de negócio** (Business Verification) — exige documentos do CNPJ, pode levar 1-2 semanas. **Bloqueador da PR B**.
 2. **WhatsApp Business Account (WABA)**: dentro do Business Manager, criar WABA. Cadastrar número da plataforma (linha PJ comprada, **não** pode reutilizar WhatsApp pessoal). Anota `WABA_ID` e `PHONE_NUMBER_ID`.
-3. **Template `lembrete_consulta_v1`** — submeter pra aprovação Meta:
+3. **Template `confirmacao_atendimento_v1`** — submeter pra aprovação Meta:
    - Categoria: `UTILITY`
    - Idioma: `pt_BR`
    - Body: texto base alinhado ao default em §2.1.1, com 5 variáveis `{{1}}`/`{{2}}`/`{{3}}`/`{{4}}`/`{{5}}` (paciente, psicologa, data, hora, endereço)
